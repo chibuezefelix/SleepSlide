@@ -14,7 +14,7 @@ interface VolumeMemoryRepository {
 
     suspend fun saveVolumes(volumes: Map<String, Float>)
 
-    suspend fun clearVolume(soundId: String)
+    suspend fun clearVolume(soundId: String):Int
 
-    suspend fun clearAll()
+    suspend fun clearAll():Int
 }

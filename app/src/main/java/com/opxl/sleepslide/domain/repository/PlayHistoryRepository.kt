@@ -9,23 +9,16 @@ interface PlayHistoryRepository {
 
     fun observeByPreset(presetId: Long): Flow<List<Domain.PlaySession>>
 
-    fun observeTotalPlayedMs(): Flow<Long>
+        fun observeTotalPlayedMs(): Flow<Long>
 
     fun observeSessionCount(): Flow<Int>
 
     suspend fun getLatestSession(): Domain.PlaySession?
-
     suspend fun getActiveSession(): Domain.PlaySession?
-
     suspend fun getTotalPlayedMsForPreset(presetId: Long): Long
-
     suspend fun openSession(mix: Domain.SoundMix, presetId: Long?): Long
-
     suspend fun closeSession(sessionId: Long, reason: Domain.StopReason)
-
     suspend fun closeAnyActiveSessions(reason: Domain.StopReason)
-
-    suspend fun pruneOlderThan(epochMs: Long)
-
-    suspend fun clearAll()
+    suspend fun pruneOlderThan(epochMs: Long):Int
+    suspend fun clearAll():Int
 }

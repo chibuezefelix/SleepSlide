@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface PresetRepository {
 
     fun observeAll(): Flow<List<Domain.Preset>>
-
+//
     fun observePinned(): Flow<List<Domain.Preset>>
 
     fun observeRecentlyUsed(limit: Int = 5): Flow<List<Domain.Preset>>
@@ -17,13 +17,14 @@ interface PresetRepository {
 
     suspend fun getById(id: Long): Domain.Preset?
 
+
     suspend fun getLastUsed(): Domain.Preset?
 
     suspend fun getCount(): Int
 
     suspend fun save(preset: Domain.Preset): Long
 
-    suspend fun update(preset: Domain.Preset)
+    suspend fun update(preset: Domain.Preset):Long
 
     suspend fun updateMix(presetId: Long, mix: Domain.SoundMix)
 
@@ -39,7 +40,7 @@ interface PresetRepository {
 
     suspend fun reorder(orderedIds: List<Long>)
 
-    suspend fun delete(presetId: Long)
+    suspend fun delete(presetId: Long):Int
 
-    suspend fun deleteAll()
+    suspend fun deleteAll(): Int
 }

@@ -20,7 +20,6 @@ interface SoundRepository {
     fun observeDownloaded(): Flow<List<Domain.Sound>>
 
     suspend fun getById(id: String): Domain.Sound?
-
     suspend fun getByIds(ids: List<String>): List<Domain.Sound>
 
     suspend fun getAll(): List<Domain.Sound>
@@ -35,7 +34,7 @@ interface SoundRepository {
 
     suspend fun markDownloadComplete(soundId: String, localPath: String)
 
-    suspend fun deleteDownload(soundId: String)
+    suspend fun deleteDownload(soundId: String): Int
 
-    suspend fun deleteOrphanedDownloads()
+    suspend fun deleteOrphanedDownloads():Int
 }
