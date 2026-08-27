@@ -25,21 +25,22 @@ interface PresetDao {
 
     @Transaction
     @Query("""
-        SELECT * FROM presets 
-        WHERE lastUsedAt IS NOT NULL 
-        ORDER BY lastUsedAt DESC 
+        SELECT * FROM presets
+        WHERE lastUsedAt IS NOT NULL
+        ORDER BY lastUsedAt DESC
         LIMIT 1
     """)
     suspend fun getLastUsed(): Local.PresetWithLayers?
 
     @Transaction
     @Query("""
-        SELECT * FROM presets 
-        WHERE lastUsedAt IS NOT NULL 
-        ORDER BY lastUsedAt DESC 
+        SELECT * FROM presets
+        WHERE lastUsedAt IS NOT NULL
+        ORDER BY lastUsedAt DESC
         LIMIT :limit
     """)
     fun observeRecentlyUsed(limit: Int = 5): Flow<List<Local.PresetWithLayers>>
+
 
     @Query("SELECT COUNT(*) FROM presets")
     fun observeCount(): Flow<Int>
@@ -87,14 +88,14 @@ interface PresetDao {
     }
 
     @Query("DELETE FROM preset_layers WHERE presetId = :presetId")
-    suspend fun deleteLayersByPresetId(presetId: Long)
+    suspend fun deleteLayersByPresetId(presetId: Long) :Int
 
     @Query("DELETE FROM presets WHERE id = :id")
-    suspend fun deleteById(id: Long)
+    suspend fun deleteById(id: Long):Int
 
     @Delete
     suspend fun delete(preset: Local.PresetEntity)
 
     @Query("DELETE FROM presets")
-    suspend fun deleteAll()
+    suspend fun deleteAll():Int
 }

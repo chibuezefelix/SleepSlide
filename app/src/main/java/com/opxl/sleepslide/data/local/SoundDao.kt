@@ -30,9 +30,9 @@ interface SoundDao {
     fun observePremium(): Flow<List<Local.SoundEntity>>
 
     @Query("""
-        SELECT * FROM sounds 
-        WHERE lastPlayedAt IS NOT NULL 
-        ORDER BY lastPlayedAt DESC 
+        SELECT * FROM sounds
+        WHERE lastPlayedAt IS NOT NULL
+        ORDER BY lastPlayedAt DESC
         LIMIT :limit
     """)
     fun observeRecentlyPlayed(limit: Int = 10): Flow<List<Local.SoundEntity>>
@@ -62,10 +62,10 @@ interface SoundDao {
     suspend fun incrementPlayCount(id: String, timestamp: Long)
 
     @Query("""
-        UPDATE sounds 
-        SET isDownloading = :isDownloading, 
-            downloadedBytes = :downloadedBytes, 
-            totalBytes = :totalBytes 
+        UPDATE sounds
+        SET isDownloading = :isDownloading,
+            downloadedBytes = :downloadedBytes,
+            totalBytes = :totalBytes
         WHERE id = :id
     """)
     suspend fun updateDownloadProgress(
@@ -76,18 +76,18 @@ interface SoundDao {
     )
 
     @Query("""
-        UPDATE sounds 
-        SET downloadedPath = :path, 
-            isDownloading = 0 
+        UPDATE sounds
+        SET downloadedPath = :path,
+            isDownloading = 0
         WHERE id = :id
     """)
     suspend fun markDownloadComplete(id: String, path: String)
 
     @Query("UPDATE sounds SET downloadedPath = NULL, isDownloading = 0 WHERE id = :id")
-    suspend fun clearDownload(id: String)
+    suspend fun clearDownload(id: String) : Int
 
     @Query("DELETE FROM sounds WHERE isBundled = 0 AND downloadedPath IS NULL AND isDownloading = 0")
-    suspend fun deleteOrphaned()
+    suspend fun deleteOrphaned() : Int
 
     @Delete
     suspend fun delete(sound: Local.SoundEntity)

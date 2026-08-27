@@ -26,51 +26,49 @@ interface PlayHistoryDao {
     suspend fun getActiveSession(): Local.PlayHistoryEntity?
 
     @Query("""
-        SELECT * FROM play_history 
-        WHERE startedAt >= :fromEpoch AND startedAt <= :toEpoch 
+        SELECT * FROM play_history
+        WHERE startedAt >= :fromEpoch AND startedAt <= :toEpoch
         ORDER BY startedAt DESC
     """)
     fun observeInRange(fromEpoch: Long, toEpoch: Long): Flow<List<Local.PlayHistoryEntity>>
 
     @Query("SELECT SUM(durationPlayedMs) FROM play_history")
     fun observeTotalPlayedMs(): Flow<Long?>
-
+//
     @Query("SELECT SUM(durationPlayedMs) FROM play_history WHERE presetId = :presetId")
     suspend fun getTotalPlayedMsForPreset(presetId: Long): Long?
-
+//
     @Query("SELECT COUNT(*) FROM play_history")
     fun observeSessionCount(): Flow<Int>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(session: Local.PlayHistoryEntity): Long
-
+//
     @Update
     suspend fun update(session: Local.PlayHistoryEntity)
-
+//
     @Query("""
-        UPDATE play_history 
-        SET endedAt = :endedAt, 
-            durationPlayedMs = :durationMs, 
-            stoppedBy = :reason 
+        UPDATE play_history
+        SET endedAt = :endedAt,
+            durationPlayedMs = :durationMs,
+            stoppedBy = :reason
         WHERE id = :id
     """)
     suspend fun closeSession(id: Long, endedAt: Long, durationMs: Long, reason: String)
 
     @Query("""
-        UPDATE play_history 
-        SET endedAt = :endedAt, 
-            durationPlayedMs = :durationMs, 
-            stoppedBy = :reason 
+        UPDATE play_history
+        SET endedAt = :endedAt,
+            durationPlayedMs = :durationMs,
+            stoppedBy = :reason
         WHERE endedAt IS NULL
     """)
-    suspend fun closeAllActiveSessions(endedAt: Long, durationMs: Long, reason: String)
-
+    suspend fun closeAllActiveSessions(endedAt: Long?, durationMs: Long?, reason: String)
     @Query("DELETE FROM play_history WHERE startedAt < :beforeEpoch")
-    suspend fun deleteOlderThan(beforeEpoch: Long)
-
+    suspend fun deleteOlderThan(beforeEpoch: Long): Int
     @Query("DELETE FROM play_history WHERE id = :id")
-    suspend fun deleteById(id: Long)
+    suspend fun deleteById(id: Long):Int
 
     @Query("DELETE FROM play_history")
-    suspend fun deleteAll()
+    suspend fun deleteAll(): Int
 }
