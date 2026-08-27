@@ -5,6 +5,8 @@ val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()){
     localProperties.load(FileInputStream(localPropertiesFile))
+}else{
+    throw GradleException("local.properties file not found. Please create it and add the required properties.")
 }
 plugins {
 
@@ -12,6 +14,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.room)
 
 
 }
@@ -29,6 +32,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "REVENUECAT_KEY", localProperties["REVENUECAT_KEY"] as String)
+        //Assets
+        buildConfigField("String", "WHITE_NOISE", localProperties["WHITE_NOISE"] as String)
+
+
     }
 
     buildTypes {
@@ -36,6 +45,15 @@ android {
             optimization {
                 enable = false
             }
+        }
+
+        debug {
+            applicationIdSuffix=".debug"
+            versionNameSuffix="-debug"
+            isMinifyEnabled = false
+            buildConfigField("String", "REVENUECAT_KEY", localProperties.get("REVENUECAT_KEY") as String)
+            //Assets
+            buildConfigField("String", "WHITE_NOISE", localProperties.get("WHITE_NOISE") as String)
         }
     }
     compileOptions {
@@ -56,13 +74,11 @@ android {
         kotlinCompilerExtensionVersion = "1.5.15"
     }
 
-
-    defaultConfig {
-        buildConfigField("String", "REVENUECAT_KEY", localProperties.get("REVENUECAT_KEY") as String)
-
-    }
 }
 
+room {
+    schemaDirectory("$projectDir/schemas")
+}
 dependencies {
     // Core
     implementation(libs.androidx.core.ktx)
