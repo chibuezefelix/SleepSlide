@@ -65,7 +65,6 @@ class PurchaseRepositoryImpl @Inject constructor(
     }
 
     override suspend fun syncEntitlement() = withContext(io) {
-        try {
             suspendCancellableCoroutine { cont ->
                 purchases.getCustomerInfo(object : ReceiveCustomerInfoCallback {
                     override fun onReceived(customerInfo: CustomerInfo) {
@@ -77,12 +76,9 @@ class PurchaseRepositoryImpl @Inject constructor(
                     }
                     override fun onError(error: PurchasesError) { cont.resume(Unit) }
                 })
-            }
-        }catch (e: Exception) {
-            // Handle exception
-        }
 
-    }
+
+    }}
 
 
     private fun CustomerInfo.toEntitlementTier(): EntitlementTier =
