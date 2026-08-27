@@ -1,6 +1,7 @@
 package com.opxl.sleepslide.di
 
 
+import com.opxl.sleepslide.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,6 +19,5 @@ object AppConfigModule {
     @Provides
     @Singleton
     @RevenueCatApiKey
-    fun provideRevenueCatApiKey(): String = "BuildConfig.REVENUECAT_KEY"
-//    fun provideRevenueCatApiKey(): String = BuildConfig.REVENUECAT_KEY
+    fun provideRevenueCatApiKey(): String = BuildConfig.REVENUECAT_KEY
 }
