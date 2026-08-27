@@ -90,6 +90,7 @@ object Domain {
         val isPlayingInBackground: Boolean = false,
         val isBluetoothConnected: Boolean = false,
         val isNightLockEnabled: Boolean = false,
+        val isLooped: Boolean = false,
         val fadeInProgress: Float? = null,
     )
 
