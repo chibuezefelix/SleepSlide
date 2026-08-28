@@ -13,7 +13,7 @@ interface PurchaseService {
 
     suspend fun restore(): RestoreResult
 
-    suspend fun refresh()
+    suspend fun refresh(): Result<Unit>
 
     fun isPremium(): Boolean
 }
