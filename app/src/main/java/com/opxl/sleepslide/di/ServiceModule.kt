@@ -19,11 +19,7 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class ServiceModule {
-//
-//    @Binds //since we are binding an interface to its implementation, we use @Binds instead of @Provides
-//    @Singleton
-//    abstract fun bindAudioService(audioServiceImpl: AudioServiceImpl): AudioService
-//
+
 @Provides
 @Singleton
 fun provideTimerService(
