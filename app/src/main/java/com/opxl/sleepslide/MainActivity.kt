@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         Intent(this, AudioServiceImpl::class.java).also {
-            bindService(it, connection, Context.BIND_AUTO_CREATE)
+            bindService(it, audioServiceConnection, Context.BIND_AUTO_CREATE)
         }
     }
 
