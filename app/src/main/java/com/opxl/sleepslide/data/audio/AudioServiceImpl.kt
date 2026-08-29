@@ -1,4 +1,25 @@
 package com.opxl.sleepslide.data.audio
+/**
+ * Author Chibueze Felix
+* Date: 2026-8-29
+* License: MIT
+* #DOC
+* Description: This file contains the implementation of the AudioService interface, which manages
+* audio playback, including playing, pausing, stopping, and managing audio layers and volumes.
+*  It also handles audio focus changes, Bluetooth connectivity, and media session management.
+* The service runs in the foreground to ensure continuous playback even when the app is in the
+*  background. It uses coroutines for asynchronous operations and state management with StateFlow
+* to provide real-time updates on the audio state. The service is designed to be injected using
+* Dagger Hilt for dependency management.
+* It serves as a bridge between the domain layer and the Android framework,
+* providing a clean API for audio playback extendes the MediaSessionService to integrate with
+* Android's media playback framework- it is Android initiated and managed, allowing for better
+* control over audio playback and user interactions. Hilt @Binds is used to bind the AudioService
+* interface to its implementation, ensuring that the service can be easily injected and used
+* throughout the application
+* The service is designed to be robust and handle various edge cases, such as audio focus loss,
+*
+*/
 
 import com.opxl.sleepslide.domain.model.Domain
 
