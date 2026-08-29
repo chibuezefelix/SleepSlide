@@ -151,7 +151,10 @@ object Domain {
 
         // Last played
         val lastPlayedPresetId: Long? = null,
-        val lastPlayedMixJson: String? = null,       
+        val lastPlayedMixJson: String? = null,
+
+       var  nightLockBrightness: Float = 0.01f  ,        // 0.0 (off) to 1.0 (full)
+     var   hasRequestedNotificationPermission: Boolean = false
     )
 
     enum class ThemeMode { LIGHT, DARK, SYSTEM, SCHEDULED }
