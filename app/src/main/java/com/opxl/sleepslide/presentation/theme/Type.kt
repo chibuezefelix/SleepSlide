@@ -2,11 +2,11 @@ package com.opxl.sleepslide.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-
-import androidx.compose.ui.unit.sp
+import com.opxl.sleepslide.R
 
 /**
  * SleepSlide typography system.
@@ -15,9 +15,16 @@ import androidx.compose.ui.unit.sp
  * Replace EditorialFont with a bundled serif FontFamily when desired.
  */
 
-private val UiFont = FontFamily.SansSerif
-private val EditorialFont = FontFamily.Serif
-private val MonoFont = FontFamily.Monospace
+private val Exo2 = FontFamily(
+    Font(R.font.exo_variable_font_wght, FontWeight.Normal),
+    Font(R.font.exo_variable_font_wght, FontWeight.Medium),
+    Font(R.font.exo_variable_font_wght, FontWeight.SemiBold),
+    Font(R.font.exo_variable_font_wght, FontWeight.Bold)
+)
+
+private val UiFont = Exo2
+private val EditorialFont = Exo2
+private val MonoFont = Exo2
 
 val SleepSlideTypography = Typography(
 
