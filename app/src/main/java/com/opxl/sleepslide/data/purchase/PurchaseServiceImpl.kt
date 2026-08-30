@@ -33,7 +33,7 @@ import kotlin.coroutines.resume
 @Singleton
 class PurchaseServiceImpl @Inject constructor(
     private val purchaseRepository: PurchaseRepository,
-    private val `purchases`: Purchases,
+    private val purchases: Purchases,
     @ApplicationScope private val scope: CoroutineScope,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) : PurchaseService {
