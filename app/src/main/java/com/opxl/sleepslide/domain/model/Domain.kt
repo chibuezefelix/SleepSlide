@@ -111,6 +111,11 @@ object Domain {
         DUCK,
     }
 
+    enum class AudioFocusLostReason {
+        PHONE_CALL,         // LOST_TRANSIENT — will auto-resume
+        ANOTHER_APP,        // LOST — user must manually resume
+    }
+
     data class Entitlement(
         val tier: EntitlementTier,
         val purchasedAt: Long? = null,
