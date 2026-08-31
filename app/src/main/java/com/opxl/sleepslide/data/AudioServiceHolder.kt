@@ -2,7 +2,6 @@ package com.opxl.sleepslide.data
 
 
 import com.opxl.sleepslide.domain.service.AudioService
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +20,7 @@ import javax.inject.Singleton
 class AudioServiceHolder @Inject constructor() {
 
     private val _service = MutableStateFlow<AudioService?>(null)
-    val service: Flow<AudioService?> = _service.asStateFlow()
+    val service: StateFlow<AudioService?> = _service.asStateFlow()
 
     val current: AudioService? get() = _service.value
 
