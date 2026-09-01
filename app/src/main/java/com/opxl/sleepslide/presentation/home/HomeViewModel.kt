@@ -53,18 +53,18 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
 
-    private val _events = Channel<HomeView.HomeEvent>(Channel.BUFFERED)
-    val events: Flow<HomeView.HomeEvent> = _events.receiveAsFlow()
+    private val _events = Channel<HomeViewState.HomeEvent>(Channel.BUFFERED)
+    val events: Flow<HomeViewState.HomeEvent> = _events.receiveAsFlow()
 
 
     private val _isRefreshing = MutableStateFlow(false)
 
 
-    val uiState: StateFlow<HomeView.HomeUiState> = buildUiStateFlow()
+    val uiState: StateFlow<HomeViewState.HomeUiState> = buildUiStateFlow()
         .catch { e ->
             emit(
-                HomeView.HomeUiState(
-                    screen = HomeView.ScreenState.Error(
+                HomeViewState.HomeUiState(
+                    screen = HomeViewState.ScreenState.Error(
                         e.message ?: "Something went wrong loading your sounds"
                     )
                 )
@@ -73,7 +73,7 @@ class HomeViewModel @Inject constructor(
         .stateIn(
             scope            = viewModelScope,
             started          = SharingStarted.WhileSubscribed(SHARING_STOP_TIMEOUT_MS),
-            initialValue     = HomeView.HomeUiState(),
+            initialValue     = HomeViewState.HomeUiState(),
         )
 
 
@@ -88,37 +88,37 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val service = audioServiceHolder.current
             if (service == null) {
-                _events.send(HomeView.HomeEvent.ShowServiceUnavailableSnackbar)
+                _events.send(HomeViewState.HomeEvent.ShowServiceUnavailableSnackbar)
                 return@launch
             }
 
-            val state = uiState.value.screen as? HomeView.ScreenState.Ready ?: return@launch
+            val state = uiState.value.screen as? HomeViewState.ScreenState.Ready ?: return@launch
             val resume = state.resumeCard ?: run {
-                _events.send(HomeView.HomeEvent.NavigateToLibrary)
+                _events.send(HomeViewState.HomeEvent.NavigateToLibrary)
                 return@launch
             }
 
             runCatching {
                 when (resume) {
-                    is HomeView.ResumeCardState.FromPreset -> {
+                    is HomeViewState.ResumeCardState.FromPreset -> {
                         val preset = presetRepository.getById(resume.preset.id)
                             ?: return@launch
                         service.play(preset.mix)
                         presetRepository.recordUsed(preset.id)
                         userPreferencesRepository.setLastPlayedPreset(preset.id)
-                        _events.send(HomeView.HomeEvent.PlaybackStarted(preset.name))
+                        _events.send(HomeViewState.HomeEvent.PlaybackStarted(preset.name))
                     }
-                    is HomeView.ResumeCardState.FromEphemeralMix -> {
+                    is HomeViewState.ResumeCardState.FromEphemeralMix -> {
                         service.play(resume.mix)
                         userPreferencesRepository.setLastPlayedEphemeralMix(
                             mixSerializer.serialize(resume.mix)
                         )
-                        _events.send(HomeView.HomeEvent.PlaybackStarted(null))
+                        _events.send(HomeViewState.HomeEvent.PlaybackStarted(null))
                     }
                 }
-                _events.send(HomeView.HomeEvent.NavigateToPlayer)
+                _events.send(HomeViewState.HomeEvent.NavigateToPlayer)
             }.onFailure { e ->
-                _events.send(HomeView.HomeEvent.ShowError(
+                _events.send(HomeViewState.HomeEvent.ShowError(
                     e.message ?: "Could not resume playback"
                 ))
             }
@@ -129,14 +129,14 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val service = audioServiceHolder.current
             if (service == null) {
-                _events.send(HomeView.HomeEvent.ShowServiceUnavailableSnackbar)
+                _events.send(HomeViewState.HomeEvent.ShowServiceUnavailableSnackbar)
                 return@launch
             }
 
             val currentPlayback = uiState.value.playback
 
             runCatching {
-                if (currentPlayback is HomeView.PlaybackUiState.Active &&
+                if (currentPlayback is HomeViewState.PlaybackUiState.Active &&
                     currentPlayback.status == Domain.PlaybackStatus.PLAYING
                 ) {
                     // Already playing — crossfade to the new preset smoothly
@@ -146,10 +146,10 @@ class HomeViewModel @Inject constructor(
                 }
                 presetRepository.recordUsed(preset.id)
                 userPreferencesRepository.setLastPlayedPreset(preset.id)
-                _events.send(HomeView.HomeEvent.PlaybackStarted(preset.name))
-                _events.send(HomeView.HomeEvent.NavigateToPlayer)
+                _events.send(HomeViewState.HomeEvent.PlaybackStarted(preset.name))
+                _events.send(HomeViewState.HomeEvent.NavigateToPlayer)
             }.onFailure { e ->
-                _events.send(HomeView.HomeEvent.ShowError(
+                _events.send(HomeViewState.HomeEvent.ShowError(
                     e.message ?: "Could not launch ${preset.name}"
                 ))
             }
@@ -161,7 +161,7 @@ class HomeViewModel @Inject constructor(
             runCatching {
                 audioServiceHolder.current?.pause()
             }.onFailure {
-                _events.send(HomeView.HomeEvent.ShowError("Could not pause playback"))
+                _events.send(HomeViewState.HomeEvent.ShowError("Could not pause playback"))
             }
         }
     }
@@ -170,13 +170,13 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val service = audioServiceHolder.current
             if (service == null) {
-                _events.send(HomeView.HomeEvent.ShowServiceUnavailableSnackbar)
+                _events.send(HomeViewState.HomeEvent.ShowServiceUnavailableSnackbar)
                 return@launch
             }
             runCatching {
                 service.resume()
             }.onFailure {
-                _events.send(HomeView.HomeEvent.ShowError("Could not resume playback"))
+                _events.send(HomeViewState.HomeEvent.ShowError("Could not resume playback"))
             }
         }
     }
@@ -186,7 +186,7 @@ class HomeViewModel @Inject constructor(
             runCatching {
                 audioServiceHolder.current?.stop()
             }.onFailure {
-                _events.send(HomeView.HomeEvent.ShowError("Could not stop playback"))
+                _events.send(HomeViewState.HomeEvent.ShowError("Could not stop playback"))
             }
         }
     }
@@ -195,22 +195,22 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val state = uiState.value
             if (state.hasReachedFreePresetLimit) {
-                _events.send(HomeView.HomeEvent.ShowPresetLimitReached(FREE_PRESET_LIMIT))
+                _events.send(HomeViewState.HomeEvent.ShowPresetLimitReached(FREE_PRESET_LIMIT))
                 return@launch
             }
-            _events.send(HomeView.HomeEvent.NavigateToLibrary)
+            _events.send(HomeViewState.HomeEvent.NavigateToLibrary)
         }
     }
 
     fun navigateToPreset(presetId: Long) {
         viewModelScope.launch {
-            _events.send(HomeView.HomeEvent.NavigateToPreset(presetId))
+            _events.send(HomeViewState.HomeEvent.NavigateToPreset(presetId))
         }
     }
 
     fun navigateToPlayer() {
         viewModelScope.launch {
-            _events.send(HomeView.HomeEvent.NavigateToPlayer)
+            _events.send(HomeViewState.HomeEvent.NavigateToPlayer)
         }
     }
 
@@ -218,17 +218,17 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val service = audioServiceHolder.current
             if (service == null) {
-                _events.send(HomeView.HomeEvent.ShowServiceUnavailableSnackbar)
+                _events.send(HomeViewState.HomeEvent.ShowServiceUnavailableSnackbar)
                 return@launch
             }
             // Navigate to library pre-filtered to this sound's category
-            _events.send(HomeView.HomeEvent.NavigateToLibrary)
+            _events.send(HomeViewState.HomeEvent.NavigateToLibrary)
         }
     }
 
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private fun buildUiStateFlow(): Flow<HomeView.HomeUiState> {
+    private fun buildUiStateFlow(): Flow<HomeViewState.HomeUiState> {
         val pinnedPresetsFlow = presetRepository.observePinned()
             .catch { emit(emptyList()) }
             .distinctUntilChanged()
@@ -255,26 +255,26 @@ class HomeViewModel @Inject constructor(
 
 
 
-        fun Domain.AudioState.toPlaybackUiState():HomeView.PlaybackUiState {
+        fun Domain.AudioState.toPlaybackUiState():HomeViewState.PlaybackUiState {
             return when {
                 playbackStatus == Domain.PlaybackStatus.ERROR ->
-                    HomeView.  PlaybackUiState.Error
+                    HomeViewState.  PlaybackUiState.Error
 
                 playbackStatus == Domain.PlaybackStatus.IDLE ->
-                    HomeView.   PlaybackUiState.Idle
+                    HomeViewState.   PlaybackUiState.Idle
 
                 audioFocusStatus == Domain.AudioFocusStatus.LOST ->
-                    HomeView .  PlaybackUiState.AudioFocusLost(
+                    HomeViewState .  PlaybackUiState.AudioFocusLost(
                         Domain.AudioFocusLostReason.ANOTHER_APP
                     )
 
                 audioFocusStatus == Domain.AudioFocusStatus.LOST_TRANSIENT ->
-                    HomeView.  PlaybackUiState.AudioFocusLost(
+                    HomeViewState.  PlaybackUiState.AudioFocusLost(
                         Domain.AudioFocusLostReason.PHONE_CALL
                     )
 
                 else ->
-                    HomeView. PlaybackUiState.Active(
+                    HomeViewState. PlaybackUiState.Active(
                         status = playbackStatus,
                         activePresetId = activePresetId,
                         activePresetName = null,
@@ -287,7 +287,7 @@ class HomeViewModel @Inject constructor(
             }
         }
 
-        val playbackFlow: StateFlow<HomeView.PlaybackUiState> =
+        val playbackFlow: StateFlow<HomeViewState.PlaybackUiState> =
             audioServiceHolder.service
                 .flatMapLatest { service ->
                     service?.audioState
@@ -295,15 +295,15 @@ class HomeViewModel @Inject constructor(
                             audioState.toPlaybackUiState()
                         }
                         ?.catch {
-                            emit(HomeView.PlaybackUiState.Error)
+                            emit(HomeViewState.PlaybackUiState.Error)
                         }
-                        ?: flowOf(HomeView.PlaybackUiState.ServiceUnavailable)
+                        ?: flowOf(HomeViewState.PlaybackUiState.ServiceUnavailable)
                 }
                 .distinctUntilChanged()
                 .stateIn(
                     scope = viewModelScope,
                     started = SharingStarted.WhileSubscribed(5_000),
-                    initialValue = HomeView.PlaybackUiState.ServiceUnavailable
+                    initialValue = HomeViewState.PlaybackUiState.ServiceUnavailable
                 )
 
 //        // AudioState flows — flat-map the service holder so we handle null service gracefully
@@ -343,13 +343,13 @@ class HomeViewModel @Inject constructor(
 
 
 
-        val timerFlow: Flow<HomeView.TimerUiState> = timerStateObserver.timerState
+        val timerFlow: Flow<HomeViewState.TimerUiState> = timerStateObserver.timerState
             .map { timerState ->
                 when (timerState.status) {
-                    Domain.TimerStatus.IDLE     -> HomeView.TimerUiState.Idle
-                    Domain.TimerStatus.FINISHED -> HomeView.TimerUiState.Finished
+                    Domain.TimerStatus.IDLE     -> HomeViewState.TimerUiState.Idle
+                    Domain.TimerStatus.FINISHED -> HomeViewState.TimerUiState.Finished
                     Domain.TimerStatus.RUNNING,
-                    Domain.TimerStatus.FADING   -> HomeView.TimerUiState.Active(
+                    Domain.TimerStatus.FADING   -> HomeViewState.TimerUiState.Active(
                         status          = timerState.status,
                         remainingMs     = timerState.remainingMs,
                         remainingLabel  = timerState.remainingMs.toTimerLabel(),
@@ -361,19 +361,19 @@ class HomeViewModel @Inject constructor(
                     )
                 }
             }
-            .catch { emit(HomeView.TimerUiState.Idle) }
+            .catch { emit(HomeViewState.TimerUiState.Idle) }
             .distinctUntilChanged()
 
-        val bluetoothFlow: Flow<HomeView.BluetoothUiState> = serviceFlow.flatMapLatest { service ->
+        val bluetoothFlow: Flow<HomeViewState.BluetoothUiState> = serviceFlow.flatMapLatest { service ->
             if (service == null) {
-                flowOf(HomeView.BluetoothUiState.Unknown)
+                flowOf(HomeViewState.BluetoothUiState.Unknown)
             } else {
                 service.audioState
                     .map { state ->
-                        if (state.isBluetoothConnected) HomeView.BluetoothUiState.Connected
-                        else HomeView.BluetoothUiState.Disconnected
+                        if (state.isBluetoothConnected) HomeViewState.BluetoothUiState.Connected
+                        else HomeViewState.BluetoothUiState.Disconnected
                     }
-                    .catch { emit(HomeView.BluetoothUiState.Unknown) }
+                    .catch { emit(HomeViewState.BluetoothUiState.Unknown) }
                     .distinctUntilChanged()
             }
         }
@@ -407,7 +407,7 @@ class HomeViewModel @Inject constructor(
                 Long,
                 Domain.UserPreferences>,
         ctx: PlaybackContext,
-    ): HomeView.HomeUiState {
+    ): HomeViewState.HomeUiState {
         val (pinned, recent, sounds, totalMs, prefs) = content
         val (playback, timer, bluetooth, tier, presetCount) = ctx
 
@@ -415,7 +415,7 @@ class HomeViewModel @Inject constructor(
         val freeLimit  = tier == Domain.EntitlementTier.FREE && presetCount >= FREE_PRESET_LIMIT
 
         // Enrich active playback with preset name from recent presets
-        val enrichedPlayback = if (playback is HomeView.PlaybackUiState.Active &&
+        val enrichedPlayback = if (playback is HomeViewState.PlaybackUiState.Active &&
             playback.activePresetId != null
         ) {
             val presetName = recent.find { it.id == playback.activePresetId }?.name
@@ -426,12 +426,12 @@ class HomeViewModel @Inject constructor(
         }
 
         val isInitialising = pinned.isEmpty() && recent.isEmpty() &&
-                sounds.isEmpty() && playback is HomeView.PlaybackUiState.ServiceUnavailable
+                sounds.isEmpty() && playback is HomeViewState.PlaybackUiState.ServiceUnavailable
 
         val screenState = when {
-            isInitialising -> HomeView.ScreenState.Loading
-            pinned.isEmpty() && recent.isEmpty() && sounds.isEmpty() -> HomeView.ScreenState.Empty
-            else -> HomeView.ScreenState.Ready(
+            isInitialising -> HomeViewState.ScreenState.Loading
+            pinned.isEmpty() && recent.isEmpty() && sounds.isEmpty() -> HomeViewState.ScreenState.Empty
+            else -> HomeViewState.ScreenState.Ready(
                 resumeCard    = resumeCard,
                 pinnedPresets = pinned,
                 recentPresets = recent.filter { r -> pinned.none { p -> p.id == r.id } },
@@ -440,7 +440,7 @@ class HomeViewModel @Inject constructor(
             )
         }
 
-        return HomeView.HomeUiState(
+        return HomeViewState.HomeUiState(
             screen                  = screenState,
             playback                = enrichedPlayback,
             timer                   = timer,
@@ -456,7 +456,7 @@ class HomeViewModel @Inject constructor(
     private fun resolveResumeCard(
         prefs: Domain.UserPreferences,
         recentPresets: List<Domain.Preset>,
-    ): HomeView.ResumeCardState? {
+    ): HomeViewState.ResumeCardState? {
         val now = System.currentTimeMillis()
 
         // Priority 1: last used preset within 24 hours
@@ -465,7 +465,7 @@ class HomeViewModel @Inject constructor(
             val preset = recentPresets.find { it.id == lastPresetId }
             val lastUsedAt = preset?.lastUsedAt
             if (preset != null && lastUsedAt != null && (now - lastUsedAt) < RESUME_STALENESS_MS) {
-                return HomeView.ResumeCardState.FromPreset(preset, lastUsedAt)
+                return HomeViewState.ResumeCardState.FromPreset(preset, lastUsedAt)
             }
         }
 
@@ -474,7 +474,7 @@ class HomeViewModel @Inject constructor(
             .filter { it.lastUsedAt != null && (now - it.lastUsedAt!!) < RESUME_STALENESS_MS }
             .maxByOrNull { it.lastUsedAt!! }
         if (mostRecent != null) {
-            return HomeView.ResumeCardState.FromPreset(mostRecent, mostRecent.lastUsedAt!!)
+            return HomeViewState.ResumeCardState.FromPreset(mostRecent, mostRecent.lastUsedAt!!)
         }
 
         // Priority 3: last played ephemeral mix (Sandra's un-saved sessions)
@@ -484,7 +484,7 @@ class HomeViewModel @Inject constructor(
             if (mix != null && !mix.isEmpty) {
                 // Approximate timestamp from the mix itself — no dedicated timestamp on ephemeral
                 val approxTimestamp = now - (2 * 60 * 60 * 1000L) // assume 2h ago as fallback
-                return HomeView.ResumeCardState.FromEphemeralMix(mix, approxTimestamp)
+                return HomeViewState.ResumeCardState.FromEphemeralMix(mix, approxTimestamp)
             }
         }
 
@@ -492,21 +492,21 @@ class HomeViewModel @Inject constructor(
     }
 
 
-    private fun buildGreeting(): HomeView.GreetingUiState {
+    private fun buildGreeting(): HomeViewState.GreetingUiState {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val timeOfDay = when (hour) {
-            in 5..11  -> HomeView.TimeOfDay.MORNING
-            in 12..16 -> HomeView.TimeOfDay.AFTERNOON
-            in 17..20 -> HomeView.TimeOfDay.EVENING
-            else      -> HomeView.TimeOfDay.NIGHT
+            in 5..11  -> HomeViewState.TimeOfDay.MORNING
+            in 12..16 -> HomeViewState.TimeOfDay.AFTERNOON
+            in 17..20 -> HomeViewState.TimeOfDay.EVENING
+            else      -> HomeViewState.TimeOfDay.NIGHT
         }
         val (headline, subtext) = when (timeOfDay) {
-            HomeView.TimeOfDay.MORNING   -> "Good morning" to "Start your day with calm"
-            HomeView.TimeOfDay.AFTERNOON -> "Good afternoon" to "A moment of quiet"
-            HomeView.TimeOfDay.EVENING   -> "Good evening" to "Wind down with sound"
-            HomeView.TimeOfDay.NIGHT     -> "Sleep well" to "Let sound carry you"
+            HomeViewState.TimeOfDay.MORNING   -> "Good morning" to "Start your day with calm"
+            HomeViewState.TimeOfDay.AFTERNOON -> "Good afternoon" to "A moment of quiet"
+            HomeViewState.TimeOfDay.EVENING   -> "Good evening" to "Wind down with sound"
+            HomeViewState.TimeOfDay.NIGHT     -> "Sleep well" to "Let sound carry you"
         }
-        return HomeView.GreetingUiState(headline, subtext, timeOfDay)
+        return HomeViewState.GreetingUiState(headline, subtext, timeOfDay)
     }
 
 
@@ -523,10 +523,10 @@ class HomeViewModel @Inject constructor(
                     Domain.AudioFocusStatus.GAINED -> {
                         // Only send the "restored" event if we were previously interrupted
                         val playback = uiState.value.playback
-                        if (playback is HomeView.PlaybackUiState.AudioFocusLost &&
+                        if (playback is HomeViewState.PlaybackUiState.AudioFocusLost &&
                             playback.reason == Domain.AudioFocusLostReason.PHONE_CALL
                         ) {
-                            _events.send(HomeView.HomeEvent.AudioFocusRestoredAfterCall)
+                            _events.send(HomeViewState.HomeEvent.AudioFocusRestoredAfterCall)
                         }
                     }
                     else -> { /* Handled via uiState playback sub-state */ }
@@ -545,7 +545,7 @@ class HomeViewModel @Inject constructor(
             .distinctUntilChanged()
             .onEach { status ->
                 if (status == Domain.TimerStatus.FINISHED) {
-                    _events.send(HomeView.HomeEvent.ShowError("Your sleep timer has ended"))
+                    _events.send(HomeViewState.HomeEvent.ShowError("Your sleep timer has ended"))
                 }
             }
             .catch { }
@@ -563,8 +563,8 @@ class HomeViewModel @Inject constructor(
             .onEach { unavailable ->
                 if (unavailable) {
                     val playback = uiState.value.playback
-                    if (playback is HomeView.PlaybackUiState.Active) {
-                        _events.send(HomeView.HomeEvent.ShowServiceUnavailableSnackbar)
+                    if (playback is HomeViewState.PlaybackUiState.Active) {
+                        _events.send(HomeViewState.HomeEvent.ShowServiceUnavailableSnackbar)
                     }
                 }
             }
@@ -595,9 +595,9 @@ class HomeViewModel @Inject constructor(
     private operator fun <A, B, C, D, E> Quintuple<A, B, C, D, E>.component5() = e
 
     private data class PlaybackContext(
-        val playback: HomeView.PlaybackUiState,
-        val timer: HomeView.TimerUiState,
-        val bluetooth: HomeView.BluetoothUiState,
+        val playback: HomeViewState.PlaybackUiState,
+        val timer: HomeViewState.TimerUiState,
+        val bluetooth: HomeViewState.BluetoothUiState,
         val tier: Domain.EntitlementTier,
         val presetCount: Int,
     )
