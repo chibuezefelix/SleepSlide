@@ -2,13 +2,14 @@ package com.opxl.sleepslide.presentation.home
 
 import com.opxl.sleepslide.domain.model.Domain
 
-object  HomeView {
+object  HomeViewState {
+
     data class HomeUiState(
-        val screen:HomeView.ScreenState                 = HomeView.ScreenState.Loading,
-        val playback:HomeView. PlaybackUiState           =HomeView. PlaybackUiState.Idle,
-        val timer:HomeView.TimerUiState                 =HomeView. TimerUiState.Idle,
+        val screen:ScreenState                 = ScreenState.Loading,
+        val playback: PlaybackUiState           = PlaybackUiState.Idle,
+        val timer:TimerUiState                 = TimerUiState.Idle,
         val greeting: GreetingUiState           = GreetingUiState(),
-        val bluetooth:HomeView. BluetoothUiState         =HomeView. BluetoothUiState.Unknown,
+        val bluetooth: BluetoothUiState         = BluetoothUiState.Unknown,
         val entitlementTier: Domain.EntitlementTier = Domain.EntitlementTier.FREE,
         val presetCount: Int                    = 0,
         val hasReachedFreePresetLimit: Boolean  = false,
