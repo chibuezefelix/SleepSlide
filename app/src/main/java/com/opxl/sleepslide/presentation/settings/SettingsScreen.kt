@@ -177,6 +177,16 @@ fun SettingsScreen(
             }
 
             item {
+                SectionHeader("Wind-down reminder")
+                WindDownSection(
+                    state        = uiState.windDown,
+                    onToggle     = viewModel::setWindDownEnabled,
+                    onTimeChange = viewModel::setWindDownTime,
+                    onTest       = { viewModel.sendTestWindDownNotification() },
+                )
+            }
+
+            item {
                 SectionHeader("Accessibility")
                 AccessibilitySection(
                     state              = uiState.accessibility,
@@ -214,7 +224,137 @@ fun SettingsScreen(
         )
     }
 }
+@Composable
+private fun WindDownSection(
+    state: SettingsVMState.WindDownState,
+    onToggle: (Boolean) -> Unit,
+    onTimeChange: (hour: Int, minute: Int) -> Unit,
+    onTest: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // Master toggle
+        ToggleRow(
+            label    = "Daily reminder",
+            sublabel = if (state.isEnabled)
+                "Fires at ${state.formattedTime} every day"
+            else
+                "Get a gentle nudge before your wind-down time",
+            enabled  = state.isEnabled,
+            onToggle = onToggle,
+        )
 
+        // Time picker — only shown when enabled
+        AnimatedVisibility(
+            visible = state.isEnabled,
+            enter   = expandVertically(tween(250)) + fadeIn(tween(200)),
+            exit    = shrinkVertically(tween(200)) + fadeOut(tween(150)),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Hour selector
+                SettingsCard {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            "Reminder time",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Charcoal,
+                        )
+
+                        // Hour chips — evening hours most relevant
+                        Text("Hour", style = MaterialTheme.typography.labelSmall, color = MutedGray)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            val hours = (18..23).toList()
+                            items(hours) { h ->
+                                val selected = h == state.hour
+                                TimeChip(
+                                    label    = "${h}:00",
+                                    selected = selected,
+                                    onClick  = { onTimeChange(h, state.minute) },
+                                )
+                            }
+                        }
+
+                        // Minute chips
+                        Text("Minute", style = MaterialTheme.typography.labelSmall, color = MutedGray)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            val minutes = listOf(0, 15, 30, 45)
+                            items(minutes) { m ->
+                                val selected = m == state.minute
+                                TimeChip(
+                                    label    = "%02d".format(m),
+                                    selected = selected,
+                                    onClick  = { onTimeChange(state.hour, m) },
+                                )
+                            }
+                        }
+
+                        HRule()
+
+                        Text(
+                            text  = "Set for ${state.formattedTime} daily",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MutedGray,
+                        )
+                    }
+                }
+
+                // SCHEDULE_EXACT_ALARM permission warning — API 31+
+                if (!state.exactAlarmPermissionGranted) {
+                    SettingsCard(bg = PaleYellow, border = PaleYellowText) {
+                        Row(
+                            modifier              = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment     = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "Precise timing requires permission",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = PaleYellowText,
+                                )
+                                Text(
+                                    "Enable 'Alarms & reminders' for the exact time. Without it, the reminder may arrive a few minutes late.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = PaleYellowText.copy(alpha = 0.8f),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Test notification row
+                SettingsRow(
+                    label    = "Send test notification",
+                    sublabel = "Preview what the reminder looks like",
+                    trailing = { ChevronRight(MutedGray) },
+                    onClick  = onTest,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimeChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(if (selected) Charcoal else SurfaceMuted)
+            .border(1.dp, if (selected) Charcoal else Border, RoundedCornerShape(6.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+    ) {
+        Text(
+            text  = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (selected) White else MutedGray,
+        )
+    }
+}
 
 @Composable
 private fun SettingsTopBar(onBack: () -> Unit) {

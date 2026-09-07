@@ -11,11 +11,19 @@ data class SettingsUiState(
     val appearance: AppearanceState         = AppearanceState(),
     val accessibility: AccessibilityState   = AccessibilityState(),
     val about: AboutState                   = AboutState(),
+    val windDown: WindDownState             = WindDownState(),
     val purchase: PurchaseOperationState    = PurchaseOperationState.Idle,
     val dataReset: DataResetState           = DataResetState.Idle,
 )
 
-
+    data class WindDownState(
+        val isEnabled: Boolean                  = false,
+        val hour: Int                           = 21,
+        val minute: Int                         = 30,
+        val formattedTime: String               = "9:30 PM",
+        val exactAlarmPermissionGranted: Boolean = true,
+        val isScheduled: Boolean                = false,
+    )
 sealed interface AccountState {
     data object Loading : AccountState
     data class Free(

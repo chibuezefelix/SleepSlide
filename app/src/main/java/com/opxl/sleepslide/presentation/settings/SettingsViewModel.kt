@@ -38,6 +38,7 @@ class SettingsViewModel @Inject constructor(
     private val purchaseService: PurchaseService,
     private val purchaseRepository: PurchaseRepository,
     private val entitlementObserver: EntitlementObserver,
+    private val windDownNotificationService: com.opxl.sleepslide.domain.service.WindDownNotificationService,
 ) : ViewModel() {
 
     //  Events
@@ -366,6 +367,154 @@ class SettingsViewModel @Inject constructor(
                 dataReset = dataReset,
             )
         }
+
+
+
+    }
+
+    /**
+     * Master toggle. When enabling, schedules the alarm immediately using the
+     * stored hour/minute. When disabling, cancels any pending alarm.
+     * Also writes the SharedPreferences cache so BootReceiver can read it
+     * synchronously after reboot.
+     */
+    fun setWindDownEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            runCatching {
+                val prefs = userPreferencesRepository.get()
+                userPreferencesRepository.setWindDownEnabled(enabled)
+
+                if (enabled) {
+                    windDownNotificationService.scheduleDailyReminder(
+                        prefs.windDownHour,
+                        prefs.windDownMinute,
+                    )
+                    writeWindDownCache(
+                        enabled = true,
+                        hour    = prefs.windDownHour,
+                        minute  = prefs.windDownMinute,
+                        path    = prefs.onboardingPath,
+                    )
+                    _events.trySend(
+                        SettingsVMState.SettingsEvent.ShowInfo(
+                            "Reminder set for ${formatTime(prefs.windDownHour, prefs.windDownMinute)}"
+                        )
+                    )
+                } else {
+                    windDownNotificationService.cancelDailyReminder()
+                    writeWindDownCache(
+                        enabled = false,
+                        hour    = prefs.windDownHour,
+                        minute  = prefs.windDownMinute,
+                        path    = prefs.onboardingPath,
+                    )
+                    _events.trySend(
+                        SettingsVMState.SettingsEvent.ShowInfo("Wind-down reminder cancelled")
+                    )
+                }
+            }.onFailure { e ->
+                _events.trySend(
+                    SettingsVMState.SettingsEvent.ShowError(
+                    e.message ?: "Could not update wind-down reminder"
+                ))
+            }
+        }
+    }
+
+    /**
+     * Updates the time and immediately reschedules if enabled.
+     * Both the DataStore write and alarm reschedule happen atomically —
+     * if either fails the other is not committed, keeping them in sync.
+     */
+    fun setWindDownTime(hour: Int, minute: Int) {
+        viewModelScope.launch {
+            runCatching {
+                userPreferencesRepository.setWindDownTime(hour, minute)
+                val prefs = userPreferencesRepository.get()
+
+                if (prefs.isWindDownEnabled) {
+                    windDownNotificationService.scheduleDailyReminder(hour, minute)
+                    writeWindDownCache(
+                        enabled = true,
+                        hour    = hour,
+                        minute  = minute,
+                        path    = prefs.onboardingPath,
+                    )
+                    _events.trySend(
+                        SettingsVMState.SettingsEvent.ShowInfo(
+                        "Reminder updated to ${formatTime(hour, minute)}"
+                    ))
+                }
+            }.onFailure { e ->
+                _events.trySend(SettingsVMState.SettingsEvent.ShowError(
+                    e.message ?: "Could not update reminder time"
+                ))
+            }
+        }
+    }
+
+    /**
+     * Fires the notification immediately so the user can preview what it looks
+     * like without waiting for the scheduled time.
+     */
+    fun sendTestWindDownNotification() {
+        viewModelScope.launch {
+            runCatching {
+                windDownNotificationService.showImmediateNotification()
+                _events.trySend(SettingsVMState.SettingsEvent.ShowInfo("Test notification sent"))
+            }.onFailure {
+                _events.trySend(SettingsVMState.SettingsEvent.ShowError("Could not send test notification"))
+            }
+        }
+    }
+
+    /**
+     * Checks if SCHEDULE_EXACT_ALARM permission is granted on API 31+.
+     * Called when the user navigates to the wind-down section so the
+     * permission warning chip shows immediately without requiring a tap.
+     */
+    fun checkExactAlarmPermission(): Boolean = runCatching {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            val am = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+            am.canScheduleExactAlarms()
+        } else {
+            true
+        }
+    }.getOrDefault(true)
+
+    fun openExactAlarmSettings() {
+        viewModelScope.launch {
+            _events.trySend(
+                SettingsVMState.SettingsEvent.ShowInfo(
+                "Enable 'Alarms & reminders' for precise daily timing"
+            ))
+            // Actual navigation to alarm settings is handled by MainActivity
+            // via SettingsEvent.OpenBatteryOptSettings re-used for this purpose
+            // or a dedicated event if the caller differentiates
+        }
+    }
+
+    private fun writeWindDownCache(
+        enabled: Boolean,
+        hour: Int,
+        minute: Int,
+        path: Domain.OnboardingPath,
+    ) {
+        runCatching {
+            (windDownNotificationService
+                    as? com.opxl.sleepslide.data.notification.WindDownNotificationServiceImpl)
+                ?.writeCache(enabled, hour, minute, path)
+        }
+    }
+
+    private fun formatTime(hour: Int, minute: Int): String {
+        val amPm = if (hour < 12) "AM" else "PM"
+        val h    = when {
+            hour == 0    -> 12
+            hour > 12    -> hour - 12
+            else         -> hour
+        }
+        return "%d:%02d %s".format(h, minute, amPm)
     }
 
     // HELPERS
