@@ -177,9 +177,7 @@ val LocalSleepSlideColors = staticCompositionLocalOf {
     LightExtendedColors
 }
 
-// -----------------------------------------------------------------------------
 // Theme
-// -----------------------------------------------------------------------------
 
 @Composable
 fun SleepSlideTheme(
