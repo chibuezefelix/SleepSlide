@@ -6,7 +6,6 @@ import androidx.datastore.preferences.core.edit
 import com.opxl.sleepslide.data.local.Mapper.applyFrom
 import com.opxl.sleepslide.data.local.Mapper.toUserPreferences
 import com.opxl.sleepslide.domain.model.Domain
-
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -94,7 +93,38 @@ class UserPrefsDataStore @Inject constructor(
         }
     }
 
+    /**
+     * Atomically persists enabled state + time in one edit block.
+     * This prevents an inconsistent state where the alarm is enabled
+     * but the stored time hasn't been written yet.
+     */
+    suspend fun setWindDown(enabled: Boolean, hour: Int, minute: Int) {
+        dataStore.edit {
+            it[PrefKeys.IS_WIND_DOWN_ENABLED] = enabled
+            it[PrefKeys.WIND_DOWN_HOUR]        = hour
+            it[PrefKeys.WIND_DOWN_MINUTE]      = minute
+        }
+    }
+
+    suspend fun setWindDownEnabled(enabled: Boolean) {
+        dataStore.edit { it[PrefKeys.IS_WIND_DOWN_ENABLED] = enabled }
+    }
+
+    suspend fun setWindDownTime(hour: Int, minute: Int) {
+        dataStore.edit {
+            it[PrefKeys.WIND_DOWN_HOUR]   = hour
+            it[PrefKeys.WIND_DOWN_MINUTE] = minute
+        }
+    }
+
+    suspend fun markNotificationPermissionRequested() {
+        dataStore.edit { it[PrefKeys.HAS_REQUESTED_NOTIFICATION_PERM] = true }
+    }
+
     suspend fun clear() {
         dataStore.edit { it.clear() }
     }
+
+
+
 }

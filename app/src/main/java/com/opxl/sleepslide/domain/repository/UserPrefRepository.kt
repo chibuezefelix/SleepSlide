@@ -36,5 +36,11 @@ interface UserPreferencesRepository {
 
     suspend fun clearLastPlayed()
 
+    suspend fun setWindDownEnabled(enabled: Boolean)
+
+    suspend fun setWindDownTime(hour: Int, minute: Int)
+
+    suspend fun markNotificationPermissionRequested()
+
     suspend fun reset()
 }
