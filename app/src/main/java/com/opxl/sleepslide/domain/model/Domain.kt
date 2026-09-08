@@ -104,7 +104,10 @@ object Domain {
         ERROR,
     }
 
+
+
     enum class AudioFocusStatus {
+        NONE,
         GAINED,
         LOST,
         LOST_TRANSIENT,
@@ -159,7 +162,11 @@ object Domain {
         val lastPlayedMixJson: String? = null,
 
        var  nightLockBrightness: Float = 0.01f  ,        // 0.0 (off) to 1.0 (full)
-     var   hasRequestedNotificationPermission: Boolean = false
+       var   hasRequestedNotificationPermission: Boolean = false,
+        val isWindDownEnabled: Boolean          = false,
+        val windDownHour: Int                   = 21,
+        val windDownMinute: Int                 = 30,
+
     )
 
     enum class ThemeMode { LIGHT, DARK, SYSTEM, SCHEDULED }
@@ -169,4 +176,5 @@ object Domain {
         TINNITUS,
         GENERAL,
     }
+
 }
