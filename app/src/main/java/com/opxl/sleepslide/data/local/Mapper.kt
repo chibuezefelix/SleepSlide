@@ -25,6 +25,11 @@ object PrefKeys {
     val IS_HIGH_CONTRAST            = booleanPreferencesKey("is_high_contrast")
     val LAST_PLAYED_PRESET_ID       = longPreferencesKey("last_played_preset_id")
     val LAST_PLAYED_MIX_JSON        = stringPreferencesKey("last_played_mix_json")
+    val WIND_DOWN_ENABLED = booleanPreferencesKey("wind_down_enabled")
+    val IS_WIND_DOWN_ENABLED            = booleanPreferencesKey("is_wind_down_enabled")
+    val WIND_DOWN_HOUR = intPreferencesKey("wind_down_hour")
+    val WIND_DOWN_MINUTE = intPreferencesKey("wind_down_minute")
+    val HAS_REQUESTED_NOTIFICATION_PERM = booleanPreferencesKey("has_requested_notification_perm")
 }
 object Mapper {
 
@@ -146,6 +151,10 @@ object Mapper {
                 ?: defaults.isHighContrastEnabled,
             lastPlayedPresetId          = this[PrefKeys.LAST_PLAYED_PRESET_ID],
             lastPlayedMixJson           = this[PrefKeys.LAST_PLAYED_MIX_JSON],
+
+            isWindDownEnabled           = this[PrefKeys.IS_WIND_DOWN_ENABLED]        ?: defaults.isWindDownEnabled,
+            windDownHour                = this[PrefKeys.WIND_DOWN_HOUR]              ?: defaults.windDownHour,
+            windDownMinute              = this[PrefKeys.WIND_DOWN_MINUTE]            ?: defaults.windDownMinute,
         )
     }
 
@@ -181,6 +190,11 @@ object Mapper {
         this[PrefKeys.IS_HIGH_CONTRAST]              = prefs.isHighContrastEnabled
         prefs.lastPlayedPresetId?.let { this[PrefKeys.LAST_PLAYED_PRESET_ID] = it }
         prefs.lastPlayedMixJson?.let  { this[PrefKeys.LAST_PLAYED_MIX_JSON]  = it }
+
+        this[PrefKeys.IS_WIND_DOWN_ENABLED]         = prefs.isWindDownEnabled
+        this[PrefKeys.WIND_DOWN_HOUR]               = prefs.windDownHour
+        this[PrefKeys.WIND_DOWN_MINUTE]             = prefs.windDownMinute
+        this[PrefKeys.HAS_REQUESTED_NOTIFICATION_PERM] = prefs.hasRequestedNotificationPermission
     }
 
     fun Local.PlayHistoryEntity.toDomain(): Domain.PlaySession = Domain.PlaySession(
