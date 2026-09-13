@@ -129,7 +129,7 @@ dependencies {
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
 
-    // RevenueCat
+    // RevenueCat — core SDK + Compose Paywall UI (Paywall composable in Settings)
     implementation(libs.bundles.revenuecat)
 
     // Debug
