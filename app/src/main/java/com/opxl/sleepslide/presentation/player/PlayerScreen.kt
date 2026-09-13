@@ -77,6 +77,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -86,6 +87,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opxl.sleepslide.presentation.permission.isNotificationPermissionGranted
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
@@ -116,16 +118,22 @@ import kotlinx.coroutines.launch
 fun PlayerScreen(
     onNavigateBack: () -> Unit,
     onNavigateToLibrary: () -> Unit,
-    onRequestNotificationPermission: () -> Unit,
+    onRequestNotificationPermission: (onResult: (granted: Boolean) -> Unit) -> Unit,
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     var showTimerSheet    by rememberSaveable { mutableStateOf(false) }
     var showSaveDialog    by rememberSaveable { mutableStateOf(false) }
     var showUnsavedDialog by rememberSaveable { mutableStateOf(false) }
+
+    // Seed the permission gate so first play can ask just-in-time (Android 13+)
+    LaunchedEffect(Unit) {
+        viewModel.checkNotificationPermission(context.isNotificationPermissionGranted())
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -135,7 +143,10 @@ fun PlayerScreen(
                 is PlayerEvent.ShowTimerPicker          -> showTimerSheet = true
                 is PlayerEvent.ShowSavePresetDialog     -> showSaveDialog = true
                 is PlayerEvent.ShowUnsavedChangesDialog -> showUnsavedDialog = true
-                is PlayerEvent.RequestNotificationPermission -> onRequestNotificationPermission()
+                is PlayerEvent.RequestNotificationPermission ->
+                    onRequestNotificationPermission { granted ->
+                        viewModel.onNotificationPermissionResult(granted)
+                    }
                 is PlayerEvent.ShowError                ->
                     scope.launch { snackbarHostState.showSnackbar(event.message) }
                 is PlayerEvent.ShowInfo                 ->

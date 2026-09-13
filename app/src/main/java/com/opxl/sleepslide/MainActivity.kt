@@ -4,7 +4,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +15,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -28,6 +28,9 @@ import com.opxl.sleepslide.data.purchase.PurchaseServiceImpl
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
 import com.opxl.sleepslide.presentation.navigation.NavGraph
+import com.opxl.sleepslide.presentation.permission.LocalNotificationPermissionRequester
+import com.opxl.sleepslide.presentation.permission.NotificationPermissionRequester
+import com.opxl.sleepslide.presentation.permission.isNotificationPermissionGranted
 import com.opxl.sleepslide.ui.theme.SleepSlideTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -72,12 +75,29 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Single POST_NOTIFICATIONS launcher for the whole app. Screens ask through
+     * [LocalNotificationPermissionRequester]; the result is handed back to whichever
+     * screen asked. If the Activity is recreated while the system dialog is up the
+     * pending callback is lost, which is fine — screens re-check on entry.
+     */
+    private var pendingNotificationPermissionResult: ((Boolean) -> Unit)? = null
+
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (!granted) {
-            // User denied — audio will still play but notification won't show.
-            // We do not re-ask; the user made a deliberate choice.
+        // Denied — audio still plays but the media notification won't show.
+        // We do not re-ask; the requesting screen records the user's choice.
+        pendingNotificationPermissionResult?.invoke(granted)
+        pendingNotificationPermissionResult = null
+    }
+
+    private val notificationPermissionRequester = NotificationPermissionRequester { onResult ->
+        if (isNotificationPermissionGranted()) {
+            onResult(true)
+        } else {
+            pendingNotificationPermissionResult = onResult
+            notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
@@ -100,11 +120,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             SleepSlideTheme {
-                NavGraph(userPreferencesRepository = userPreferencesRepository)
+                CompositionLocalProvider(
+                    LocalNotificationPermissionRequester provides notificationPermissionRequester,
+                ) {
+                    NavGraph(userPreferencesRepository = userPreferencesRepository)
+                }
             }
         }
-
-        requestNotificationPermissionIfNeeded()
 
         // Start observing after setContent so flows have collectors
         observeThemeAndNightLock()
@@ -276,15 +298,6 @@ class MainActivity : ComponentActivity() {
                 startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                     data = Uri.parse("package:$packageName")
                 })
-            }
-        }
-    }
-
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val permission = android.Manifest.permission.POST_NOTIFICATIONS
-            if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                notificationPermissionLauncher.launch(permission)
             }
         }
     }

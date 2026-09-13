@@ -105,6 +105,9 @@ class PlayerViewModel @Inject constructor(
     // Notification permission
     private val _notification   = MutableStateFlow<NotificationState>(NotificationState.Idle)
 
+    // Playback action deferred by the permission gate — replayed once the result arrives
+    private var pendingPlayback: (() -> Unit)? = null
+
     // Debounce jobs — one per keyed target (layer position or "master")
     private val volumeJobs = mutableMapOf<String, Job>()
 
@@ -152,7 +155,7 @@ class PlayerViewModel @Inject constructor(
      */
     fun play(mix: Domain.SoundMix, preset: Domain.Preset? = null) {
         viewModelScope.launch {
-            if (!gateNotificationPermission()) return@launch
+            if (!gateNotificationPermission { play(mix, preset) }) return@launch
             val service = gateService() ?: return@launch
             if (mix.isEmpty) {
                 _events.trySend(PlayerEvent.ShowError("No sounds in this mix"))
@@ -225,6 +228,7 @@ class PlayerViewModel @Inject constructor(
 
     fun resume() {
         viewModelScope.launch {
+            if (!gateNotificationPermission { resume() }) return@launch
             val service = gateService() ?: return@launch
             runCatching { service.resume() }
                 .onFailure { _events.trySend(PlayerEvent.ShowError("Could not resume")) }
@@ -687,11 +691,17 @@ class PlayerViewModel @Inject constructor(
     // NOTIFICATION PERMISSION
 
     /**
-     * Called by MainActivity after the permission result callback.
-     * [isGranted] — system result. [hasRequestedBefore] — from preferences.
+     * Called by PlayerScreen with the system result from MainActivity's launcher.
+     * Records that we asked (so we never re-ask — denial is a deliberate choice) and
+     * replays the playback action that was deferred by [gateNotificationPermission].
+     * Audio still plays when denied; only the media notification is affected.
      */
     fun onNotificationPermissionResult(isGranted: Boolean) {
         _notification.value = if (isGranted) NotificationState.Granted else NotificationState.Idle
+        viewModelScope.launch {
+            runCatching { userPreferencesRepository.markNotificationPermissionRequested() }
+            pendingPlayback?.also { pendingPlayback = null }?.invoke()
+        }
     }
 
     fun checkNotificationPermission(isGranted: Boolean) {
@@ -1043,12 +1053,14 @@ class PlayerViewModel @Inject constructor(
 
     /**
      * Returns true if playback can proceed.
-     * On first play, emits [PlayerEvent.RequestNotificationPermission] and returns false
-     * so the caller defers until the permission result arrives.
+     * On first play, stores [onGranted] as the pending action, emits
+     * [PlayerEvent.RequestNotificationPermission] and returns false; the action is
+     * replayed from [onNotificationPermissionResult] once the user answers.
      */
-    private suspend fun gateNotificationPermission(): Boolean {
+    private fun gateNotificationPermission(onGranted: () -> Unit): Boolean {
         val state = _notification.value
         return if (state == NotificationState.PermissionRequired) {
+            pendingPlayback = onGranted
             _events.trySend(PlayerEvent.RequestNotificationPermission)
             false
         } else {

@@ -26,6 +26,7 @@ import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
 import com.opxl.sleepslide.presentation.home.HomeScreen
 import com.opxl.sleepslide.presentation.library.LibraryScreen
 import com.opxl.sleepslide.presentation.onboard.OnboardingScreen
+import com.opxl.sleepslide.presentation.permission.LocalNotificationPermissionRequester
 import com.opxl.sleepslide.presentation.player.PlayerScreen
 import com.opxl.sleepslide.presentation.presets.PresetsScreen
 import com.opxl.sleepslide.presentation.settings.SettingsScreen
@@ -138,6 +139,8 @@ fun NavGraph(
                 navDeepLink { uriPattern = Routes.PLAYER_DEEP_LINK }
             ),
         ) {
+            // MainActivity owns the POST_NOTIFICATIONS launcher and provides it via CompositionLocal
+            val notificationPermissionRequester = LocalNotificationPermissionRequester.current
             PlayerScreen(
                 onNavigateBack    = { navController.popBackStack() },
                 onNavigateToLibrary = {
@@ -146,9 +149,7 @@ fun NavGraph(
                         launchSingleTop = true
                     }
                 },
-                onRequestNotificationPermission = {
-                    // Delegate to MainActivity via a side-effect — MainActivity owns the launcher
-                },
+                onRequestNotificationPermission = notificationPermissionRequester::request,
             )
         }
 
