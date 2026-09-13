@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.opxl.sleepslide.data.repository.PlayHistoryRepositoryImpl
 import com.opxl.sleepslide.data.repository.SoundRepositoryImpl
+import com.opxl.sleepslide.data.observer.PlaySessionTracker
 import com.opxl.sleepslide.data.purchase.PurchaseServiceImpl
 import com.opxl.sleepslide.di.ApplicationScope
 import com.opxl.sleepslide.di.IsTestingMode
@@ -31,6 +32,7 @@ class SleepSlideApp : Application(), Configuration.Provider {
     @Inject lateinit var soundRepository: SoundRepositoryImpl
     @Inject lateinit var playHistoryRepository: PlayHistoryRepositoryImpl
     @Inject lateinit var purchaseService: PurchaseServiceImpl
+    @Inject lateinit var playSessionTracker: PlaySessionTracker
     @Inject @ApplicationScope lateinit var appScope: CoroutineScope
     @Inject lateinit var windDownRepository: com.opxl.sleepslide.domain.repository.WindDownRepository
     @Inject lateinit var windDownNotificationService: com.opxl.sleepslide.domain.service.WindDownNotificationService
@@ -49,6 +51,7 @@ class SleepSlideApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         initRevenueCat()
+        playSessionTracker.start()
         runStartupSequence()
     }
 

@@ -47,14 +47,23 @@ interface PlayHistoryDao {
     @Update
     suspend fun update(session: Local.PlayHistoryEntity)
 //
+    /**
+     * Adds audible playing time to every open session. Called periodically while
+     * playing, so durationPlayedMs is always a running total rather than something
+     * derived at close time — the only way a session orphaned by process death can
+     * still report an honest figure.
+     */
+    @Query("UPDATE play_history SET durationPlayedMs = durationPlayedMs + :deltaMs WHERE endedAt IS NULL")
+    suspend fun addPlayedTimeToActiveSessions(deltaMs: Long)
+
+    /** Live close — the caller has flushed the running counter; only the end stamp is set. */
     @Query("""
         UPDATE play_history
         SET endedAt = :endedAt,
-            durationPlayedMs = :durationMs,
             stoppedBy = :reason
-        WHERE id = :id
+        WHERE id = :id AND endedAt IS NULL
     """)
-    suspend fun closeSession(id: Long, endedAt: Long, durationMs: Long, reason: String)
+    suspend fun closeSession(id: Long, endedAt: Long, reason: String)
 
     /**
      * Stale close (cold start after a crash / force-kill). The real end time is
