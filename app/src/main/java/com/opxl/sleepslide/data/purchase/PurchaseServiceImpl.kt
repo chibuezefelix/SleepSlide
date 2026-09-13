@@ -66,8 +66,9 @@ class PurchaseServiceImpl @Inject constructor(
         val activity = activityRef?.get()
             ?: return@withContext PurchaseResult.Failure("No Activity bound — call bindActivity() first")
 
-        val pkg = runCatching { fetchPackage(productId) }.getOrNull()
-            ?: return@withContext PurchaseResult.Failure("Product not found: $productId")
+
+        val pkg = runCatching { fetchPackage(productId) }
+            .getOrElse { e -> return@withContext PurchaseResult.Failure(e.message ?: "Package not found") }
 
         suspendCancellableCoroutine<PurchaseResult> { cont ->
             purchases.purchase(
