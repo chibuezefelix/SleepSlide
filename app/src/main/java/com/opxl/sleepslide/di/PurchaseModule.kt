@@ -21,9 +21,13 @@ object PurchaseModule {
         @ApplicationContext context: Context,
         @RevenueCatApiKey apiKey: String,
     ): Purchases {
-        Purchases.configure(
-            PurchasesConfiguration.Builder(context, apiKey).build()
-        )
+
+        check(Purchases.isConfigured) {
+            "Purchases must be configured in SleepSlideApp.initRevenueCat() before this provider runs"
+        }
+//        Purchases.configure(
+//            PurchasesConfiguration.Builder(context, apiKey).build()
+//        )
         return Purchases.sharedInstance
     }
 }
