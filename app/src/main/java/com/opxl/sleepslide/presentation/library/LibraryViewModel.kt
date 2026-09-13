@@ -319,7 +319,8 @@ class LibraryViewModel @Inject constructor(
             val mix = buildMix(layers, _masterVolume.value)
             runCatching { service.play(mix) }
                 .onSuccess {
-                    soundRepository.recordPlayed(layers.map { it.sound.id }.first())
+                    // Muted layers produced no sound — don't let them surface in "Most played"
+                    soundRepository.recordPlayed(layers.filterNot { it.isMuted }.map { it.sound.id })
                     userPreferencesRepository.setLastPlayedEphemeralMix(
                         mixSerializer.serialize(mix)
                     )

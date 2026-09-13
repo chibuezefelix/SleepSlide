@@ -11,6 +11,7 @@ import com.opxl.sleepslide.domain.observer.EntitlementObserver
 import com.opxl.sleepslide.domain.observer.TimerStateObserver
 import com.opxl.sleepslide.domain.repository.PlayHistoryRepository
 import com.opxl.sleepslide.domain.repository.PresetRepository
+import com.opxl.sleepslide.domain.repository.SoundRepository
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
 import com.opxl.sleepslide.domain.repository.VolumeMemoryRepository
 import com.opxl.sleepslide.domain.service.TimerService
@@ -62,6 +63,7 @@ class PlayerViewModel @Inject constructor(
     private val entitlementObserver: EntitlementObserver,
     private val timerService: TimerService,
     private val presetRepository: PresetRepository,
+    private val soundRepository: SoundRepository,
     private val playHistoryRepository: PlayHistoryRepository,
     private val volumeMemoryRepository: VolumeMemoryRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
@@ -203,6 +205,13 @@ class PlayerViewModel @Inject constructor(
 
             _sessionId.value    = sessionId
             _sessionStart.value = System.currentTimeMillis()
+
+            // Per-sound play stats — non-fatal and independent of last-played persistence below
+            runCatching {
+                soundRepository.recordPlayed(
+                    resolvedMix.layers.filterNot { it.isMuted }.map { it.sound.id }
+                )
+            }
 
             // Persist last-played reference — non-fatal
             runCatching {

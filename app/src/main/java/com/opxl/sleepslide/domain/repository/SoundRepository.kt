@@ -28,6 +28,8 @@ interface SoundRepository {
 
     suspend fun recordPlayed(soundId: String)
 
+    suspend fun recordPlayed(soundIds: Collection<String>)
+
     suspend fun beginDownload(soundId: String)
 
     suspend fun updateDownloadProgress(soundId: String, downloadedBytes: Long, totalBytes: Long)

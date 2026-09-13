@@ -66,6 +66,10 @@ interface SoundDao {
     @Query("UPDATE sounds SET playCount = playCount + 1, lastPlayedAt = :timestamp WHERE id = :id")
     suspend fun incrementPlayCount(id: String, timestamp: Long)
 
+    // Single statement for a whole mix — one invalidation, one shelf recomposition per play
+    @Query("UPDATE sounds SET playCount = playCount + 1, lastPlayedAt = :timestamp WHERE id IN (:ids)")
+    suspend fun incrementPlayCount(ids: List<String>, timestamp: Long)
+
     @Query("""
         UPDATE sounds
         SET isDownloading = :isDownloading,

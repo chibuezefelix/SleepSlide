@@ -60,6 +60,12 @@ class SoundRepositoryImpl @Inject constructor(
         soundDao.incrementPlayCount(soundId, System.currentTimeMillis())
     }
 
+    override suspend fun recordPlayed(soundIds: Collection<String>) = withContext(io) {
+        val ids = soundIds.filter { it.isNotBlank() }.distinct()
+        if (ids.isEmpty()) return@withContext
+        soundDao.incrementPlayCount(ids, System.currentTimeMillis())
+    }
+
     override suspend fun beginDownload(soundId: String) = withContext(io) {
         soundDao.updateDownloadProgress(soundId, isDownloading = true, downloadedBytes = 0L, totalBytes = 0L)
     }
