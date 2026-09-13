@@ -28,7 +28,7 @@ class PurchaseRepositoryImpl @Inject constructor(
 ) : PurchaseRepository {
 
     companion object {
-        const val ENTITLEMENT_ID = "premium"
+        const val ENTITLEMENT_ID = "sleepslide_pro"
         const val PRODUCT_ID     = "sleepdrift_unlock_all"
     }
 
