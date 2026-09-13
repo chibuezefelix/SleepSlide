@@ -61,11 +61,9 @@ class PlayHistoryRepositoryImpl @Inject constructor(
         val duration = now - session.startedAt
         playHistoryDao.closeSession(sessionId, now, duration, reason.name)
     }
+
     override suspend fun closeAnyActiveSessions(reason: Domain.StopReason) = withContext(io) {
-        val now = System.currentTimeMillis()
-        val active = playHistoryDao.getActiveSession()
-        val duration = active?.let { now - it.startedAt } ?: 0L
-        playHistoryDao.closeAllActiveSessions(now, duration, reason.name)
+        playHistoryDao.closeAllActiveSessions(reason.name)
     }
 
     override suspend fun pruneOlderThan(epochMs: Long) = withContext(io) {

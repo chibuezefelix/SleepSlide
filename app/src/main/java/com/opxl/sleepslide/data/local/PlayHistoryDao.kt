@@ -56,14 +56,18 @@ interface PlayHistoryDao {
     """)
     suspend fun closeSession(id: Long, endedAt: Long, durationMs: Long, reason: String)
 
+    /**
+     * Stale close (cold start after a crash / force-kill). The real end time is
+     * unknowable, so each row derives it from its own running counter instead of
+     * "now" — a session killed at 23:00 and closed at 07:00 must not record 8 h.
+     */
     @Query("""
         UPDATE play_history
-        SET endedAt = :endedAt,
-            durationPlayedMs = :durationMs,
+        SET endedAt = startedAt + durationPlayedMs,
             stoppedBy = :reason
         WHERE endedAt IS NULL
     """)
-    suspend fun closeAllActiveSessions(endedAt: Long?, durationMs: Long?, reason: String)
+    suspend fun closeAllActiveSessions(reason: String)
     @Query("DELETE FROM play_history WHERE startedAt < :beforeEpoch")
     suspend fun deleteOlderThan(beforeEpoch: Long): Int
     @Query("DELETE FROM play_history WHERE id = :id")
