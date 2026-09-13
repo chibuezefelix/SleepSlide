@@ -33,10 +33,10 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "REVENUECAT_KEY", localProperties["REVENUECAT_KEY"] as String)
         //Assets
+        buildConfigField("String", "REVENUECAT_KEY", localProperties["REVENUECAT_KEY"] as String)
+        buildConfigField("String", "TEST_REVENUECAT_KEY", localProperties["TEST_REVENUECAT_KEY"] as String)
         buildConfigField("String", "WHITE_NOISE", localProperties["WHITE_NOISE"] as String)
-
 
     }
 

@@ -4,6 +4,7 @@ package com.opxl.sleepslide.data.purchase
 import android.app.Activity
 import com.opxl.sleepslide.di.ApplicationScope
 import com.opxl.sleepslide.di.IoDispatcher
+import com.opxl.sleepslide.di.IsTestingMode
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.domain.repository.PurchaseRepository
 import com.opxl.sleepslide.domain.repository.PurchaseResult
@@ -34,6 +35,7 @@ import kotlin.coroutines.resume
 class PurchaseServiceImpl @Inject constructor(
     private val purchaseRepository: PurchaseRepository,
     private val purchases: Purchases,
+    @IsTestingMode private val isTestingMode: Boolean,
     @ApplicationScope private val scope: CoroutineScope,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) : PurchaseService {
@@ -44,8 +46,13 @@ class PurchaseServiceImpl @Inject constructor(
     }
 
     private val _entitlement = MutableStateFlow(
-        Domain.Entitlement(tier = Domain.EntitlementTier.FREE, revenueCatUserId = purchases.appUserID)
+        Domain.Entitlement(
+            tier             = if (isTestingMode) Domain.EntitlementTier.PREMIUM else Domain.EntitlementTier.FREE,
+            revenueCatUserId = purchases.appUserID,
+        )
     )
+
+
     override val entitlement: StateFlow<Domain.Entitlement> = _entitlement.asStateFlow()
 
     private var activityRef: WeakReference<Activity>? = null
@@ -63,6 +70,17 @@ class PurchaseServiceImpl @Inject constructor(
     }
 
     override suspend fun purchase(productId: String): PurchaseResult = withContext(io) {
+
+        // Testing mode — simulate a successful purchase without hitting RevenueCat
+        if (isTestingMode) {
+            val upgraded = _entitlement.value.copy(
+                tier       = Domain.EntitlementTier.PREMIUM,
+                purchasedAt = System.currentTimeMillis(),
+            )
+            _entitlement.value = upgraded
+            return@withContext PurchaseResult.Success(upgraded)
+        }
+
         val activity = activityRef?.get()
             ?: return@withContext PurchaseResult.Failure("No Activity bound — call bindActivity() first")
 

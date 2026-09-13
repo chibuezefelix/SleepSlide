@@ -2,6 +2,7 @@ package com.opxl.sleepslide.data.purchase
 
 
 import com.opxl.sleepslide.di.IoDispatcher
+import com.opxl.sleepslide.di.IsTestingMode
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.domain.model.Domain.EntitlementTier
 import com.opxl.sleepslide.domain.repository.PurchaseRepository
@@ -24,6 +25,7 @@ import kotlin.coroutines.resume
 @Singleton
 class PurchaseRepositoryImpl @Inject constructor(
     private val purchases: Purchases,
+    @IsTestingMode private val isTestingMode: Boolean,
     @IoDispatcher private val io: CoroutineDispatcher,
 ) : PurchaseRepository {
 
@@ -34,7 +36,7 @@ class PurchaseRepositoryImpl @Inject constructor(
 
     private val _entitlement = MutableStateFlow(
         Domain.Entitlement(
-            tier = EntitlementTier.FREE,
+            tier = if (isTestingMode) EntitlementTier.PREMIUM else EntitlementTier.FREE,
             revenueCatUserId = purchases.appUserID,
         )
     )
@@ -47,11 +49,25 @@ class PurchaseRepositoryImpl @Inject constructor(
         withContext(io) { PurchaseResult.Failure("Purchase flow requires Activity context — delegate to PurchaseService") }
 
     override suspend fun restorePurchases(): RestoreResult = withContext(io) {
-        suspendCancellableCoroutine { cont ->
+
+        // In testing mode, restore always returns success with PREMIUM
+        if (isTestingMode) {
+            _entitlement.value = _entitlement.value.copy(
+                tier       = EntitlementTier.PREMIUM,
+                isRestored = true,
+            )
+            return@withContext RestoreResult.Success(EntitlementTier.PREMIUM)
+        }
+
+
+        suspendCancellableCoroutine<RestoreResult> { cont ->
             purchases.restorePurchases(object : ReceiveCustomerInfoCallback {
                 override fun onReceived(customerInfo: CustomerInfo) {
                     val tier = customerInfo.toEntitlementTier()
-                    _entitlement.value = _entitlement.value.copy(tier = tier, isRestored = true)
+                    _entitlement.value = _entitlement.value.copy(
+                        tier       = tier,
+                        isRestored = true,
+                    )
                     cont.resume(
                         if (tier == EntitlementTier.PREMIUM) RestoreResult.Success(tier)
                         else RestoreResult.NothingToRestore
@@ -62,6 +78,7 @@ class PurchaseRepositoryImpl @Inject constructor(
                 }
             })
         }
+
     }
 
     override suspend fun syncEntitlement() = withContext(io) {

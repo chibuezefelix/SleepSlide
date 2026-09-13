@@ -4,6 +4,7 @@ import javax.inject.Qualifier
 
 
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class RevenueCatApiKey
+@Qualifier @Retention(AnnotationRetention.BINARY) annotation class IsTestingMode
 
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class IoDispatcher
 @Qualifier @Retention(AnnotationRetention.BINARY) annotation class DefaultDispatcher
