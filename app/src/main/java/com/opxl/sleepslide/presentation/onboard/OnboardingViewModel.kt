@@ -105,11 +105,9 @@ class OnboardingViewModel @Inject constructor(
 
     fun onNotificationPermissionResult(granted: Boolean) {
         _permissions.update { it.copy(notificationGranted = granted) }
-        if (granted) {
-            runCatching { userPreferencesRepository }
-            viewModelScope.launch {
-                runCatching { userPreferencesRepository.recordBatteryOptPromptShown() }
-            }
+        // Record the ask regardless of outcome so PlayerScreen doesn't prompt again on first play
+        viewModelScope.launch {
+            runCatching { userPreferencesRepository.markNotificationPermissionRequested() }
         }
     }
 
