@@ -27,6 +27,7 @@ import com.opxl.sleepslide.data.audio.AudioServiceImpl
 import com.opxl.sleepslide.data.purchase.PurchaseServiceImpl
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
+import com.opxl.sleepslide.presentation.navigation.NavGraph
 import com.opxl.sleepslide.ui.theme.SleepSlideTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -99,7 +100,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             SleepSlideTheme {
-//                NavGraph()
+                NavGraph(userPreferencesRepository = userPreferencesRepository)
             }
         }
 
