@@ -112,6 +112,26 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Called by the RevenueCat [Paywall] listener after the paywall itself completed a
+     * purchase or restore. The SDK already owns the transaction; we just re-sync the
+     * entitlement so the account tier updates, and surface the same success feedback
+     * as the direct-purchase path.
+     */
+    fun onPaywallPurchaseCompleted() {
+        viewModelScope.launch {
+            runCatching { purchaseService.refresh() }
+            _events.trySend(SettingsVMState.SettingsEvent.PurchaseSuccess)
+        }
+    }
+
+    fun onPaywallRestoreCompleted() {
+        viewModelScope.launch {
+            runCatching { purchaseService.refresh() }
+            _events.trySend(SettingsVMState.SettingsEvent.RestoreSuccess)
+        }
+    }
+
     fun restorePurchases() {
         viewModelScope.launch {
             if (_purchaseState.value is SettingsVMState.PurchaseOperationState.Restoring) return@launch

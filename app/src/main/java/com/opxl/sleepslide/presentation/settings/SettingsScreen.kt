@@ -77,8 +77,12 @@ import com.opxl.sleepslide.ui.theme.PaleYellowText
 import com.opxl.sleepslide.ui.theme.SurfaceMuted
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import com.opxl.sleepslide.ui.theme.White
+import com.revenuecat.purchases.CustomerInfo
+import com.revenuecat.purchases.models.StoreTransaction
+import com.revenuecat.purchases.ui.revenuecatui.Paywall
+import com.revenuecat.purchases.ui.revenuecatui.PaywallListener
+import com.revenuecat.purchases.ui.revenuecatui.PaywallOptions
 import kotlinx.coroutines.launch
-
 
 @Composable
 fun SettingsScreen(
@@ -90,7 +94,7 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
+    var showPaywall by rememberSaveable { mutableStateOf(false) }
     var showResetDialog       by rememberSaveable { mutableStateOf(false) }
     var showOnboardingDialog  by rememberSaveable { mutableStateOf(false) }
 
@@ -221,6 +225,29 @@ fun SettingsScreen(
         RetakeOnboardingDialog(
             onConfirm = { showOnboardingDialog = false; viewModel.confirmRetakeOnboarding() },
             onDismiss = { showOnboardingDialog = false },
+        )
+    }
+
+    // RevenueCat Paywall — shown when user taps "Unlock All"
+    // In testing mode this is bypassed — purchase() simulates success immediately
+    if (showPaywall) {
+        Paywall(
+            options = PaywallOptions.Builder(dismissRequest = { showPaywall = false })
+                .setShouldDisplayDismissButton(true)
+                .setListener(
+                    object : PaywallListener {
+                        override fun onPurchaseCompleted(customerInfo: CustomerInfo, storeTransaction: StoreTransaction) {
+                            showPaywall = false
+                            viewModel.onPaywallPurchaseCompleted()
+                        }
+
+                        override fun onRestoreCompleted(customerInfo: CustomerInfo) {
+                            showPaywall = false
+                            viewModel.onPaywallRestoreCompleted()
+                        }
+                    }
+                )
+                .build()
         )
     }
 }
