@@ -37,7 +37,12 @@ interface SoundDao {
     """)
     fun observeRecentlyPlayed(limit: Int = 10): Flow<List<Local.SoundEntity>>
 
-    @Query("SELECT * FROM sounds ORDER BY playCount DESC LIMIT :limit")
+    @Query("""
+        SELECT * FROM sounds
+        WHERE playCount > 0
+        ORDER BY playCount DESC, lastPlayedAt DESC
+        LIMIT :limit
+    """)
     fun observeMostPlayed(limit: Int = 10): Flow<List<Local.SoundEntity>>
 
     @Query("SELECT * FROM sounds WHERE isBundled = 0 AND downloadedPath IS NOT NULL")
