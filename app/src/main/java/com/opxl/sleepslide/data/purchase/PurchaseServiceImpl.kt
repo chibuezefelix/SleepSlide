@@ -40,7 +40,7 @@ class PurchaseServiceImpl @Inject constructor(
 
     companion object {
         private const val OFFERING_ID     = "default"
-        private const val PACKAGE_ID      = "sleepdrift_unlock_all"
+//        private const val PACKAGE_ID      = "sleepdrift_unlock_all"
     }
 
     private val _entitlement = MutableStateFlow(
