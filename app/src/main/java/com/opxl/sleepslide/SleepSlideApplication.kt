@@ -8,11 +8,7 @@ import com.opxl.sleepslide.data.repository.SoundRepositoryImpl
 import com.opxl.sleepslide.data.observer.PlaySessionTracker
 import com.opxl.sleepslide.data.purchase.PurchaseServiceImpl
 import com.opxl.sleepslide.di.ApplicationScope
-import com.opxl.sleepslide.di.IsTestingMode
 import com.opxl.sleepslide.domain.model.Domain
-import com.revenuecat.purchases.LogLevel
-import com.revenuecat.purchases.Purchases
-import com.revenuecat.purchases.PurchasesConfiguration
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -37,10 +33,6 @@ class SleepSlideApp : Application(), Configuration.Provider {
     @Inject lateinit var windDownRepository: com.opxl.sleepslide.domain.repository.WindDownRepository
     @Inject lateinit var windDownNotificationService: com.opxl.sleepslide.domain.service.WindDownNotificationService
     @Inject lateinit var userPreferencesRepository: com.opxl.sleepslide.domain.repository.UserPreferencesRepository
-    // A `var` with a default has a private backing field, which Dagger can't inject
-    // into — so inject via the setter and pin the qualifier to it as well.
-    @set:Inject @set:IsTestingMode
-    var isTestingMode: Boolean = false
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
@@ -50,37 +42,11 @@ class SleepSlideApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        initRevenueCat()
+        // RevenueCat is configured by PurchaseModule.providePurchases() during Hilt
+        // injection above — it must exist before PurchaseService is constructed.
         playSessionTracker.start()
         runStartupSequence()
     }
-
-
-    //  RevenueCat
-
-    private fun initRevenueCat() {
-        runCatching {
-            if (BuildConfig.DEBUG || isTestingMode) {
-                Purchases.logLevel = LogLevel.DEBUG
-            }
-            if (isTestingMode) {
-                Log.w(TAG, "⚠️  TESTING MODE — all users granted PREMIUM tier without purchase")
-            }
-            // Use the API key provided by AppConfigModule
-            // (test key in testing mode, BuildConfig.REVENUECAT_API_KEY in production)
-            val apiKey = if (isTestingMode) {
-                "test_NNK09uijiuifasuHHKLOJ"
-            } else {
-                BuildConfig.REVENUECAT_KEY
-            }
-            Purchases.configure(
-                PurchasesConfiguration.Builder(this, apiKey).build()
-            )
-        }.onFailure { e ->
-            Log.e(TAG, "RevenueCat init failed — app continues in free tier", e)
-        }
-    }
-
 
 
     // Startup sequence tasks that can run concurrently and don't block the main thread
