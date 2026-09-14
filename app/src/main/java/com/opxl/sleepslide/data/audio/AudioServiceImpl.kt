@@ -136,7 +136,8 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
 
     override fun onDestroy() {
         cancelFades()
-        playerLayerManager.releaseAll()
+        // Stop, don't release: the players are singletons reused by the next service instance
+        playerLayerManager.stopAll()
         audioFocusHandler.abandon()
         audioFocusHandler.clearCallbacks()
         runCatching { unregisterReceiver(bluetoothReceiver) }

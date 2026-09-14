@@ -121,6 +121,11 @@ class PlayerLayerManager @Inject constructor(
         _errors.value -= position
     }
 
+    /**
+     * Only for process teardown. The players are @Singleton and outlive the service;
+     * AudioServiceImpl.onDestroy() must call [stopAll], not this — a released player
+     * throws "Handler on a dead thread" the next time the service binds.
+     */
     fun releaseAll() {
         players.forEach { it.release() }
     }
