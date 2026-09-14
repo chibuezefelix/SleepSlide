@@ -42,8 +42,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -76,6 +74,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opxl.sleepslide.presentation.components.LineSlider
+import com.opxl.sleepslide.presentation.components.LineSliderColors
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.MutedGray
@@ -767,12 +767,12 @@ private fun MixBuilderPanel(
                     color    = White.copy(alpha = 0.5f),
                     modifier = Modifier.width(48.dp),
                 )
-                Slider(
+                LineSlider(
                     value                 = mix.masterVolume,
                     onValueChange         = onMasterVolume,
                     onValueChangeFinished = onMasterDragEnd,
                     modifier              = Modifier.weight(1f),
-                    colors                = darkSliderColors(),
+                    colors                = LineSliderColors.dark(),
                 )
             }
         }
@@ -826,12 +826,12 @@ private fun LayerSliderRow(
         )
 
         // Volume slider
-        Slider(
+        LineSlider(
             value                 = layer.volume,
             onValueChange         = onVolume,
             onValueChangeFinished = onDragEnd,
             modifier              = Modifier.weight(1f),
-            colors                = darkSliderColors(muted = layer.isMuted),
+            colors                = LineSliderColors.dark(muted = layer.isMuted),
         )
 
         // Percentage label
@@ -1144,9 +1144,3 @@ private fun categoryColors(category: Domain.SoundCategory) = when (category) {
     else                   -> SurfaceMuted to MutedGray
 }
 
-@Composable
-private fun darkSliderColors(muted: Boolean = false) = SliderDefaults.colors(
-    thumbColor         = if (muted) White.copy(alpha = 0.2f) else White,
-    activeTrackColor   = if (muted) White.copy(alpha = 0.2f) else White,
-    inactiveTrackColor = White.copy(alpha = 0.15f),
-)

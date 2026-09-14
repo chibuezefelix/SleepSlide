@@ -48,8 +48,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -88,6 +86,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opxl.sleepslide.presentation.permission.isNotificationPermissionGranted
+import com.opxl.sleepslide.presentation.components.LineSlider
+import com.opxl.sleepslide.presentation.components.LineSliderColors
 import com.opxl.sleepslide.presentation.scene.SceneBackdrop
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.ui.theme.Border
@@ -732,12 +732,12 @@ private fun LayerRow(
                 color    = MutedGray,
                 modifier = Modifier.width(28.dp),
             )
-            Slider(
+            LineSlider(
                 value                 = layer.volume,
                 onValueChange         = onVolume,
                 onValueChangeFinished = onDragEnd,
                 modifier              = Modifier.weight(1f),
-                colors                = playerSliderColors(muted = layer.isMuted),
+                colors                = LineSliderColors.light(muted = layer.isMuted),
             )
         }
     }
@@ -759,6 +759,7 @@ private fun CategoryPill(label: String, bg: Color, fg: Color) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MasterVolumeRow(volume: Float, onChange: (Float) -> Unit, onDragEnd: () -> Unit) {
     Row(
@@ -768,9 +769,11 @@ private fun MasterVolumeRow(volume: Float, onChange: (Float) -> Unit, onDragEnd:
     ) {
         Text("Master", style = MaterialTheme.typography.labelSmall, color = MutedGray,
             modifier = Modifier.width(48.dp))
-        Slider(
-            value = volume, onValueChange = onChange, onValueChangeFinished = onDragEnd,
-            modifier = Modifier.weight(1f), colors = playerSliderColors(),
+        LineSlider(
+            value                 = volume,
+            onValueChange         = onChange,
+            onValueChangeFinished = onDragEnd,
+            modifier              = Modifier.weight(1f),
         )
         Text(
             text      = "${(volume * 100).toInt()}",
@@ -1346,9 +1349,3 @@ private fun SaveIcon(tint: Color) {
     })
 }
 
-@Composable
-private fun playerSliderColors(muted: Boolean = false) = SliderDefaults.colors(
-    thumbColor         = if (muted) MutedGray else Charcoal,
-    activeTrackColor   = if (muted) MutedGray else Charcoal,
-    inactiveTrackColor = Border,
-)
