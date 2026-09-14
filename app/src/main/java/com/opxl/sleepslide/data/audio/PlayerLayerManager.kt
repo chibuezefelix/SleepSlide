@@ -2,6 +2,7 @@ package com.opxl.sleepslide.data.audio
 
 import android.content.Context
 import android.net.Uri
+import java.io.File
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -46,8 +47,12 @@ class PlayerLayerManager @Inject constructor(
 
     fun load(layer: Domain.SoundLayer) {
         val player = players.getOrNull(layer.position) ?: return
-        val assetPath = SoundAssetResolver.resolveOrNull(layer.sound.id) ?: return
-        val uri = Uri.parse("asset:///$assetPath")
+        // The Sound row is the source of truth for where the audio lives: a downloaded
+        // file if present, else the bundled asset (BundledSoundCatalogue / DB assetPath).
+        val uri = layer.sound.downloadedPath
+            ?.takeIf { it.isNotBlank() }
+            ?.let { Uri.fromFile(File(it)) }
+            ?: Uri.parse("asset:///${layer.sound.assetPath}")
         player.apply {
             setMediaItem(MediaItem.fromUri(uri))
             repeatMode = Player.REPEAT_MODE_ONE
