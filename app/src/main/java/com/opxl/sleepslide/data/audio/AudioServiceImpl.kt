@@ -29,6 +29,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import androidx.core.content.ContextCompat
 import android.content.pm.ServiceInfo
 import android.os.Binder
 import android.os.Build
@@ -157,6 +158,12 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
             return
         }
 
+        // Promote from bound-only to started+foreground so playback survives the
+        // Activity unbinding (screen off, app backgrounded). onStartCommand() then
+        // calls startForegroundSafely(). Without this the service is destroyed the
+        // moment MainActivity.onStop() unbinds — silence as soon as the phone locks.
+        ContextCompat.startForegroundService(this, Intent(this, AudioServiceImpl::class.java))
+
         cancelFades()
         playerLayerManager.stopAll()
         layerVolumes.clear()
@@ -208,6 +215,11 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
                 fadeInProgress        = null,
             )
         }
+        // Symmetric with play(): drop foreground + the "started" state so the service
+        // can be destroyed once the last client unbinds. The binding keeps it alive
+        // while the UI is up.
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     override suspend fun setLayerVolume(position: Int, volume: Float) {
