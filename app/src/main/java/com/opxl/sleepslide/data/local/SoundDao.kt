@@ -57,6 +57,24 @@ interface SoundDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(sounds: List<Local.SoundEntity>)
 
+    @Query("SELECT id FROM sounds WHERE isBundled = 1")
+    suspend fun getBundledIds(): List<String>
+
+    /** Catalogue-owned columns only — never touches playCount / lastPlayedAt / download state. */
+    @Query("""
+        UPDATE sounds
+        SET title = :title, category = :category, assetPath = :assetPath,
+            isPremium = :isPremium, tags = :tags, frequencyHz = :frequencyHz
+        WHERE id = :id
+    """)
+    suspend fun updateCatalogueFields(
+        id: String, title: String, category: String, assetPath: String,
+        isPremium: Boolean, tags: String, frequencyHz: Int?,
+    )
+
+    @Query("DELETE FROM sounds WHERE id = :id")
+    suspend fun deleteById(id: String): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(sound: Local.SoundEntity)
 

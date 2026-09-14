@@ -50,10 +50,29 @@ class SoundRepositoryImpl @Inject constructor(
         soundDao.getAll().map { it.toDomain() }
     }
 
+    /**
+     * Syncs the DB with [BundledSoundCatalogue] rather than seeding once: new rows are
+     * inserted, existing rows get catalogue-owned fields refreshed (paths, titles,
+     * tags) while play stats survive, and bundled rows whose file no longer ships are
+     * removed — unless a preset still references them (FK RESTRICT), in which case
+     * they stay so the preset keeps loading.
+     */
     override suspend fun seedBundledSounds() = withContext(io) {
-        val existing = soundDao.getAll()
-        if (existing.isNotEmpty()) return@withContext
-        soundDao.insertAll(BundledSoundCatalogue.all.map { it.toEntity() })
+        val catalogue = BundledSoundCatalogue.all.map { it.toEntity() }
+        val existingIds = soundDao.getBundledIds().toSet()
+
+        soundDao.insertAll(catalogue.filter { it.id !in existingIds })
+        catalogue.filter { it.id in existingIds }.forEach { e ->
+            soundDao.updateCatalogueFields(
+                id = e.id, title = e.title, category = e.category, assetPath = e.assetPath,
+                isPremium = e.isPremium, tags = e.tags, frequencyHz = e.frequencyHz,
+            )
+        }
+
+        val catalogueIds = catalogue.map { it.id }.toSet()
+        (existingIds - catalogueIds).forEach { staleId ->
+            runCatching { soundDao.deleteById(staleId) }   // RESTRICT: keep if a preset uses it
+        }
     }
 
     override suspend fun recordPlayed(soundId: String) = withContext(io) {
