@@ -144,9 +144,6 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test.junit4)
 }
 
-configurations.all {
-    resolutionStrategy {
-        force("androidx.core:core-ktx:1.13.1")
-        force("androidx.core:core:1.13.1")
-    }
-}
+// NOTE: do not force androidx.core below what the Compose BOM needs —
+// foundation-layout 1.10 calls DisplayCutoutCompat.getCutoutPath() (core ≥ 1.16)
+// and an older forced core crashes at first layout with NoSuchMethodError.
