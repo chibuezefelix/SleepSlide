@@ -13,15 +13,15 @@ import androidx.compose.ui.graphics.Color
 // Base / Neutral
 
 val Bone = Color(0xFFF7F6F3)
-val WarmWhite = Color(0xFFFBFBFA)
+val WarmWhite = Color(0xFFEEEEEB)   // scaffold ground — light warm grey so white cards and text lift off it
 val White = Color(0xFFFFFFFF)
 
 val Charcoal = Color(0xFF111111)
 val DarkGray = Color(0xFF2F3437)
-val MutedGray = Color(0xFF787774)
+val MutedGray = Color(0xFF5C5B57)   // secondary text — darkened for contrast on the grey ground
 
-val Border = Color(0xFFEAEAEA)
-val SurfaceMuted = Color(0xFFF9F9F8)
+val Border = Color(0xFFDCDCD8)
+val SurfaceMuted = Color(0xFFFAFAF9)   // unselected chips/tabs — must lift off the grey ground, bordered inside cards
 
 // Pastel semantic accents
 
