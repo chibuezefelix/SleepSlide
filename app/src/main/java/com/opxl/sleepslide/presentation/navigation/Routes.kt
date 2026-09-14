@@ -11,9 +11,27 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -30,6 +48,11 @@ import com.opxl.sleepslide.presentation.permission.LocalNotificationPermissionRe
 import com.opxl.sleepslide.presentation.player.PlayerScreen
 import com.opxl.sleepslide.presentation.presets.PresetsScreen
 import com.opxl.sleepslide.presentation.settings.SettingsScreen
+import com.opxl.sleepslide.ui.theme.Border
+import com.opxl.sleepslide.ui.theme.Charcoal
+import com.opxl.sleepslide.ui.theme.MutedGray
+import com.opxl.sleepslide.ui.theme.SurfaceMuted
+import com.opxl.sleepslide.ui.theme.White
 
 
 object Routes {
@@ -44,6 +67,91 @@ object Routes {
     const val DEEP_LINK_BASE = "sleepslide://app"
     const val PLAYER_DEEP_LINK = "$DEEP_LINK_BASE/player"
     const val PRESETS_DEEP_LINK = "$DEEP_LINK_BASE/presets"
+}
+
+/** Top-level destinations reachable from the bottom bar. Player and Onboarding are not tabs. */
+private enum class AppTab(val route: String, val label: String) {
+    HOME(Routes.HOME,         "Home"),
+    PRESETS(Routes.PRESETS,   "Presets"),
+    LIBRARY(Routes.LIBRARY,   "Library"),
+    SETTINGS(Routes.SETTINGS, "Settings");
+
+    companion object {
+        fun forRoute(route: String?): AppTab? = entries.firstOrNull { it.route == route }
+    }
+}
+
+// Glyphs drawn like the rest of the app's icons (stroked paths, no icon library).
+@Composable
+private fun TabGlyph(tab: AppTab, tint: Color) {
+    Canvas(Modifier.size(22.dp)) {
+        val w = size.width; val h = size.height
+        val stroke = Stroke(1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+        when (tab) {
+            AppTab.HOME -> {
+                // roof + walls + door
+                drawPath(Path().apply {
+                    moveTo(w * 0.10f, h * 0.50f); lineTo(w * 0.50f, h * 0.14f); lineTo(w * 0.90f, h * 0.50f)
+                    moveTo(w * 0.22f, h * 0.42f); lineTo(w * 0.22f, h * 0.88f); lineTo(w * 0.78f, h * 0.88f); lineTo(w * 0.78f, h * 0.42f)
+                    moveTo(w * 0.42f, h * 0.88f); lineTo(w * 0.42f, h * 0.62f); lineTo(w * 0.58f, h * 0.62f); lineTo(w * 0.58f, h * 0.88f)
+                }, tint, style = stroke)
+            }
+            AppTab.PRESETS -> {
+                // five-point star
+                val cx = w / 2f; val cy = h * 0.54f; val outer = w * 0.42f; val inner = outer * 0.45f
+                drawPath(Path().apply {
+                    for (i in 0 until 10) {
+                        val r = if (i % 2 == 0) outer else inner
+                        val a = Math.toRadians((-90 + i * 36).toDouble())
+                        val x = cx + (r * Math.cos(a)).toFloat(); val y = cy + (r * Math.sin(a)).toFloat()
+                        if (i == 0) moveTo(x, y) else lineTo(x, y)
+                    }
+                    close()
+                }, tint, style = stroke)
+            }
+            AppTab.LIBRARY -> {
+                // three list rows with bullets
+                for (i in 0..2) {
+                    val y = h * (0.24f + i * 0.26f)
+                    drawCircle(tint, radius = 1.6.dp.toPx(), center = Offset(w * 0.16f, y))
+                    drawLine(tint, Offset(w * 0.34f, y), Offset(w * 0.88f, y), stroke.width, StrokeCap.Round)
+                }
+            }
+            AppTab.SETTINGS -> {
+                // three sliders with knobs at different positions
+                val knobs = listOf(0.62f, 0.34f, 0.72f)
+                for (i in 0..2) {
+                    val y = h * (0.24f + i * 0.26f)
+                    drawLine(tint, Offset(w * 0.12f, y), Offset(w * 0.88f, y), stroke.width, StrokeCap.Round)
+                    drawCircle(tint, radius = 2.6.dp.toPx(), center = Offset(w * knobs[i], y))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SleepSlideBottomBar(current: AppTab, onSelect: (AppTab) -> Unit) {
+    NavigationBar(
+        containerColor = White,
+        tonalElevation = 0.dp,
+    ) {
+        AppTab.entries.forEach { tab ->
+            NavigationBarItem(
+                selected = tab == current,
+                onClick  = { onSelect(tab) },
+                icon     = { TabGlyph(tab, tint = if (tab == current) Charcoal else MutedGray) },
+                label    = { Text(tab.label, style = MaterialTheme.typography.labelMedium) },
+                colors   = NavigationBarItemDefaults.colors(
+                    selectedIconColor   = Charcoal,
+                    selectedTextColor   = Charcoal,
+                    indicatorColor      = SurfaceMuted,
+                    unselectedIconColor = MutedGray,
+                    unselectedTextColor = MutedGray,
+                ),
+            )
+        }
+    }
 }
 
 
@@ -96,6 +204,26 @@ fun NavGraph(
         }
     }
 
+    // Bottom bar only on top-level screens; the Player is a detail screen and Onboarding is modal.
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentTab = AppTab.forRoute(backStackEntry?.destination?.route)
+
+    fun openTab(tab: AppTab) {
+        if (tab == currentTab) return
+        navController.navigate(tab.route) {
+            // One instance per tab, state kept when switching, back always returns to Home
+            popUpTo(Routes.HOME) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
+    Scaffold(
+        containerColor = Color.Transparent,
+        bottomBar = {
+            if (currentTab != null) SleepSlideBottomBar(current = currentTab, onSelect = ::openTab)
+        },
+    ) { outerPadding ->
     NavHost(
         navController    = navController,
         startDestination = startDestination,
@@ -103,6 +231,7 @@ fun NavGraph(
         exitTransition   = { exitTransition },
         popEnterTransition = { popEnter },
         popExitTransition  = { popExit },
+        modifier = Modifier.padding(bottom = outerPadding.calculateBottomPadding()),
     ) {
 
         composable(route = Routes.ONBOARDING) {
@@ -194,4 +323,5 @@ fun NavGraph(
             )
         }
     }
+    } // Scaffold
 }
