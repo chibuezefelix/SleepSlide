@@ -63,6 +63,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.opxl.sleepslide.R
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.presentation.scene.SceneBackdrop
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.DarkBackground
@@ -137,6 +138,20 @@ item{
                 enter   = fadeIn(tween(300)) + slideInVertically { -it },
                 exit    = fadeOut(tween(200)),
             ) {
+                Column {
+                    // Scene for what's playing — tap opens the full player
+                    val active = uiState.playback as? HomeViewState.PlaybackUiState.Active
+                    val activeSounds = active?.activeMix?.layers?.map { it.sound }.orEmpty()
+                    if (activeSounds.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        SceneBackdrop(
+                            sounds    = activeSounds,
+                            isPlaying = active?.status == Domain.PlaybackStatus.PLAYING,
+                            compact   = true,
+                            onTap     = { viewModel.navigateToPlayer() },
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
                 ActivePlaybackBar(
                     playback       = uiState.playback,
                     timer          = uiState.timer,
@@ -150,6 +165,7 @@ item{
                     onStop         = { viewModel.stopPlayback() },
                     onExpandPlayer = { viewModel.navigateToPlayer() },
                 )
+                }
             }
         }
 

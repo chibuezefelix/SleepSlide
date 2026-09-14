@@ -88,6 +88,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opxl.sleepslide.presentation.permission.isNotificationPermissionGranted
+import com.opxl.sleepslide.presentation.scene.SceneBackdrop
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
@@ -192,7 +193,16 @@ fun PlayerScreen(
                     onUpdate = { viewModel.updateActivePreset() },
                 )
 
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(4.dp))
+
+                // Photo backdrop chosen for the mix + time of day; drifts while playing
+                SceneBackdrop(
+                    sounds    = uiState.mixer.layers.map { it.sound },
+                    isPlaying = uiState.playback is PlayerPlaybackState.Playing ||
+                                uiState.playback is PlayerPlaybackState.FadingIn,
+                )
+
+                Spacer(Modifier.height(20.dp))
 
                 PlaybackHub(
                     playback  = uiState.playback,
