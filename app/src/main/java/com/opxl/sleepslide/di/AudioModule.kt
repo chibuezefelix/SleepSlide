@@ -24,8 +24,11 @@ object  AudioModule{
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
 
+        // handleAudioFocus = false: AudioFocusHandler owns focus for the whole mix.
+        // With three players each requesting focus, Android grants the newest request
+        // and sends AUDIOFOCUS_LOSS to our own handler — the app pauses itself.
         return ExoPlayer.Builder(context)
-            .setAudioAttributes(audioAttributes,true)
+            .setAudioAttributes(audioAttributes, false)
             .setHandleAudioBecomingNoisy(true)
             .build()
 
