@@ -43,14 +43,18 @@
             </intent-filter>
         </service>
 
+        <!-- WorkManager is configured by SleepSlideApp (Configuration.Provider) so the
+             HiltWorkerFactory is used; the default on-demand initializer must be removed
+             or it initialises WorkManager first with the default factory. -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
             android:exported="false"
             tools:node="merge">
             <meta-data
-                android:name="androidx.hilt.work.HiltWorkerInitializer"
-                android:value="androidx.startup"/>
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove"/>
         </provider>
         <receiver android:name=".data.notification.WindDownAlarmReceiver"
             android:exported="false"/>
