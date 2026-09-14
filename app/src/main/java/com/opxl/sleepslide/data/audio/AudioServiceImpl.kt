@@ -467,7 +467,7 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("SleepSlide")
-            .setContentText("Playing in background")
+            .setContentText("Playing")
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
             .setOngoing(true)

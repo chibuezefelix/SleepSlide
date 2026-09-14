@@ -152,7 +152,7 @@ fun PlayerScreen(
                 is PlayerEvent.ShowInfo                 ->
                     scope.launch { snackbarHostState.showSnackbar(event.message) }
                 is PlayerEvent.ShowServiceUnavailable   ->
-                    scope.launch { snackbarHostState.showSnackbar("Audio service is starting") }
+                    scope.launch { /*snackbarHostState.showSnackbar("Audio service is starting") */ }
                 is PlayerEvent.AudioInterrupted         ->
                     scope.launch {
                         snackbarHostState.showSnackbar(
@@ -515,7 +515,7 @@ private fun StopButtonSmall(onClick: () -> Unit) {
 private fun PlaybackStatusLine(playback: PlayerPlaybackState, bluetooth: Boolean) {
     val (label, color) = when (playback) {
         is PlayerPlaybackState.Playing      ->
-            if (playback.isPlayingInBackground) "Playing in background" to PaleGreenText
+            if (playback.isPlayingInBackground) "Playing " to PaleGreenText
             else "Playing" to MutedGray
         is PlayerPlaybackState.Paused       -> "Paused" to MutedGray
         is PlayerPlaybackState.FadingIn     -> "Fading in…" to PaleBlueText
