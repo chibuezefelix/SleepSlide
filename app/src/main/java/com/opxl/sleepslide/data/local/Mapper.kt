@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.repository.CoachMarkScreens
 import org.json.JSONArray
 
 
@@ -30,6 +31,9 @@ object PrefKeys {
     val WIND_DOWN_HOUR = intPreferencesKey("wind_down_hour")
     val WIND_DOWN_MINUTE = intPreferencesKey("wind_down_minute")
     val HAS_REQUESTED_NOTIFICATION_PERM = booleanPreferencesKey("has_requested_notification_perm")
+
+    /** One boolean per screen — true once that screen's first-visit coach marks were dismissed. */
+    fun coachMarkSeen(screen: String) = booleanPreferencesKey("has_seen_coach_mark_$screen")
 }
 object Mapper {
 
@@ -155,6 +159,8 @@ object Mapper {
             isWindDownEnabled           = this[PrefKeys.IS_WIND_DOWN_ENABLED]        ?: defaults.isWindDownEnabled,
             windDownHour                = this[PrefKeys.WIND_DOWN_HOUR]              ?: defaults.windDownHour,
             windDownMinute              = this[PrefKeys.WIND_DOWN_MINUTE]            ?: defaults.windDownMinute,
+            seenCoachMarks              = CoachMarkScreens.ALL
+                .filterTo(mutableSetOf()) { this[PrefKeys.coachMarkSeen(it)] == true },
         )
     }
 
@@ -195,6 +201,7 @@ object Mapper {
         this[PrefKeys.WIND_DOWN_HOUR]               = prefs.windDownHour
         this[PrefKeys.WIND_DOWN_MINUTE]             = prefs.windDownMinute
         this[PrefKeys.HAS_REQUESTED_NOTIFICATION_PERM] = prefs.hasRequestedNotificationPermission
+        CoachMarkScreens.ALL.forEach { this[PrefKeys.coachMarkSeen(it)] = it in prefs.seenCoachMarks }
     }
 
     fun Local.PlayHistoryEntity.toDomain(): Domain.PlaySession = Domain.PlaySession(

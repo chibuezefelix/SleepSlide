@@ -8,6 +8,7 @@ import com.opxl.sleepslide.domain.observer.EntitlementObserver
 import com.opxl.sleepslide.domain.repository.PurchaseRepository
 import com.opxl.sleepslide.domain.repository.PurchaseResult
 import com.opxl.sleepslide.domain.repository.RestoreResult
+import com.opxl.sleepslide.domain.repository.TutorialRepository
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
 import com.opxl.sleepslide.domain.service.PurchaseService
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,6 +40,7 @@ class SettingsViewModel @Inject constructor(
     private val purchaseRepository: PurchaseRepository,
     private val entitlementObserver: EntitlementObserver,
     private val windDownNotificationService: com.opxl.sleepslide.domain.service.WindDownNotificationService,
+    private val tutorialRepository: TutorialRepository,
 ) : ViewModel() {
 
     //  Events
@@ -296,6 +298,17 @@ class SettingsViewModel @Inject constructor(
     }
 
     // DATA RESET
+
+    // TUTORIAL
+
+    /** Forgets every screen's coach marks; the ones for this screen reappear immediately. */
+    fun resetCoachMarks() {
+        viewModelScope.launch {
+            runCatching { tutorialRepository.resetAll() }
+                .onSuccess { _events.trySend(SettingsVMState.SettingsEvent.ShowInfo("Tips will show again on each screen")) }
+                .onFailure { e -> _events.trySend(SettingsVMState.SettingsEvent.ShowError(e.message ?: "Could not reset tips")) }
+        }
+    }
 
     fun requestDataReset() {
         viewModelScope.launch {

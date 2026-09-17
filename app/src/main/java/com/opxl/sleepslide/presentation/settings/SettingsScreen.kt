@@ -55,15 +55,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opxl.sleepslide.presentation.components.ChevronLeft
+import com.opxl.sleepslide.presentation.components.ChevronRight
+import com.opxl.sleepslide.presentation.components.CheckIcon
+import com.opxl.sleepslide.domain.repository.CoachMarkScreens
+import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
+import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
+import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
+import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.MutedGray
@@ -89,7 +94,9 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToOnboarding: () -> Unit,
     onOpenBatterySettings: () -> Unit,
+    onNavigateToTutorial: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
+    tutorial: TutorialViewModel = tutorialViewModel(CoachMarkScreens.SETTINGS),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -126,6 +133,7 @@ fun SettingsScreen(
         }
     }
 
+    CoachMarkHost(viewModel = tutorial, labels = SETTINGS_COACH_MARKS) {
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data ->
@@ -156,6 +164,14 @@ fun SettingsScreen(
                     purchase = uiState.purchase,
                     onBuy    = { viewModel.purchase() },
                     onRestore = { viewModel.restorePurchases() },
+                )
+            }
+
+            item {
+                SectionHeader("Learn")
+                LearnSection(
+                    onTour      = onNavigateToTutorial,
+                    onResetTips = { viewModel.resetCoachMarks() },
                 )
             }
 
@@ -213,6 +229,7 @@ fun SettingsScreen(
             item { Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars)) }
         }
     }
+    } // CoachMarkHost
 
     if (showResetDialog) {
         DataResetDialog(
@@ -249,8 +266,40 @@ fun SettingsScreen(
                 )
                 .build()
         )
+
     }
 }
+/** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
+private val SETTINGS_COACH_MARKS = listOf(
+    "tour"      to "Swipe through every feature, any time",
+    "fades"     to "Set default fade in, fade out and timer length",
+    "wind_down" to "Get a nightly nudge to start winding down",
+)
+
+@Composable
+private fun LearnSection(onTour: () -> Unit, onResetTips: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SettingsRow(
+            label    = "Feature tour",
+            sublabel = "Swipe through what SleepSlide can do",
+            trailing = { ChevronRight(MutedGray) },
+            onClick  = onTour,
+            modifier = Modifier.coachMarkAnchor("tour"),
+        )
+        SettingsRow(
+            label    = "Show tips again",
+            sublabel = "Replay the first-visit pointers on every screen",
+            trailing = { ChevronRight(MutedGray) },
+            onClick  = onResetTips,
+        )
+    }
+}
+
 @Composable
 private fun WindDownSection(
     state: SettingsVMState.WindDownState,
@@ -273,6 +322,7 @@ private fun WindDownSection(
                 "Get a gentle nudge before your wind-down time",
             enabled  = state.isEnabled,
             onToggle = onToggle,
+            modifier = Modifier.coachMarkAnchor("wind_down"),
         )
 
         // Time picker — only shown when enabled
@@ -542,6 +592,7 @@ private fun PlaybackSection(
             steps    = FADE_IN_STEPS_MS,
             selected = state.defaultFadeInMs,
             onSelect = onFadeIn,
+            modifier = Modifier.coachMarkAnchor("fades"),
         )
 
         StepSelectorRow(
@@ -896,10 +947,11 @@ private fun SectionHeader(label: String) {
 private fun SettingsCard(
     bg: Color = White,
     border: Color = Border,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(bg)
@@ -916,8 +968,9 @@ private fun SettingsRow(
     sublabel: String?,
     trailing: @Composable () -> Unit,
     onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
 ) {
-    val modifier = Modifier
+    val modifier = modifier
         .fillMaxWidth()
         .clip(RoundedCornerShape(8.dp))
         .background(White)
@@ -948,9 +1001,10 @@ private fun ToggleRow(
     sublabel: String,
     enabled: Boolean,
     onToggle: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(White)
@@ -978,8 +1032,9 @@ private fun StepSelectorRow(
     steps: List<Pair<Long, String>>,
     selected: Long,
     onSelect: (Long) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    SettingsCard {
+    SettingsCard(modifier = modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
                 modifier              = Modifier.fillMaxWidth(),
@@ -1102,38 +1157,3 @@ private fun SmallIconButton(
     )
 }
 
-@Composable
-private fun ChevronLeft(tint: Color) {
-    Box(Modifier.size(16.dp).drawBehind {
-        val path = androidx.compose.ui.graphics.Path().apply {
-            moveTo(size.width, 0f)
-            lineTo(0f, size.height / 2f)
-            lineTo(size.width, size.height)
-        }
-        drawPath(path, tint, style = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round))
-    })
-}
-
-@Composable
-private fun ChevronRight(tint: Color) {
-    Box(Modifier.size(16.dp).drawBehind {
-        val path = androidx.compose.ui.graphics.Path().apply {
-            moveTo(0f, 0f)
-            lineTo(size.width, size.height / 2f)
-            lineTo(0f, size.height)
-        }
-        drawPath(path, tint, style = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round))
-    })
-}
-
-@Composable
-private fun CheckIcon(tint: Color) {
-    Box(Modifier.size(12.dp).drawBehind {
-        val path = androidx.compose.ui.graphics.Path().apply {
-            moveTo(0f, size.height * 0.5f)
-            lineTo(size.width * 0.38f, size.height)
-            lineTo(size.width, 0f)
-        }
-        drawPath(path, tint, style = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round))
-    })
-}

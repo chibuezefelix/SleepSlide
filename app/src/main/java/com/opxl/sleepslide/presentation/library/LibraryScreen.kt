@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -74,7 +75,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opxl.sleepslide.domain.repository.CoachMarkScreens
+import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
+import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
+import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
+import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
 import com.opxl.sleepslide.presentation.components.LineSlider
+import com.opxl.sleepslide.presentation.components.ChevronLeft
 import com.opxl.sleepslide.presentation.components.LineSliderColors
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
@@ -98,6 +105,7 @@ fun LibraryScreen(
     onNavigateBack: () -> Unit,
     onNavigateToPlayer: () -> Unit,
     viewModel: LibraryViewModel = hiltViewModel(),
+    tutorial: TutorialViewModel = tutorialViewModel(CoachMarkScreens.LIBRARY),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -131,6 +139,7 @@ fun LibraryScreen(
         }
     }
 
+    CoachMarkHost(viewModel = tutorial, labels = LIBRARY_COACH_MARKS) {
     Scaffold(
         snackbarHost = {
             SnackbarHost(snackbarHostState) { data ->
@@ -190,6 +199,7 @@ fun LibraryScreen(
             }
         }
     }
+    } // CoachMarkHost
 
     if (showSaveDialog) {
         SavePresetDialog(
@@ -201,6 +211,15 @@ fun LibraryScreen(
         )
     }
 }
+
+/** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
+private val LIBRARY_COACH_MARKS = listOf(
+    "search"    to "Search sounds by name",
+    "tabs"      to "Filter by category",
+    "sound"     to "Tap to add to your mix, long-press to preview",
+    "mix_panel" to "Your mix — balance the sounds and press play",
+    "save"      to "Save your mix as a preset",
+)
 
 // Top bar
 
@@ -233,6 +252,7 @@ private fun LibraryTopBar(
             Box(
                 modifier = Modifier
                     .weight(1f)
+                    .coachMarkAnchor("search")
                     .clip(RoundedCornerShape(8.dp))
                     .background(SurfaceMuted)
                     .border(
@@ -294,6 +314,7 @@ private fun LibraryTopBar(
                     description = "Save as preset",
                     background  = if (isDirty) Charcoal else SurfaceMuted,
                     borderColor = if (isDirty) Charcoal else Border,
+                    modifier    = Modifier.coachMarkAnchor("save"),
                 ) {
                     SaveDot(tint = if (isDirty) White else MutedGray)
                 }
@@ -440,14 +461,15 @@ private fun LibraryReadyBody(
                 }
             }
 
-            items(
+            itemsIndexed(
                 items = catalogue.displayedSounds,
-                key   = { it.sound.id },
-            ) { item ->
+                key   = { _, item -> item.sound.id },
+            ) { index, item ->
                 SoundRow(
                     item        = item,
                     onTap       = { onSoundTap(item.sound) },
                     onLongPress = { onSoundLongPress(item.sound) },
+                    modifier    = if (index == 0) Modifier.coachMarkAnchor("sound") else Modifier,
                 )
             }
 
@@ -489,6 +511,7 @@ private fun CategoryTabs(
     onSelect: (LibraryVMState.CategoryTab) -> Unit,
 ) {
     LazyRow(
+        modifier              = Modifier.coachMarkAnchor("tabs"),
         contentPadding        = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -574,6 +597,7 @@ private fun SoundRow(
     item: LibraryVMState.SoundItemState,
     onTap: () -> Unit,
     onLongPress: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val isIn      = item.isInActiveMix
     val locked    = item.isPremiumLocked
@@ -593,7 +617,7 @@ private fun SoundRow(
     val (pillBg, pillFg) = categoryColors(item.sound.category)
 
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(bgColor)
@@ -695,6 +719,7 @@ private fun MixBuilderPanel(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .coachMarkAnchor("mix_panel")
             .background(Charcoal)
             .padding(horizontal = 20.dp, vertical = 16.dp),
     ) {
@@ -959,10 +984,11 @@ private fun SmallIconButton(
     description: String,
     background: Color  = White,
     borderColor: Color = Border,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(40.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(background)
@@ -1036,16 +1062,6 @@ private fun PreviewingWave(tint: Color) {
 @Composable
 private fun ActiveDot(tint: Color) {
     Box(Modifier.size(6.dp).clip(CircleShape).background(tint))
-}
-
-@Composable
-private fun ChevronLeft(tint: Color) {
-    Box(Modifier.size(16.dp).drawBehind {
-        val path = androidx.compose.ui.graphics.Path().apply {
-            moveTo(size.width, 0f); lineTo(0f, size.height / 2f); lineTo(size.width, size.height)
-        }
-        drawPath(path, tint, style = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round))
-    })
 }
 
 @Composable

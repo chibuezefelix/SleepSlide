@@ -167,6 +167,8 @@ object Domain {
         val windDownHour: Int                   = 21,
         val windDownMinute: Int                 = 30,
 
+        // Tutorial — screens whose first-visit coach marks have been dismissed
+        val seenCoachMarks: Set<String>         = emptySet(),
     )
 
     enum class ThemeMode { LIGHT, DARK, SYSTEM, SCHEDULED }

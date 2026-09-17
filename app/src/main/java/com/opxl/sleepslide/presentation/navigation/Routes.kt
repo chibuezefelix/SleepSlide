@@ -11,6 +11,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -48,6 +50,7 @@ import com.opxl.sleepslide.presentation.permission.LocalNotificationPermissionRe
 import com.opxl.sleepslide.presentation.player.PlayerScreen
 import com.opxl.sleepslide.presentation.presets.PresetsScreen
 import com.opxl.sleepslide.presentation.settings.SettingsScreen
+import com.opxl.sleepslide.presentation.tutorial.TutorialScreen
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.MutedGray
@@ -62,6 +65,7 @@ object Routes {
     const val LIBRARY    = "library"
     const val PRESETS    = "presets"
     const val SETTINGS   = "settings"
+    const val TUTORIAL   = "tutorial"
 
     // Deep link base — matches notification tap to open player
     const val DEEP_LINK_BASE = "sleepslide://app"
@@ -320,7 +324,19 @@ fun NavGraph(
                     }
                 },
                 onOpenBatterySettings = { openBatterySettings() },
+                onNavigateToTutorial = { navController.navigate(Routes.TUTORIAL) { launchSingleTop = true } },
             )
+        }
+
+        // Feature tour — a sheet, so it rises from the bottom instead of sliding in sideways
+        composable(
+            route              = Routes.TUTORIAL,
+            enterTransition    = { slideInVertically(tween(300)) { it } + fadeIn(tween(300)) },
+            exitTransition     = { fadeOut(tween(200)) },
+            popEnterTransition = { fadeIn(tween(200)) },
+            popExitTransition  = { slideOutVertically(tween(250)) { it } + fadeOut(tween(250)) },
+        ) {
+            TutorialScreen(onClose = { navController.popBackStack() })
         }
     }
     } // Scaffold

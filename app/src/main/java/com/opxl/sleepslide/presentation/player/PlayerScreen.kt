@@ -86,7 +86,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opxl.sleepslide.presentation.permission.isNotificationPermissionGranted
+import com.opxl.sleepslide.domain.repository.CoachMarkScreens
+import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
+import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
+import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
+import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
 import com.opxl.sleepslide.presentation.components.LineSlider
+import com.opxl.sleepslide.presentation.components.ChevronLeft
+import com.opxl.sleepslide.presentation.components.ClockIcon
 import com.opxl.sleepslide.presentation.components.LineSliderColors
 import com.opxl.sleepslide.presentation.scene.SceneBackdrop
 import com.opxl.sleepslide.domain.model.Domain
@@ -121,6 +128,7 @@ fun PlayerScreen(
     onNavigateToLibrary: () -> Unit,
     onRequestNotificationPermission: (onResult: (granted: Boolean) -> Unit) -> Unit,
     viewModel: PlayerViewModel = hiltViewModel(),
+    tutorial: TutorialViewModel = tutorialViewModel(CoachMarkScreens.PLAYER),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -176,6 +184,7 @@ fun PlayerScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        CoachMarkHost(viewModel = tutorial, labels = PLAYER_COACH_MARKS) {
         Scaffold(
             snackbarHost   = { SnackbarHost(snackbarHostState) },
             containerColor = WarmWhite,
@@ -263,6 +272,7 @@ fun PlayerScreen(
                 Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
             }
         }
+        } // CoachMarkHost
 
         if (uiState.nightLock != NightLockState.Disabled) {
             NightLockOverlay(
@@ -314,6 +324,16 @@ fun PlayerScreen(
         )
     }
 }
+
+/** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
+private val PLAYER_COACH_MARKS = listOf(
+    "save"       to "Save this mix as a preset",
+    "transport"  to "Play or pause the whole mix",
+    "timer"      to "Set a sleep timer that fades out",
+    "layer"      to "Drag to balance each sound; mute or remove it",
+    "add_sound"  to "Add up to three sounds",
+    "night_lock" to "Lock the screen against sleepy taps",
+)
 
 // Top bar
 
@@ -370,6 +390,7 @@ private fun PlayerTopBar(
             background          = if (isDirtyLoaded) Charcoal else SurfaceMuted,
             borderColor         = if (isDirtyLoaded) Charcoal else Border,
             contentDescription  = if (isDirtyLoaded) "Save changes" else "Save as preset",
+            modifier            = Modifier.coachMarkAnchor("save"),
         ) {
             SaveIcon(tint = if (isDirtyLoaded) White else MutedGray)
         }
@@ -480,6 +501,7 @@ private fun MainTransportButton(
     Box(
         modifier = Modifier
             .size(72.dp)
+            .coachMarkAnchor("transport")
             .clip(CircleShape)
             .background(bgColor)
             .border(1.dp, Border, CircleShape)
@@ -563,15 +585,19 @@ private fun TimerTriggerButton(timer: PlayerTimerState, onClick: () -> Unit) {
     val fg       = if (active?.isFading == true) PaleYellowText else if (active != null) Charcoal else MutedGray
     val desc     = active?.let { "Timer: ${it.remainingLabel}. Tap to adjust" } ?: "Set sleep timer"
 
-    Box(
+    Row(
         modifier = Modifier
+            .coachMarkAnchor("timer")
             .clip(RoundedCornerShape(6.dp))
             .background(bg)
             .border(1.dp, Border, RoundedCornerShape(6.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 10.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp)
             .semantics { contentDescription = desc },
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        ClockIcon(tint = fg, size = 14.dp)
         Text(text = label, style = MaterialTheme.typography.labelLarge, color = fg)
     }
 }
@@ -628,9 +654,10 @@ private fun MixerSection(
         if (mixer.layers.isEmpty()) {
             EmptyMixerCard(onAddSound)
         } else {
-            mixer.layers.forEach { layer ->
+            mixer.layers.forEachIndexed { index, layer ->
                 LayerRow(
                     layer    = layer,
+                    modifier = if (index == 0) Modifier.coachMarkAnchor("layer") else Modifier,
                     onVolume = { vol -> onVolume(layer.position, vol) },
                     onDragEnd = { onDragEnd(layer.position) },
                     onMute   = { onMute(layer.position) },
@@ -658,6 +685,7 @@ private fun EmptyMixerCard(onAddSound: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .coachMarkAnchor("add_sound")
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, Border, RoundedCornerShape(8.dp))
             .background(SurfaceMuted)
@@ -681,6 +709,7 @@ private fun LayerRow(
     onMute: () -> Unit,
     onUnmute: () -> Unit,
     onRemove: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val extended = LocalSleepSlideColors.current
     val (pillBg, pillFg) = when (layer.sound.category) {
@@ -690,7 +719,7 @@ private fun LayerRow(
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, Border, RoundedCornerShape(8.dp))
@@ -790,6 +819,7 @@ private fun AddLayerButton(onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .coachMarkAnchor("add_sound")
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, Border, RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
@@ -948,6 +978,7 @@ private fun NightLockToggleRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
+            .coachMarkAnchor("night_lock")
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, Border, RoundedCornerShape(8.dp))
             .background(if (isOn) Charcoal else White)
@@ -1219,10 +1250,11 @@ private fun IconButton(
     contentDescription: String,
     background: Color  = White,
     borderColor: Color = Border,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(40.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(background)
@@ -1312,23 +1344,6 @@ private fun LockIcon(tint: Color, sizeDp: Int) {
                     .background(tint)
             )
         }
-    }
-}
-
-@Composable
-private fun ChevronLeft(tint: Color) {
-    Box(Modifier.size(16.dp), contentAlignment = Alignment.Center) {
-        Box(Modifier.size(8.dp).drawBehind {
-            drawPath(
-                Path().apply {
-                    moveTo(size.width, 0f)
-                    lineTo(0f, size.height / 2f)
-                    lineTo(size.width, size.height)
-                },
-                color = tint,
-                style = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round),
-            )
-        })
     }
 }
 

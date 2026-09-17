@@ -63,7 +63,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.opxl.sleepslide.R
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.repository.CoachMarkScreens
 import com.opxl.sleepslide.presentation.scene.SceneBackdrop
+import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
+import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
+import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
+import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.DarkBackground
@@ -89,6 +94,7 @@ fun HomeScreen(
     onNavigateToLibrary: () -> Unit,
     onNavigateToPreset: (Long) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
+    tutorial: TutorialViewModel = tutorialViewModel(CoachMarkScreens.HOME),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -113,6 +119,7 @@ fun HomeScreen(
         }
     }
 
+    CoachMarkHost(viewModel = tutorial, labels = HOME_COACH_MARKS) {
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = WarmWhite,
@@ -207,14 +214,20 @@ item{
                         )
                     }
                 }}
-
-
-
-
-        }//<!--!>Scaffold
+        } // LazyColumn
+    } // Scaffold
+    } // CoachMarkHost
 }
 
-}
+/** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
+private val HOME_COACH_MARKS = listOf(
+    "library"     to "Open the library to build a new mix",
+    "now_playing" to "What's playing — tap to open the player",
+    "resume"      to "Pick up where you left off",
+    "preset"      to "Tap to play, long-press to edit",
+    "add_mix"     to "Start a fresh mix from scratch",
+    "browse"      to "Pick your first sounds here",
+)
 
 
 @Composable
@@ -303,6 +316,7 @@ private fun LibraryIconButton(onClick: () -> Unit) {
             .border(1.dp, Border, RoundedCornerShape(8.dp))
             .background(White)
             .clickable(onClick = onClick)
+            .coachMarkAnchor("library")
             .semantics { contentDescription = "Browse sounds" },
         contentAlignment = Alignment.Center,
     ) {
@@ -338,6 +352,7 @@ private fun ActivePlaybackBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 12.dp)
+            .coachMarkAnchor("now_playing")
             .clip(RoundedCornerShape(8.dp))
             .background(if (interrupted) PaleYellow else Charcoal)
             .clickable(onClick = onExpandPlayer)
@@ -429,6 +444,7 @@ private fun ResumeCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 8.dp)
+            .coachMarkAnchor("resume")
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, Border, RoundedCornerShape(8.dp))
             .background(White)
@@ -485,6 +501,7 @@ private fun HomeReadyBody(
                 activeId  = (uiState.playback as? HomeViewState.PlaybackUiState.Active)?.activePresetId,
                 onClick   = onPresetClick,
                 onLongClick = onPresetLong,
+                anchorFirst = true,
             )
         }
 
@@ -496,6 +513,7 @@ private fun HomeReadyBody(
                 activeId  = (uiState.playback as? HomeViewState.PlaybackUiState.Active)?.activePresetId,
                 onClick   = onPresetClick,
                 onLongClick = onPresetLong,
+                anchorFirst = screen.pinnedPresets.isEmpty(),
             )
         }
 
@@ -528,6 +546,7 @@ private fun PresetGrid(
     activeId: Long?,
     onClick: (Domain.Preset) -> Unit,
     onLongClick: (Domain.Preset) -> Unit,
+    anchorFirst: Boolean = false,   // first card is the coach mark target for "your presets"
 ) {
     Column(
         modifier = Modifier
@@ -546,7 +565,9 @@ private fun PresetGrid(
                         isActive    = preset.id == activeId,
                         onClick     = { onClick(preset) },
                         onLongClick = { onLongClick(preset) },
-                        modifier    = Modifier.weight(1f),
+                        modifier    = Modifier
+                            .weight(1f)
+                            .then(if (anchorFirst && rowIndex == 0 && colIndex == 0) Modifier.coachMarkAnchor("preset") else Modifier),
                         animDelay   = (rowIndex * 2 + colIndex) * 60,
                     )
                 }
@@ -723,6 +744,7 @@ private fun AddPresetButton(onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 24.dp, vertical = 8.dp)
+            .coachMarkAnchor("add_mix")
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, Border, RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
@@ -822,6 +844,7 @@ private fun HomeEmptyBody(onBrowse: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         Box(
             modifier = Modifier
+                .coachMarkAnchor("browse")
                 .clip(RoundedCornerShape(6.dp))
                 .background(Charcoal)
                 .clickable(onClick = onBrowse)

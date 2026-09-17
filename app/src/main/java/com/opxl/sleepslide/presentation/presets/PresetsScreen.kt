@@ -74,6 +74,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.presentation.components.ChevronLeft
+import com.opxl.sleepslide.presentation.components.CheckIcon
+import com.opxl.sleepslide.domain.repository.CoachMarkScreens
+import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
+import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
+import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
+import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.MutedGray
@@ -96,6 +103,7 @@ fun PresetsScreen(
     onNavigateToPlayer: (presetId: Long) -> Unit,
     onNavigateToLibrary: () -> Unit,
     viewModel: PresetsViewModel = hiltViewModel(),
+    tutorial: TutorialViewModel = tutorialViewModel(CoachMarkScreens.PRESETS),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -160,6 +168,7 @@ fun PresetsScreen(
         }
     }
 
+    CoachMarkHost(viewModel = tutorial, labels = PRESETS_COACH_MARKS) {
     Scaffold(
         snackbarHost   = {
             SnackbarHost(snackbarHostState) { data ->
@@ -232,6 +241,7 @@ fun PresetsScreen(
             }
         }
     }
+    } // CoachMarkHost
 
     // Dialogs
 
@@ -274,6 +284,14 @@ fun PresetsScreen(
 }
 
 // Top bar
+
+/** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
+private val PRESETS_COACH_MARKS = listOf(
+    "add"    to "Build a new preset from the library",
+    "search" to "Find a preset by name",
+    "preset" to "Tap to play, long-press to select or reorder",
+    "browse" to "Save your first mix to see it here",
+)
 
 @Composable
 private fun PresetsTopBar(
@@ -350,6 +368,7 @@ private fun DefaultTopBar(
             description = "Add preset",
             background  = if (hasReachedLimit) SurfaceMuted else Charcoal,
             borderColor = if (hasReachedLimit) Border else Charcoal,
+            modifier    = Modifier.coachMarkAnchor("add"),
         ) {
             PlusIcon(tint = if (hasReachedLimit) MutedGray else White)
         }
@@ -442,6 +461,7 @@ private fun SearchBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 8.dp)
+            .coachMarkAnchor("search")
             .clip(RoundedCornerShape(8.dp))
             .background(SurfaceMuted)
             .border(1.dp, Border, RoundedCornerShape(8.dp))
@@ -536,6 +556,7 @@ private fun PresetsEmptyState(onBrowse: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         Box(
             modifier = Modifier
+                .coachMarkAnchor("browse")
                 .clip(RoundedCornerShape(6.dp))
                 .background(Charcoal)
                 .clickable(onClick = onBrowse)
@@ -601,6 +622,7 @@ private fun PresetsReadyBody(
 
     val displayItems = if (screen.isFiltered) screen.filtered
     else screen.pinned + screen.unpinned
+    val firstId = displayItems.firstOrNull()?.preset?.id   // coach mark target
 
     // Load stats when the list first becomes visible — single call, not per-item
     LaunchedEffect(displayItems.map { it.preset.id }) {
@@ -641,6 +663,7 @@ private fun PresetsReadyBody(
                     onUnpin     = { onUnpin(item.preset) },
                     onRename    = { onRename(item.preset) },
                     onDelete    = { onDelete(item.preset) },
+                    modifier    = if (item.preset.id == firstId) Modifier.coachMarkAnchor("preset") else Modifier,
                 )
             }
         }
@@ -668,6 +691,7 @@ private fun PresetsReadyBody(
                     onUnpin     = { onUnpin(item.preset) },
                     onRename    = { onRename(item.preset) },
                     onDelete    = { onDelete(item.preset) },
+                    modifier    = if (item.preset.id == firstId) Modifier.coachMarkAnchor("preset") else Modifier,
                 )
             }
         }
@@ -706,6 +730,7 @@ private fun PresetsReadyBody(
                         onUnpin     = { onUnpin(item.preset) },
                         onRename    = { onRename(item.preset) },
                         onDelete    = { onDelete(item.preset) },
+                        modifier    = if (item.preset.id == firstId) Modifier.coachMarkAnchor("preset") else Modifier,
                     )
                 }
             }
@@ -730,6 +755,7 @@ private fun PresetCard(
     onUnpin: () -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val preset = item.preset
@@ -756,7 +782,7 @@ private fun PresetCard(
     val subColor    = if (item.isActive) White.copy(alpha = 0.6f) else MutedGray
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(bgColor)
@@ -911,7 +937,7 @@ private fun SelectionIndicator(isSelected: Boolean, isActive: Boolean) {
         contentAlignment = Alignment.Center,
     ) {
         if (isSelected) {
-            CheckIcon(tint = if (isActive) Charcoal else White)
+            CheckIcon(tint = if (isActive) Charcoal else White, size = 10.dp)
         }
     }
 }
@@ -1178,10 +1204,11 @@ private fun SmallIconButton(
     description: String,
     background: Color  = White,
     borderColor: Color = Border,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(40.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(background)
@@ -1191,19 +1218,6 @@ private fun SmallIconButton(
         contentAlignment = Alignment.Center,
         content          = { content() },
     )
-}
-
-@Composable
-private fun ChevronLeft(tint: Color) {
-    Box(Modifier.size(16.dp).drawBehind {
-        val path = androidx.compose.ui.graphics.Path().apply {
-            moveTo(size.width, 0f)
-            lineTo(0f, size.height / 2f)
-            lineTo(size.width, size.height)
-        }
-        drawPath(path, tint, style = Stroke(1.5.dp.toPx(),
-            cap = androidx.compose.ui.graphics.StrokeCap.Round))
-    })
 }
 
 @Composable
@@ -1231,19 +1245,6 @@ private fun TrashIcon(tint: Color) {
         drawRect(tint, Offset(2.dp.toPx(), 3.dp.toPx()),
             Size(size.width - 4.dp.toPx(), size.height - 3.dp.toPx()), style = s)
         drawLine(tint, Offset(4.dp.toPx(), 0f), Offset(size.width - 4.dp.toPx(), 0f), s.width)
-    })
-}
-
-@Composable
-private fun CheckIcon(tint: Color) {
-    Box(Modifier.size(10.dp).drawBehind {
-        val s = Stroke(1.5.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-        val path = androidx.compose.ui.graphics.Path().apply {
-            moveTo(0f, size.height * 0.5f)
-            lineTo(size.width * 0.38f, size.height)
-            lineTo(size.width, 0f)
-        }
-        drawPath(path, tint, style = s)
     })
 }
 

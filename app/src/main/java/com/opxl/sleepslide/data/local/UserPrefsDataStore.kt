@@ -6,7 +6,9 @@ import androidx.datastore.preferences.core.edit
 import com.opxl.sleepslide.data.local.Mapper.applyFrom
 import com.opxl.sleepslide.data.local.Mapper.toUserPreferences
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.repository.CoachMarkScreens
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -119,6 +121,20 @@ class UserPrefsDataStore @Inject constructor(
 
     suspend fun markNotificationPermissionRequested() {
         dataStore.edit { it[PrefKeys.HAS_REQUESTED_NOTIFICATION_PERM] = true }
+    }
+
+    // Tutorial coach marks — one key per screen, see PrefKeys.coachMarkSeen
+
+    fun hasSeenCoachMark(screen: String): Flow<Boolean> = dataStore.data
+        .map { it[PrefKeys.coachMarkSeen(screen)] ?: false }
+        .distinctUntilChanged()
+
+    suspend fun markCoachMarkSeen(screen: String) {
+        dataStore.edit { it[PrefKeys.coachMarkSeen(screen)] = true }
+    }
+
+    suspend fun resetCoachMarks() {
+        dataStore.edit { prefs -> CoachMarkScreens.ALL.forEach { prefs.remove(PrefKeys.coachMarkSeen(it)) } }
     }
 
     suspend fun clear() {
