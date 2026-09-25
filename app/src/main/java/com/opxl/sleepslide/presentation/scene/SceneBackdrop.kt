@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -41,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -87,26 +89,17 @@ fun SceneBackdrop(
         label         = "sceneHeight",
     )
 
-    // Ken Burns: the infinite drift always runs (cheap), and `motion` eases it in
-    // while playing and back to rest when paused — no snap in either direction.
-    val drift = rememberInfiniteTransition(label = "kenBurns")
-    val kbScale by drift.animateFloat(
-        initialValue  = 1.0f,
-        targetValue   = 1.10f,
-        animationSpec = infiniteRepeatable(tween(28_000, easing = LinearEasing), RepeatMode.Reverse),
-        label         = "kbScale",
-    )
-    val kbShift by drift.animateFloat(
-        initialValue  = -0.02f,
-        targetValue   = 0.02f,
-        animationSpec = infiniteRepeatable(tween(36_000, easing = LinearEasing), RepeatMode.Reverse),
-        label         = "kbShift",
-    )
-    val motion by animateFloatAsState(
+    // Ken Burns: `motion` eases the drift in while playing and back to rest when paused — no
+    // snap in either direction. The infinite drift itself only exists while motion is non-zero:
+    // left running, it ticks a frame every vsync for as long as the screen is up, paused or not,
+    // and competes with nav transitions for frame time.
+    val motion = animateFloatAsState(
         targetValue   = if (isPlaying) 1f else 0f,
         animationSpec = tween(1_500),
         label         = "sceneMotion",
     )
+    val drifting by remember { derivedStateOf { motion.value > 0f } }
+    val kenBurns = if (drifting) rememberKenBurns() else null
 
     Box(
         modifier = modifier
@@ -129,16 +122,20 @@ fun SceneBackdrop(
             val bitmap by rememberSceneBitmap(target)
             bitmap?.let {
                 Image(
-                    bitmap             = it.asImageBitmap(),
+                    bitmap             = it,
                     contentDescription = null,
                     contentScale       = ContentScale.Crop,
                     modifier           = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            val s = 1f + (kbScale - 1f) * motion
-                            scaleX = s
-                            scaleY = s
-                            translationX = size.width * kbShift * motion
+                            // Read here (draw phase) so the drift never recomposes the screen
+                            if (kenBurns != null) {
+                                val m = motion.value
+                                val s = 1f + (kenBurns.scale.value - 1f) * m
+                                scaleX = s
+                                scaleY = s
+                                translationX = size.width * kenBurns.shift.value * m
+                            }
                         },
                 )
             }
@@ -186,23 +183,49 @@ fun SceneBackdrop(
 
 // ── Asset decoding ────────────────────────────────────────────────────────────
 
-private val sceneCache = HashMap<Scene, Bitmap>()
+private class KenBurns(val scale: State<Float>, val shift: State<Float>)
 
 @Composable
-private fun rememberSceneBitmap(scene: Scene): State<Bitmap?> {
+private fun rememberKenBurns(): KenBurns {
+    val drift = rememberInfiniteTransition(label = "kenBurns")
+    val scale = drift.animateFloat(
+        initialValue  = 1.0f,
+        targetValue   = 1.10f,
+        animationSpec = infiniteRepeatable(tween(28_000, easing = LinearEasing), RepeatMode.Reverse),
+        label         = "kbScale",
+    )
+    val shift = drift.animateFloat(
+        initialValue  = -0.02f,
+        targetValue   = 0.02f,
+        animationSpec = infiniteRepeatable(tween(36_000, easing = LinearEasing), RepeatMode.Reverse),
+        label         = "kbShift",
+    )
+    return remember(scale, shift) { KenBurns(scale, shift) }
+}
+
+// ── Asset decoding ────────────────────────────────────────────────────────────
+
+// Holds ImageBitmaps (not Bitmaps) so re-entering a screen doesn't re-wrap on every recomposition.
+private val sceneCache = HashMap<Scene, ImageBitmap>()
+
+private fun cachedScene(scene: Scene): ImageBitmap? = synchronized(sceneCache) { sceneCache[scene] }
+
+@Composable
+private fun rememberSceneBitmap(scene: Scene): State<ImageBitmap?> {
     val context = LocalContext.current
-    return produceState<Bitmap?>(initialValue = sceneCache[scene], scene) {
+    return produceState(initialValue = cachedScene(scene), scene) {
         if (value == null) value = withContext(Dispatchers.IO) { decodeScene(context, scene) }
     }
 }
 
-private fun decodeScene(context: Context, scene: Scene): Bitmap? = runCatching {
-    synchronized(sceneCache) { sceneCache[scene] }?.let { return it }
+private fun decodeScene(context: Context, scene: Scene): ImageBitmap? = runCatching {
+    cachedScene(scene)?.let { return it }
     val opts = BitmapFactory.Options().apply {
         inPreferredConfig = Bitmap.Config.RGB_565   // photos, no alpha — halves memory
     }
     context.assets.open(scene.assetPath).use { BitmapFactory.decodeStream(it, null, opts) }
-        ?.also { synchronized(sceneCache) { sceneCache[scene] = it } }
+        ?.asImageBitmap()
+        ?.also { it.prepareToDraw(); synchronized(sceneCache) { sceneCache[scene] = it } }
 }.getOrNull()
 
 /** Convenience for screens that have no mix yet — a scene for the time of day. */
