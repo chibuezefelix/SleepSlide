@@ -1,6 +1,7 @@
 package com.opxl.sleepslide.presentation.tutorial
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -12,13 +13,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -55,11 +56,16 @@ class CoachMarkAnchors {
     val bounds = mutableStateMapOf<String, Rect>()
 }
 
-val LocalCoachMarkAnchors = staticCompositionLocalOf<CoachMarkAnchors?> { null }
+/**
+ * Non-null only while a [CoachMarkHost] is actually showing its marks. Outside that window
+ * [coachMarkAnchor] is a no-op, so returning users pay nothing per layout pass. A dynamic
+ * local (not static) so flipping it recomposes just the anchored call sites, not the screen.
+ */
+val LocalCoachMarkAnchors = compositionLocalOf<CoachMarkAnchors?> { null }
 
 /**
- * Registers this element as a coach mark target. A no-op outside a [CoachMarkHost], so
- * private composables can carry it without knowing whether the screen shows coach marks.
+ * Registers this element as a coach mark target. A no-op outside a [CoachMarkHost] or while
+ * its marks are hidden, so private composables can carry it without knowing either.
  */
 @Composable
 fun Modifier.coachMarkAnchor(key: String): Modifier {
@@ -76,6 +82,10 @@ fun Modifier.coachMarkAnchor(key: String): Modifier {
  * on the screen's first visit. Only marks whose target is currently laid out are drawn, so
  * [labels] can list elements that appear in some states and not others (empty vs ready).
  *
+ * Anchors are tracked only while the marks are due or still fading out. Tracking means an
+ * onGloballyPositioned write per anchored element per layout pass — every frame of a nav
+ * transition or a scroll — which is wasted work on every visit after the first.
+ *
  * @param labels anchor key → label, in the order the marks should be resolved.
  */
 @Composable
@@ -86,16 +96,21 @@ fun CoachMarkHost(
 ) {
     val show by viewModel.showCoachMarks.collectAsStateWithLifecycle()
     val anchors = remember { CoachMarkAnchors() }
+    val visibleState = remember { MutableTransitionState(false) }
 
-    CompositionLocalProvider(LocalCoachMarkAnchors provides anchors) {
+    // Wait for at least one target to exist so a loading screen isn't dimmed for nothing.
+    visibleState.targetState = show && labels.any { (key, _) -> anchors.bounds.containsKey(key) }
+    // Keep tracking through the fade-out so the arrows stay put while the overlay leaves.
+    val tracking = show || visibleState.currentState || visibleState.targetState
+
+    CompositionLocalProvider(LocalCoachMarkAnchors provides anchors.takeIf { tracking }) {
         Box(Modifier.fillMaxSize()) {
             content()
 
-            // Wait for at least one target to exist so a loading screen isn't dimmed for nothing.
             AnimatedVisibility(
-                visible = show && labels.any { (key, _) -> anchors.bounds.containsKey(key) },
-                enter   = fadeIn(tween(250)),
-                exit    = fadeOut(tween(200)),
+                visibleState = visibleState,
+                enter        = fadeIn(tween(250)),
+                exit         = fadeOut(tween(200)),
             ) {
                 // Resolved inside so the arrows stay put while the overlay fades out.
                 val marks = labels.mapNotNull { (key, label) ->
