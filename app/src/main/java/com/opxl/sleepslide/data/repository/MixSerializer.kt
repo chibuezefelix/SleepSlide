@@ -7,6 +7,13 @@ import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * JSON for mixes stored outside Room (last-played ephemeral mix, play-history snapshots).
+ *
+ * The sound fields here are a snapshot, not the truth: isPremium is no longer written, and
+ * anything read back must go through [com.opxl.sleepslide.domain.repository.SoundRepository.resolve]
+ * before it is played. Older JSON that still carries isPremium stays readable.
+ */
 @Singleton
 class MixSerializer @Inject constructor() {
 
@@ -24,7 +31,6 @@ class MixSerializer @Inject constructor() {
                         put("title", layer.sound.title)
                         put("category", layer.sound.category.name)
                         put("assetPath", layer.sound.assetPath)
-                        put("isPremium", layer.sound.isPremium)
                         put("isBundled", layer.sound.isBundled)
                     })
                 })
@@ -47,8 +53,9 @@ class MixSerializer @Inject constructor() {
                     title = soundObj.getString("title"),
                     category = Domain.SoundCategory.valueOf(soundObj.getString("category")),
                     assetPath = soundObj.getString("assetPath"),
-                    isPremium = soundObj.getBoolean("isPremium"),
-                    isBundled = soundObj.getBoolean("isBundled"),
+                    // Ignored on read: resolve() replaces it with the catalogue's current value
+                    isPremium = soundObj.optBoolean("isPremium", false),
+                    isBundled = soundObj.optBoolean("isBundled", true),
                 ),
             )
         }

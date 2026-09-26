@@ -1,5 +1,6 @@
 package com.opxl.sleepslide.data.repository
 
+import android.util.Log
 import com.opxl.sleepslide.data.local.Mapper.toDomain
 import com.opxl.sleepslide.data.local.Mapper.toEntity
 import com.opxl.sleepslide.data.local.SoundDao
@@ -11,6 +12,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+
+private const val TAG = "SoundRepository"
 
 class SoundRepositoryImpl @Inject constructor(
     private val soundDao: SoundDao,
@@ -48,6 +51,17 @@ class SoundRepositoryImpl @Inject constructor(
 
     override suspend fun getAll(): List<Domain.Sound> = withContext(io) {
         soundDao.getAll().map { it.toDomain() }
+    }
+
+    override suspend fun resolve(mix: Domain.SoundMix): Domain.SoundMix = withContext(io) {
+        val current = soundDao.getByIds(mix.layers.map { it.sound.id })
+            .associate { it.id to it.toDomain() }
+        val layers = mix.layers.mapNotNull { layer ->
+            val sound = current[layer.sound.id]
+            if (sound == null) Log.w(TAG, "Dropping layer '${layer.sound.id}' — no longer in the catalogue")
+            sound?.let { layer.copy(sound = it) }
+        }
+        mix.copy(layers = layers)
     }
 
     /**

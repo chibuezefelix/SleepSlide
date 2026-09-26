@@ -24,6 +24,13 @@ interface SoundRepository {
 
     suspend fun getAll(): List<Domain.Sound>
 
+    /**
+     * Re-reads every layer's [Domain.Sound] from the catalogue by id, so a stored mix (preset,
+     * last-played JSON) picks up the current isPremium / title / assetPath instead of whatever
+     * was true when it was saved. Layers whose sound no longer exists are dropped.
+     */
+    suspend fun resolve(mix: Domain.SoundMix): Domain.SoundMix
+
     suspend fun seedBundledSounds()
 
     suspend fun recordPlayed(soundId: String)

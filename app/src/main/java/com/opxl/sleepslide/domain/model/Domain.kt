@@ -18,6 +18,14 @@ object Domain {
     /** Sounds that only work in stereo on headphones (binaural beats) carry the "headphones" tag. */
     val Sound.needsHeadphones: Boolean get() = "headphones" in tags
 
+    /** The one entitlement rule: premium sounds are locked on the free tier. */
+    fun Sound.isLockedFor(tier: EntitlementTier): Boolean =
+        isPremium && tier == EntitlementTier.FREE
+
+    /** Layers of this mix that [tier] may not play. Empty for PREMIUM. */
+    fun SoundMix.lockedLayers(tier: EntitlementTier): List<SoundLayer> =
+        layers.filter { it.sound.isLockedFor(tier) }
+
     enum class SoundCategory {
         TINNITUS,
         NATURE,
