@@ -1,6 +1,7 @@
 package com.opxl.sleepslide.presentation.presets
 
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.model.Domain.lockedLayers
 
 
 import androidx.lifecycle.ViewModel
@@ -443,6 +444,7 @@ class PresetsViewModel @Inject constructor(
                 totalListenedMs    = ms,
                 totalListenedLabel = ms.toListenedLabel(),
                 playCount          = 0, // populated via loadPlayStats if needed separately
+                hasLockedLayers    = preset.mix.lockedLayers(data.tier).isNotEmpty(),
             )
         }
 

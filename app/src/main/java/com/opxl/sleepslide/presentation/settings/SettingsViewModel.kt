@@ -11,6 +11,7 @@ import com.opxl.sleepslide.domain.repository.RestoreResult
 import com.opxl.sleepslide.domain.repository.TutorialRepository
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
 import com.opxl.sleepslide.domain.service.PurchaseService
+import com.opxl.sleepslide.presentation.navigation.UpgradeRequests
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -22,6 +23,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -41,6 +44,7 @@ class SettingsViewModel @Inject constructor(
     private val entitlementObserver: EntitlementObserver,
     private val windDownNotificationService: com.opxl.sleepslide.domain.service.WindDownNotificationService,
     private val tutorialRepository: TutorialRepository,
+    private val upgradeRequests: UpgradeRequests,
 ) : ViewModel() {
 
     //  Events
@@ -73,6 +77,7 @@ class SettingsViewModel @Inject constructor(
     init {
         refreshBatteryOptStatus()
         syncEntitlementOnEntry()
+        observeUpgradeRequests()
     }
 
     // PURCHASE COMMANDS
@@ -551,6 +556,13 @@ class SettingsViewModel @Inject constructor(
     }
 
     // HELPERS
+
+    /** An "Upgrade" snackbar action elsewhere brought the user here — start the purchase. */
+    private fun observeUpgradeRequests() {
+        upgradeRequests.requests
+            .onEach { if (!purchaseService.isPremium()) purchase() }
+            .launchIn(viewModelScope)
+    }
 
     private fun syncEntitlementOnEntry() {
         viewModelScope.launch {

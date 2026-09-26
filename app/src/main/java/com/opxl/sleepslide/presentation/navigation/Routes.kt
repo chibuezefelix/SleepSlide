@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -37,11 +38,18 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,6 +74,8 @@ import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.opxl.sleepslide.R
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
+import com.opxl.sleepslide.domain.service.LockedLayersNotice
+import com.opxl.sleepslide.domain.service.PlaybackGate
 import com.opxl.sleepslide.presentation.home.HomeScreen
 import com.opxl.sleepslide.presentation.library.LibraryScreen
 import com.opxl.sleepslide.presentation.onboard.OnboardingScreen
@@ -77,7 +87,10 @@ import com.opxl.sleepslide.presentation.tutorial.TutorialScreen
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.MutedGray
+import com.opxl.sleepslide.ui.theme.PaleBlueText
 import com.opxl.sleepslide.ui.theme.WarmWhite
+import com.opxl.sleepslide.ui.theme.White
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 
 
@@ -141,6 +154,8 @@ private val AnimatedContentTransitionScope<NavBackStackEntry>.isTabSwitch: Boole
 @Composable
 fun NavGraph(
     userPreferencesRepository: UserPreferencesRepository,
+    playbackGate: PlaybackGate,
+    upgradeRequests: UpgradeRequests,
     navController: NavHostController = rememberNavController(),
 ) {
     // Resolved once. Collecting prefs here would recompose the whole graph on every preference
@@ -176,6 +191,15 @@ fun NavGraph(
                     )
                 }
             }
+        }
+    }
+
+    // Every "Upgrade" action in the app: Settings owns the purchase flow, and picks up the
+    // request to start it as soon as it's on screen.
+    val openUpgrade: () -> Unit = remember(navController, upgradeRequests) {
+        {
+            upgradeRequests.request()
+            navController.navigateToTab(AppTab.SETTINGS)
         }
     }
 
@@ -261,6 +285,7 @@ fun NavGraph(
                         onNavigateToPlayer = {
                             entry.ifResumed { navController.navigate(Routes.PLAYER) { launchSingleTop = true } }
                         },
+                        onUpgrade          = { entry.ifResumed(openUpgrade) },
                     )
                 }
             }
@@ -332,7 +357,80 @@ fun NavGraph(
             navController = navController,
             modifier      = Modifier.align(Alignment.BottomCenter),
         )
+
+        LockedLayersNoticeHost(
+            navController = navController,
+            notices       = playbackGate.notices,
+            onUpgrade     = openUpgrade,
+            modifier      = Modifier.align(Alignment.BottomCenter),
+        )
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Premium notices
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * App-level snackbar for [PlaybackGate] notices. Lives here rather than in a screen because a
+ * launch from Home, Presets or Library navigates to the Player straight away — a snackbar on
+ * the launching screen would be torn down before anyone saw it.
+ */
+@Composable
+private fun LockedLayersNoticeHost(
+    navController: NavHostController,
+    notices: Flow<LockedLayersNotice>,
+    onUpgrade: () -> Unit,
+    modifier: Modifier,
+) {
+    val hostState = remember { SnackbarHostState() }
+    val currentOnUpgrade by rememberUpdatedState(onUpgrade)
+
+    LaunchedEffect(notices) {
+        notices.collect { notice ->
+            val result = hostState.showSnackbar(
+                message     = notice.message(),
+                actionLabel = "Upgrade",
+                duration    = SnackbarDuration.Long,
+            )
+            if (result == SnackbarResult.ActionPerformed) currentOnUpgrade()
+        }
+    }
+
+    // Sit above the floating tab bar when it's showing
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val onTab = AppTab.forRoute(backStackEntry?.destination?.route) != null
+    val barHeight = tabBarContentHeight()
+    // Same timing as TabBarHost's slide, so a showing snackbar rides with the bar
+    val barOffset by animateDpAsState(
+        targetValue   = if (onTab) barHeight else 0.dp,
+        animationSpec = tween(if (onTab) 300 else 250),
+        label         = "notice_bar_offset",
+    )
+
+    SnackbarHost(
+        hostState = hostState,
+        modifier  = modifier
+            .navigationBarsPadding()
+            .padding(bottom = barOffset),
+    ) { data ->
+        Snackbar(
+            snackbarData   = data,
+            containerColor = Charcoal,
+            contentColor   = White,
+            actionColor    = PaleBlueText,
+            shape          = RoundedCornerShape(8.dp),
+        )
+    }
+}
+
+/** "Delta Beats is premium — playing the rest of your mix". Drops the " · 2 Hz" detail. */
+private fun LockedLayersNotice.message(): String {
+    val names = lockedTitles.map { it.substringBefore(" · ") }
+    val subject = if (names.size == 1) "${names.single()} is"
+                  else "${names.dropLast(1).joinToString(", ")} and ${names.last()} are"
+    return if (playingRest) "$subject premium — playing the rest of your mix"
+           else "$subject premium — upgrade to listen"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

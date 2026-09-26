@@ -81,6 +81,7 @@ import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
 import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
 import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
 import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
+import com.opxl.sleepslide.presentation.components.PremiumPill
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.MutedGray
@@ -794,6 +795,7 @@ private fun PresetCard(
                     if (item.isActive) append(", currently playing")
                     if (item.isSelected) append(", selected")
                     if (preset.isPinned) append(", pinned")
+                    if (item.hasLockedLayers) append(", has premium sounds that will be skipped")
                 }
             },
     ) {
@@ -846,6 +848,9 @@ private fun PresetCard(
                     )
                 }
             }
+
+            // Premium layers are skipped at launch on the free tier — flag it before the tap
+            if (item.hasLockedLayers) PremiumPill()
 
             // Trailing actions
             if (!isSelecting && !reorderMode) {

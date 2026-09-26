@@ -36,6 +36,8 @@ data class PresetItemState(
     val totalListenedMs: Long,
     val totalListenedLabel: String,
     val playCount: Int,
+    /** Contains premium layers the current tier can't play — they're skipped at launch. */
+    val hasLockedLayers: Boolean = false,
 )
 
 sealed interface SelectionMode {

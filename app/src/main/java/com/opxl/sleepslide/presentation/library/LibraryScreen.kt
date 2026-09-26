@@ -45,8 +45,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -55,6 +57,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -86,6 +89,7 @@ import com.opxl.sleepslide.presentation.components.ChevronLeft
 import com.opxl.sleepslide.presentation.components.HEADPHONES_NOTE
 import com.opxl.sleepslide.presentation.components.HeadphonesIcon
 import com.opxl.sleepslide.presentation.components.LineSliderColors
+import com.opxl.sleepslide.presentation.components.PremiumPill
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.MutedGray
@@ -107,6 +111,7 @@ import kotlinx.coroutines.launch
 fun LibraryScreen(
     onNavigateBack: () -> Unit,
     onNavigateToPlayer: () -> Unit,
+    onUpgrade: () -> Unit,
     viewModel: LibraryViewModel = hiltViewModel(),
     tutorial: TutorialViewModel = tutorialViewModel(CoachMarkScreens.LIBRARY),
 ) {
@@ -114,6 +119,7 @@ fun LibraryScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
+    val currentOnUpgrade by rememberUpdatedState(onUpgrade)
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -124,7 +130,12 @@ fun LibraryScreen(
                     showSaveDialog = true
                 is LibraryVMState.LibraryEvent.ShowUpgradePrompt ->
                     scope.launch {
-                        snackbarHostState.showSnackbar("\"${event.soundTitle}\" is a premium sound — upgrade to unlock")
+                        val result = snackbarHostState.showSnackbar(
+                            message     = "\"${event.soundTitle}\" is a premium sound — upgrade to unlock",
+                            actionLabel = "Upgrade",
+                            duration    = SnackbarDuration.Long,
+                        )
+                        if (result == SnackbarResult.ActionPerformed) currentOnUpgrade()
                     }
                 is LibraryVMState.LibraryEvent.ShowMaxLayersReached ->
                     scope.launch { snackbarHostState.showSnackbar("Maximum 3 sounds in a mix") }
@@ -681,14 +692,7 @@ private fun SoundRow(
 
         // Trailing — add / remove / lock / download
         when {
-            locked -> Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(PaleYellow)
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
-            ) {
-                Text("Premium", style = MaterialTheme.typography.labelSmall, color = PaleYellowText)
-            }
+            locked -> PremiumPill()
             isIn -> Box(
                 modifier = Modifier
                     .size(24.dp)

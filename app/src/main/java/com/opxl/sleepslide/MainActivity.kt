@@ -27,7 +27,9 @@ import com.opxl.sleepslide.data.audio.AudioServiceImpl
 import com.opxl.sleepslide.data.purchase.PurchaseServiceImpl
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
+import com.opxl.sleepslide.domain.service.PlaybackGate
 import com.opxl.sleepslide.presentation.navigation.NavGraph
+import com.opxl.sleepslide.presentation.navigation.UpgradeRequests
 import com.opxl.sleepslide.presentation.permission.LocalNotificationPermissionRequester
 import com.opxl.sleepslide.presentation.permission.NotificationPermissionRequester
 import com.opxl.sleepslide.presentation.permission.isNotificationPermissionGranted
@@ -45,6 +47,8 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var audioServiceHolder: AudioServiceHolder
     @Inject lateinit var purchaseService: PurchaseServiceImpl
     @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var playbackGate: PlaybackGate
+    @Inject lateinit var upgradeRequests: UpgradeRequests
 
 
     private var isAudioServiceBound = false
@@ -123,7 +127,11 @@ class MainActivity : ComponentActivity() {
                 CompositionLocalProvider(
                     LocalNotificationPermissionRequester provides notificationPermissionRequester,
                 ) {
-                    NavGraph(userPreferencesRepository = userPreferencesRepository)
+                    NavGraph(
+                        userPreferencesRepository = userPreferencesRepository,
+                        playbackGate              = playbackGate,
+                        upgradeRequests           = upgradeRequests,
+                    )
                 }
             }
         }
