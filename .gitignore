@@ -40,3 +40,6 @@ app/src/main/assets/images/
 
 # macOS
 .DS_Store
+
+# Local asset-generation scripts (gen_noise.py, gen_binaural.py, oggtool.py)
+tools/
