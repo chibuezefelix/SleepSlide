@@ -3,6 +3,7 @@ package com.opxl.sleepslide.data.repository
 
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.domain.model.Domain.SoundCategory.AMBIENT
+import com.opxl.sleepslide.domain.model.Domain.SoundCategory.BINAURAL
 import com.opxl.sleepslide.domain.model.Domain.SoundCategory.NATURE
 import com.opxl.sleepslide.domain.model.Domain.SoundCategory.TINNITUS
 import com.opxl.sleepslide.BuildConfig
@@ -18,8 +19,11 @@ import com.opxl.sleepslide.BuildConfig
  *   time:   night · day · evening
  *   scene:  water · rain · storm · forest · garden · fire · indoor · city
  *   who:    baby (steady, event-free — safe at low level) · hearing (low-frequency masker)
+ *           · tinnitus (notched therapy) · headphones (binaural — useless on a speaker)
  *
- * Noise colours are synthesised by tools/gen_noise.py — loop-perfect, no licence.
+ * Noise colours are synthesised by tools/gen_noise.py and binaural beats by
+ * tools/gen_binaural.py — loop-perfect, no licence. For notched noise, frequencyHz is
+ * the notch centre.
  * Field recordings were cleaned with tools/oggtool.py; provenance in docs/SOUND_CREDITS.md.
  */
 internal object BundledSoundCatalogue {
@@ -29,6 +33,11 @@ internal object BundledSoundCatalogue {
         Domain.Sound(id = "pink_noise",   title = "Pink Noise",   category = TINNITUS, assetPath = "sounds/tinnitus/pink.wav",       frequencyHz = 500,  tags = listOf("noise", "masking", "baby", "calm")),
         Domain.Sound(id = "brown_noise",  title = "Brown Noise",  category = TINNITUS, assetPath = "sounds/tinnitus/brown.wav",      frequencyHz = 200,  tags = listOf("noise", "masking", "baby", "hearing", "deep")),
         Domain.Sound(id = "grey_noise",   title = "Grey Noise",   category = TINNITUS, assetPath = "sounds/tinnitus/grey.wav",       frequencyHz = 1000, tags = listOf("noise", "masking")),
+        Domain.Sound(id = "green_noise",  title = "Green Noise",  category = TINNITUS, assetPath = "sounds/tinnitus/green.wav",      frequencyHz = 500,  tags = listOf("noise", "masking", "calm")),
+        Domain.Sound(id = "notched_3000", title = "Notched Noise · 3 kHz", category = TINNITUS, assetPath = "sounds/tinnitus/notched_3000.wav", frequencyHz = 3000, tags = listOf("noise", "notched", "tinnitus")),
+        Domain.Sound(id = "notched_4000", title = "Notched Noise · 4 kHz", category = TINNITUS, assetPath = "sounds/tinnitus/notched_4000.wav", frequencyHz = 4000, tags = listOf("noise", "notched", "tinnitus")),
+        Domain.Sound(id = "notched_6000", title = "Notched Noise · 6 kHz", category = TINNITUS, assetPath = "sounds/tinnitus/notched_6000.wav", frequencyHz = 6000, tags = listOf("noise", "notched", "tinnitus")),
+        Domain.Sound(id = "notched_8000", title = "Notched Noise · 8 kHz", category = TINNITUS, assetPath = "sounds/tinnitus/notched_8000.wav", frequencyHz = 8000, tags = listOf("noise", "notched", "tinnitus")),
 
         // ── Rain ───────────────────────────────────────────────────────────────────
         Domain.Sound(id = "rain_light",   title = "Light Rain",          category = NATURE, assetPath = "sounds/nature/rain_light.ogg",   tags = listOf("rain", "water", "calm", "baby")),
@@ -49,5 +58,10 @@ internal object BundledSoundCatalogue {
         Domain.Sound(id = "fireplace",   title = "Fireplace",       category = AMBIENT, assetPath = "sounds/ambient/fireplace.ogg",   tags = listOf("fire", "cozy", "indoor", "evening")),
         Domain.Sound(id = "deep_rumble", title = "Deep Ocean Vent", category = AMBIENT, assetPath = "sounds/ambient/deep_rumble.ogg", tags = listOf("deep", "water", "hearing", "masking", "baby"), frequencyHz = 100),
         Domain.Sound(id = "womb_heart",  title = "Womb & Heartbeat", category = AMBIENT, assetPath = "sounds/nature/womb_heart_1.ogg", tags = listOf("baby", "deep", "calm", "masking", "night")),
+
+        // ── Binaural (synthesised stereo, 12 s seamless loops — headphones only) ──
+        Domain.Sound(id = "binaural_alpha", title = "Alpha Beats · 10 Hz", category = BINAURAL, assetPath = "sounds/binaural/alpha.wav", tags = listOf("binaural", "headphones", "calm", "evening")),
+        Domain.Sound(id = "binaural_theta", title = "Theta Beats · 6 Hz",  category = BINAURAL, assetPath = "sounds/binaural/theta.wav", tags = listOf("binaural", "headphones", "calm", "night")),
+        Domain.Sound(id = "binaural_delta", title = "Delta Beats · 2 Hz",  category = BINAURAL, assetPath = "sounds/binaural/delta.wav", tags = listOf("binaural", "headphones", "deep", "night")),
     )
 }
