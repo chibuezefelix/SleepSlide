@@ -70,6 +70,10 @@ android {
         compose = true
         buildConfig = true
     }
+    // android.util.Log in repository code returns 0 in JVM tests instead of throwing
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.15"
     }

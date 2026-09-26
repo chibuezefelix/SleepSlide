@@ -31,6 +31,7 @@ espresso                = "3.6.1"
 turbine                 = "1.1.0"   # Flow testing
 mockk                   = "1.13.12"
 coroutinesTest          = "1.9.0"
+orgJson                 = "20240303"  # real org.json for JVM tests — android.jar only ships stubs
 
 [libraries]
 kotlin-stdlib           = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
@@ -89,6 +90,7 @@ compose-ui-test-manifest= { group = "androidx.compose.ui", name = "ui-test-manif
 turbine                 = { group = "app.cash.turbine", name = "turbine",                             version.ref = "turbine" }
 mockk                   = { group = "io.mockk",        name = "mockk",                               version.ref = "mockk" }
 coroutines-test         = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test",       version.ref = "coroutinesTest" }
+org-json                = { group = "org.json",        name = "json",                                version.ref = "orgJson" }
 
 
 [bundles]
@@ -106,7 +108,7 @@ revenuecat              = ["revenuecat", "revenuecat-ui"]
 
 coroutines              = ["coroutines-core", "coroutines-android"]
 
-test-unit               = ["junit", "mockk", "coroutines-test", "turbine"]
+test-unit               = ["junit", "mockk", "coroutines-test", "turbine", "org-json"]
 test-android            = ["junit-ext", "espresso-core", "compose-ui-test-junit4"]
 
 
