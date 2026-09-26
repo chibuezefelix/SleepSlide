@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.opxl.sleepslide.data.AudioServiceHolder
 import com.opxl.sleepslide.data.repository.MixSerializer
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.model.Domain.isLockedFor
 import com.opxl.sleepslide.domain.model.Domain.needsHeadphones
 import com.opxl.sleepslide.domain.observer.AudioStateObserver
 import com.opxl.sleepslide.domain.observer.EntitlementObserver
@@ -14,6 +15,7 @@ import com.opxl.sleepslide.domain.repository.PresetRepository
 import com.opxl.sleepslide.domain.repository.SoundRepository
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
 import com.opxl.sleepslide.domain.repository.VolumeMemoryRepository
+import com.opxl.sleepslide.domain.service.PlaybackGate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -59,6 +61,7 @@ class LibraryViewModel @Inject constructor(
     private val entitlementObserver: EntitlementObserver,
     private val headphonesObserver: HeadphonesObserver,
     private val mixSerializer: MixSerializer,
+    private val playbackGate: PlaybackGate,
 ) : ViewModel() {
 
 
@@ -149,7 +152,7 @@ class LibraryViewModel @Inject constructor(
     fun onSoundTapped(sound: Domain.Sound) {
         viewModelScope.launch {
             val tier = entitlementObserver.entitlement.value.tier
-            if (sound.isPremium && tier == Domain.EntitlementTier.FREE) {
+            if (sound.isLockedFor(tier)) {
                 _events.trySend(LibraryVMState.LibraryEvent.ShowUpgradePrompt(sound.title))
                 return@launch
             }
@@ -176,7 +179,7 @@ class LibraryViewModel @Inject constructor(
     fun onSoundLongPressed(sound: Domain.Sound) {
         viewModelScope.launch {
             val tier = entitlementObserver.entitlement.value.tier
-            if (sound.isPremium && tier == Domain.EntitlementTier.FREE) {
+            if (sound.isLockedFor(tier)) {
                 _events.trySend(LibraryVMState.LibraryEvent.ShowUpgradePrompt(sound.title))
                 return@launch
             }
@@ -339,10 +342,20 @@ class LibraryViewModel @Inject constructor(
                 return@launch
             }
             val mix = buildMix(layers, _masterVolume.value)
-            runCatching { service.play(mix) }
+            // The builder can still hold a premium layer seeded from a session that started
+            // before the subscription lapsed — relaunching it is a new launch, so it's gated.
+            val playable = when (val decision = playbackGate.prepare(mix)) {
+                is PlaybackGate.Decision.Play          -> decision.mix
+                is PlaybackGate.Decision.AllLocked     -> return@launch
+                is PlaybackGate.Decision.NothingToPlay -> {
+                    _events.trySend(LibraryVMState.LibraryEvent.ShowInfo("Add at least one sound to play"))
+                    return@launch
+                }
+            }
+            runCatching { service.play(playable) }
                 .onSuccess {
                     // Muted layers produced no sound — don't let them surface in "Most played"
-                    soundRepository.recordPlayed(layers.filterNot { it.isMuted }.map { it.sound.id })
+                    soundRepository.recordPlayed(playable.layers.filterNot { it.isMuted }.map { it.sound.id })
                     userPreferencesRepository.setLastPlayedEphemeralMix(
                         mixSerializer.serialize(mix)
                     )
@@ -545,7 +558,7 @@ class LibraryViewModel @Inject constructor(
                 s.downloadedPath != null -> LibraryVMState.DownloadState.Downloaded
                 else -> LibraryVMState.DownloadState.NotDownloaded
             },
-            isPremiumLocked = s.isPremium && sound.tier == Domain.EntitlementTier.FREE,
+            isPremiumLocked = s.isLockedFor(sound.tier),
         )
 
         // Category tabs — Tinnitus first (Jeff's primary need), then alpha

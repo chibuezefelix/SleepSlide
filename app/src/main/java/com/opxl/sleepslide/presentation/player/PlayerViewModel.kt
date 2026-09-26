@@ -15,6 +15,7 @@ import com.opxl.sleepslide.domain.repository.PresetRepository
 import com.opxl.sleepslide.domain.repository.SoundRepository
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
 import com.opxl.sleepslide.domain.repository.VolumeMemoryRepository
+import com.opxl.sleepslide.domain.service.PlaybackGate
 import com.opxl.sleepslide.domain.service.TimerService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -70,6 +71,7 @@ class PlayerViewModel @Inject constructor(
     private val volumeMemoryRepository: VolumeMemoryRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val mixSerializer: MixSerializer,
+    private val playbackGate: PlaybackGate,
 ) : ViewModel() {
 
 
@@ -161,16 +163,20 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             if (!gateNotificationPermission { play(mix, preset) }) return@launch
             val service = gateService() ?: return@launch
-            if (mix.isEmpty) {
-                _events.trySend(PlayerEvent.ShowError("No sounds in this mix"))
-                return@launch
+            val playable = when (val decision = playbackGate.prepare(mix)) {
+                is PlaybackGate.Decision.Play          -> decision.mix
+                is PlaybackGate.Decision.AllLocked     -> return@launch
+                is PlaybackGate.Decision.NothingToPlay -> {
+                    _events.trySend(PlayerEvent.ShowError("No sounds in this mix"))
+                    return@launch
+                }
             }
 
             // Close stale session before opening new — non-fatal if it fails
             safeCloseSession(Domain.StopReason.USER)
 
             // Apply volume memory — fetch all in one query
-            val resolvedMix = applyVolumeMemory(mix)
+            val resolvedMix = applyVolumeMemory(playable)
 
             // Seed local volume state optimistically before the service echoes back
             volumeMutex.withLock {
@@ -221,8 +227,9 @@ class PlayerViewModel @Inject constructor(
                     presetRepository.recordUsed(preset.id)
                     userPreferencesRepository.setLastPlayedPreset(preset.id)
                 } else {
+                    // The full mix, locked layers included — they come back on resubscribe
                     userPreferencesRepository.setLastPlayedEphemeralMix(
-                        mixSerializer.serialize(resolvedMix)
+                        mixSerializer.serialize(mix)
                     )
                 }
             }
@@ -350,6 +357,7 @@ class PlayerViewModel @Inject constructor(
 
     fun addLayer(sound: Domain.Sound) {
         viewModelScope.launch {
+            if (playbackGate.isLocked(sound)) return@launch
             val service = gateService() ?: return@launch
             val currentLayers = uiState.value.mixer.layers
 
@@ -413,6 +421,7 @@ class PlayerViewModel @Inject constructor(
 
     fun swapLayer(position: Int, sound: Domain.Sound) {
         viewModelScope.launch {
+            if (playbackGate.isLocked(sound)) return@launch
             val service = gateService() ?: return@launch
 
             // Prevent swapping to a sound already in the mix

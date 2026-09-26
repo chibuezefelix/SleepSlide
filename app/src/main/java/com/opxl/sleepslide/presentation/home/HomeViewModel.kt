@@ -12,6 +12,7 @@ import com.opxl.sleepslide.domain.repository.PlayHistoryRepository
 import com.opxl.sleepslide.domain.repository.PresetRepository
 import com.opxl.sleepslide.domain.repository.SoundRepository
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
+import com.opxl.sleepslide.domain.service.PlaybackGate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -50,6 +51,7 @@ class HomeViewModel @Inject constructor(
     private val timerStateObserver: TimerStateObserver,
     private val entitlementObserver: EntitlementObserver,
     private val mixSerializer: MixSerializer,
+    private val playbackGate: PlaybackGate,
 ) : ViewModel() {
 
 
@@ -103,13 +105,16 @@ class HomeViewModel @Inject constructor(
                     is HomeViewState.ResumeCardState.FromPreset -> {
                         val preset = presetRepository.getById(resume.preset.id)
                             ?: return@launch
-                        service.play(preset.mix)
+                        val mix = gatedMix(preset.mix) ?: return@launch
+                        service.play(mix)
                         presetRepository.recordUsed(preset.id)
                         userPreferencesRepository.setLastPlayedPreset(preset.id)
                         _events.send(HomeViewState.HomeEvent.PlaybackStarted(preset.name))
                     }
                     is HomeViewState.ResumeCardState.FromEphemeralMix -> {
-                        service.play(resume.mix)
+                        val mix = gatedMix(resume.mix) ?: return@launch
+                        service.play(mix)
+                        // The full mix, locked layers included — they come back on resubscribe
                         userPreferencesRepository.setLastPlayedEphemeralMix(
                             mixSerializer.serialize(resume.mix)
                         )
@@ -136,13 +141,14 @@ class HomeViewModel @Inject constructor(
             val currentPlayback = uiState.value.playback
 
             runCatching {
+                val mix = gatedMix(preset.mix) ?: return@launch
                 if (currentPlayback is HomeViewState.PlaybackUiState.Active &&
                     currentPlayback.status == Domain.PlaybackStatus.PLAYING
                 ) {
                     // Already playing — crossfade to the new preset smoothly
-                    service.crossfadeTo(preset.mix)
+                    service.crossfadeTo(mix)
                 } else {
-                    service.play(preset.mix)
+                    service.play(mix)
                 }
                 presetRepository.recordUsed(preset.id)
                 userPreferencesRepository.setLastPlayedPreset(preset.id)
@@ -155,6 +161,17 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    /** Free layers of [mix], or null when there is nothing to play (the user has been told). */
+    private suspend fun gatedMix(mix: Domain.SoundMix): Domain.SoundMix? =
+        when (val decision = playbackGate.prepare(mix)) {
+            is PlaybackGate.Decision.Play          -> decision.mix
+            is PlaybackGate.Decision.AllLocked     -> null
+            is PlaybackGate.Decision.NothingToPlay -> {
+                _events.send(HomeViewState.HomeEvent.ShowError("No sounds in this mix"))
+                null
+            }
+        }
 
     fun pausePlayback() {
         viewModelScope.launch {

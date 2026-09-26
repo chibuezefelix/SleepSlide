@@ -3,7 +3,6 @@ package com.opxl.sleepslide.presentation.presets
 import com.opxl.sleepslide.domain.model.Domain
 
 
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.opxl.sleepslide.domain.observer.AudioStateObserver
@@ -11,6 +10,7 @@ import com.opxl.sleepslide.domain.observer.EntitlementObserver
 import com.opxl.sleepslide.domain.repository.PlayHistoryRepository
 import com.opxl.sleepslide.domain.repository.PresetRepository
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
+import com.opxl.sleepslide.domain.service.PlaybackGate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -52,6 +52,7 @@ class PresetsViewModel @Inject constructor(
     private val audioServiceHolder: AudioServiceHolder,
     private val audioStateObserver: AudioStateObserver,
     private val entitlementObserver: EntitlementObserver,
+    private val playbackGate: PlaybackGate,
 ) : ViewModel() {
 
     //  Events
@@ -110,9 +111,17 @@ class PresetsViewModel @Inject constructor(
                 return@launch
             }
             runCatching {
+                val mix = when (val decision = playbackGate.prepare(preset.mix)) {
+                    is PlaybackGate.Decision.Play          -> decision.mix
+                    is PlaybackGate.Decision.AllLocked     -> return@launch
+                    is PlaybackGate.Decision.NothingToPlay -> {
+                        _events.trySend(PresetsEvent.ShowError("No sounds in ${preset.name}"))
+                        return@launch
+                    }
+                }
                 val isPlaying = audioStateObserver.audioState.value
                     .playbackStatus == Domain.PlaybackStatus.PLAYING
-                if (isPlaying) service.crossfadeTo(preset.mix) else service.play(preset.mix)
+                if (isPlaying) service.crossfadeTo(mix) else service.play(mix)
                 presetRepository.recordUsed(preset.id)
                 userPreferencesRepository.setLastPlayedPreset(preset.id)
                 _events.trySend(PresetsEvent.NavigateToPlayer(preset.id))
