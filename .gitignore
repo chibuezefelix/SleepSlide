@@ -32,3 +32,11 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Media content — sounds and photos stay local, never pushed.
+# Files already tracked here stay tracked; only new ones are ignored.
+app/src/main/assets/sounds/
+app/src/main/assets/images/
+
+# macOS
+.DS_Store
