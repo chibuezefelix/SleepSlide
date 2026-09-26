@@ -15,6 +15,9 @@ object Domain {
         val frequencyHz: Int? = null,
     )
 
+    /** Sounds that only work in stereo on headphones (binaural beats) carry the "headphones" tag. */
+    val Sound.needsHeadphones: Boolean get() = "headphones" in tags
+
     enum class SoundCategory {
         TINNITUS,
         NATURE,
@@ -169,6 +172,9 @@ object Domain {
 
         // Tutorial — screens whose first-visit coach marks have been dismissed
         val seenCoachMarks: Set<String>         = emptySet(),
+
+        // One-time "binaural needs headphones" hint in the Library
+        val hasSeenHeadphonesHint: Boolean      = false,
     )
 
     enum class ThemeMode { LIGHT, DARK, SYSTEM, SCHEDULED }

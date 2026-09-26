@@ -54,3 +54,13 @@ fun ClockIcon(tint: Color, size: Dp = 16.dp, modifier: Modifier = Modifier) {
         modifier           = modifier.size(size),
     )
 }
+
+@Composable
+fun HeadphonesIcon(tint: Color, size: Dp = 12.dp, modifier: Modifier = Modifier) {
+    Icon(
+        painter            = painterResource(R.drawable.ic_headphones),
+        contentDescription = null,
+        tint               = tint,
+        modifier           = modifier.size(size),
+    )
+}

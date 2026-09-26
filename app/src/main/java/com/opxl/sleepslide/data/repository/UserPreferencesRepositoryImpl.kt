@@ -68,6 +68,9 @@ class UserPreferencesRepositoryImpl @Inject constructor(
      dataStore.markNotificationPermissionRequested()
     }
 
+    override suspend fun markHeadphonesHintSeen() =
+        dataStore.markHeadphonesHintSeen()
+
 //    override  suspend fun setWindDown(enabled: Boolean, hour: Int, minute: Int) {
 //        dataStore.setWindDown(enabled, hour, minute)
 //    }

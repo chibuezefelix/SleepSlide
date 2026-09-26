@@ -8,6 +8,7 @@ import com.opxl.sleepslide.data.repository.MixSerializer
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.domain.observer.AudioStateObserver
 import com.opxl.sleepslide.domain.observer.EntitlementObserver
+import com.opxl.sleepslide.domain.observer.HeadphonesObserver
 import com.opxl.sleepslide.domain.observer.TimerStateObserver
 import com.opxl.sleepslide.domain.repository.PlayHistoryRepository
 import com.opxl.sleepslide.domain.repository.PresetRepository
@@ -61,6 +62,7 @@ class PlayerViewModel @Inject constructor(
     private val audioStateObserver: AudioStateObserver,
     private val timerStateObserver: TimerStateObserver,
     private val entitlementObserver: EntitlementObserver,
+    private val headphonesObserver: HeadphonesObserver,
     private val timerService: TimerService,
     private val presetRepository: PresetRepository,
     private val soundRepository: SoundRepository,
@@ -864,8 +866,14 @@ class PlayerViewModel @Inject constructor(
         ) { pb, mixer, timer, preset, lock ->
             PlayerPartialA(pb, mixer, timer, preset, lock)
         }.combine(
-            combine(sessionFlow, bluetoothFlow, tierFlow, _notification) { s, bt, t, n ->
-                PlayerPartialB(s, bt, t, n)
+            combine(
+                sessionFlow,
+                bluetoothFlow,
+                tierFlow,
+                _notification,
+                headphonesObserver.isHeadphonesConnected,
+            ) { s, bt, t, n, hp ->
+                PlayerPartialB(s, bt, t, n, hp)
             }
         ) { a, b ->
             PlayerUiState(
@@ -876,6 +884,7 @@ class PlayerViewModel @Inject constructor(
                 nightLock            = a.nightLock,
                 session              = b.session,
                 isBluetoothConnected = b.bluetooth,
+                isHeadphonesConnected = b.headphones,
                 entitlementTier      = b.tier,
                 notification         = b.notification,
             )
@@ -1152,5 +1161,6 @@ class PlayerViewModel @Inject constructor(
         val bluetooth   : Boolean,
         val tier        : Domain.EntitlementTier,
         val notification: NotificationState,
+        val headphones  : Boolean,
     )
 }

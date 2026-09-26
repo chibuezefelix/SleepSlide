@@ -123,6 +123,10 @@ class UserPrefsDataStore @Inject constructor(
         dataStore.edit { it[PrefKeys.HAS_REQUESTED_NOTIFICATION_PERM] = true }
     }
 
+    suspend fun markHeadphonesHintSeen() {
+        dataStore.edit { it[PrefKeys.HAS_SEEN_HEADPHONES_HINT] = true }
+    }
+
     // Tutorial coach marks — one key per screen, see PrefKeys.coachMarkSeen
 
     fun hasSeenCoachMark(screen: String): Flow<Boolean> = dataStore.data

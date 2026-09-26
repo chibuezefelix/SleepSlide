@@ -107,6 +107,7 @@ sealed interface LibraryEvent {
     data object ShowSavePresetDialog : LibraryEvent
     data class ShowUpgradePrompt(val soundTitle: String) : LibraryEvent
     data object ShowMaxLayersReached : LibraryEvent
+    data object ShowHeadphonesHint : LibraryEvent
     data class ShowError(val message: String) : LibraryEvent
     data class ShowInfo(val message: String) : LibraryEvent
     data object ShowServiceUnavailable : LibraryEvent

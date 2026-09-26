@@ -94,9 +94,11 @@ import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
 import com.opxl.sleepslide.presentation.components.LineSlider
 import com.opxl.sleepslide.presentation.components.ChevronLeft
 import com.opxl.sleepslide.presentation.components.ClockIcon
+import com.opxl.sleepslide.presentation.components.HEADPHONES_NOTE
 import com.opxl.sleepslide.presentation.components.LineSliderColors
 import com.opxl.sleepslide.presentation.scene.SceneBackdrop
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.model.Domain.needsHeadphones
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.DarkBackground
@@ -239,6 +241,7 @@ fun PlayerScreen(
 
                 MixerSection(
                     mixer           = uiState.mixer,
+                    isHeadphonesConnected = uiState.isHeadphonesConnected,
                     onVolume        = viewModel::onLayerVolumeChanged,
                     onDragEnd       = viewModel::onLayerVolumeDragEnded,
                     onMute          = viewModel::muteLayer,
@@ -633,6 +636,7 @@ private fun InterruptionBanner(reason: InterruptionReason?) {
 @Composable
 private fun MixerSection(
     mixer: MixerState,
+    isHeadphonesConnected: Boolean,
     onVolume: (Int, Float) -> Unit,
     onDragEnd: (Int) -> Unit,
     onMute: (Int) -> Unit,
@@ -657,6 +661,7 @@ private fun MixerSection(
             mixer.layers.forEachIndexed { index, layer ->
                 LayerRow(
                     layer    = layer,
+                    showHeadphonesNote = layer.sound.needsHeadphones && !isHeadphonesConnected,
                     modifier = if (index == 0) Modifier.coachMarkAnchor("layer") else Modifier,
                     onVolume = { vol -> onVolume(layer.position, vol) },
                     onDragEnd = { onDragEnd(layer.position) },
@@ -704,6 +709,7 @@ private fun EmptyMixerCard(onAddSound: () -> Unit) {
 @Composable
 private fun LayerRow(
     layer: LayerUiState,
+    showHeadphonesNote: Boolean,
     onVolume: (Float) -> Unit,
     onDragEnd: () -> Unit,
     onMute: () -> Unit,
@@ -767,6 +773,15 @@ private fun LayerRow(
                 onValueChangeFinished = onDragEnd,
                 modifier              = Modifier.weight(1f),
                 colors                = LineSliderColors.light(muted = layer.isMuted),
+            )
+        }
+
+        if (showHeadphonesNote) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text  = HEADPHONES_NOTE,
+                style = MaterialTheme.typography.bodySmall,
+                color = MutedGray,
             )
         }
     }

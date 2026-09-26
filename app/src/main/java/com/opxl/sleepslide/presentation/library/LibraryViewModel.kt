@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.opxl.sleepslide.data.AudioServiceHolder
 import com.opxl.sleepslide.data.repository.MixSerializer
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.model.Domain.needsHeadphones
 import com.opxl.sleepslide.domain.observer.AudioStateObserver
 import com.opxl.sleepslide.domain.observer.EntitlementObserver
+import com.opxl.sleepslide.domain.observer.HeadphonesObserver
 import com.opxl.sleepslide.domain.repository.PresetRepository
 import com.opxl.sleepslide.domain.repository.SoundRepository
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
@@ -54,6 +57,7 @@ class LibraryViewModel @Inject constructor(
     private val audioServiceHolder: AudioServiceHolder,
     private val audioStateObserver: AudioStateObserver,
     private val entitlementObserver: EntitlementObserver,
+    private val headphonesObserver: HeadphonesObserver,
     private val mixSerializer: MixSerializer,
 ) : ViewModel() {
 
@@ -83,6 +87,9 @@ class LibraryViewModel @Inject constructor(
 
     // Save state
     private val _saveState   = MutableStateFlow<LibraryVMState.SavePresetState>(LibraryVMState.SavePresetState.Idle)
+
+    // Set once the headphones hint has been sent (or found already seen) this session
+    private var headphonesHintShown = false
 
     // Volume debounce jobs
     private val volumeJobs   = mutableMapOf<String, kotlinx.coroutines.Job>()
@@ -201,7 +208,7 @@ class LibraryViewModel @Inject constructor(
 
         val service = audioServiceHolder.current
         if (service != null) {
-            runCatching {
+            val added = runCatching {
                 service.addLayer(
                     Domain.SoundLayer(sound = sound, volume = volume, position = position)
                 )
@@ -209,11 +216,26 @@ class LibraryViewModel @Inject constructor(
                 // Rollback optimistic update
                 _layers.update { layers -> layers.filter { it.position != position } }
                 _events.trySend(LibraryVMState.LibraryEvent.ShowError(e.message ?: "Could not add ${sound.title}"))
-            }
+            }.isSuccess
+            // Only after the add sticks, so a rolled-back add doesn't spend the one-time hint
+            if (added) maybeShowHeadphonesHint(sound)
         } else {
             // Service not yet bound — build ephemeral mix locally, play when service arrives
             _events.trySend(LibraryVMState.LibraryEvent.ShowServiceUnavailable)
         }
+    }
+
+    /** First-ever headphones-only sound added while on a speaker → one snackbar, then never again. */
+    private suspend fun maybeShowHeadphonesHint(sound: Domain.Sound) {
+        if (!sound.needsHeadphones || headphonesObserver.isHeadphonesConnected.value) return
+        // In-memory guard: two quick taps must not both pass before the DataStore write lands
+        if (headphonesHintShown) return
+        headphonesHintShown = true
+        val seen = runCatching { userPreferencesRepository.observe().first().hasSeenHeadphonesHint }
+            .getOrDefault(true)
+        if (seen) return
+        _events.trySend(LibraryVMState.LibraryEvent.ShowHeadphonesHint)
+        runCatching { userPreferencesRepository.markHeadphonesHintSeen() }
     }
 
     private suspend fun removeFromMix(position: Int) {

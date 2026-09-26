@@ -1,10 +1,12 @@
 package com.opxl.sleepslide.di
 
 import com.opxl.sleepslide.data.audio.AudioStateObserverImpl
+import com.opxl.sleepslide.data.audio.HeadphonesObserverImpl
 import com.opxl.sleepslide.data.observer.EntitlementObserverImpl
 import com.opxl.sleepslide.data.timer.TimerStateObserverImpl
 import com.opxl.sleepslide.domain.observer.AudioStateObserver
 import com.opxl.sleepslide.domain.observer.EntitlementObserver
+import com.opxl.sleepslide.domain.observer.HeadphonesObserver
 import com.opxl.sleepslide.domain.observer.TimerStateObserver
 import dagger.Binds
 import dagger.Module
@@ -28,4 +30,8 @@ abstract class ObserverModule {
     @Binds
     @Singleton
     abstract fun bindEntitlementObserver(impl: EntitlementObserverImpl): EntitlementObserver
+
+    @Binds
+    @Singleton
+    abstract fun bindHeadphonesObserver(impl: HeadphonesObserverImpl): HeadphonesObserver
 }

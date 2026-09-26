@@ -42,5 +42,7 @@ interface UserPreferencesRepository {
 
     suspend fun markNotificationPermissionRequested()
 
+    suspend fun markHeadphonesHintSeen()
+
     suspend fun reset()
 }

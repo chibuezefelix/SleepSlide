@@ -1,6 +1,7 @@
 package com.opxl.sleepslide.presentation.library
 
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.model.Domain.needsHeadphones
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -82,6 +83,8 @@ import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
 import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
 import com.opxl.sleepslide.presentation.components.LineSlider
 import com.opxl.sleepslide.presentation.components.ChevronLeft
+import com.opxl.sleepslide.presentation.components.HEADPHONES_NOTE
+import com.opxl.sleepslide.presentation.components.HeadphonesIcon
 import com.opxl.sleepslide.presentation.components.LineSliderColors
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
@@ -125,6 +128,8 @@ fun LibraryScreen(
                     }
                 is LibraryVMState.LibraryEvent.ShowMaxLayersReached ->
                     scope.launch { snackbarHostState.showSnackbar("Maximum 3 sounds in a mix") }
+                is LibraryVMState.LibraryEvent.ShowHeadphonesHint ->
+                    scope.launch { snackbarHostState.showSnackbar(HEADPHONES_NOTE) }
                 is LibraryVMState.LibraryEvent.ShowServiceUnavailable ->
                     scope.launch { snackbarHostState.showSnackbar("Audio service is starting") }
                 is LibraryVMState.LibraryEvent.ShowError ->
@@ -602,6 +607,7 @@ private fun SoundRow(
     val isIn      = item.isInActiveMix
     val locked    = item.isPremiumLocked
     val previewing = item.isPreviewPlaying
+    val showsHeadphonesTag = item.sound.needsHeadphones
 
     val bgColor by animateColorAsState(
         targetValue   = when { isIn -> Charcoal; previewing -> PaleBlue; else -> White },
@@ -632,6 +638,7 @@ private fun SoundRow(
                     else append(", tap to add to mix")
                     if (locked) append(", premium")
                     if (previewing) append(", previewing")
+                    if (showsHeadphonesTag) append(", best with headphones")
                 }
             },
         verticalAlignment     = Alignment.CenterVertically,
@@ -657,11 +664,19 @@ private fun SoundRow(
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(2.dp))
-            Text(
-                text  = item.sound.category.name.lowercase().replaceFirstChar { it.uppercase() },
-                style = MaterialTheme.typography.bodySmall,
-                color = when { isIn -> White.copy(alpha = 0.6f); previewing -> PaleBlueText.copy(alpha = 0.7f); else -> MutedGray },
-            )
+            val categoryLabel = item.sound.category.name.lowercase().replaceFirstChar { it.uppercase() }
+            val subColor = when { isIn -> White.copy(alpha = 0.6f); previewing -> PaleBlueText.copy(alpha = 0.7f); else -> MutedGray }
+            Row(
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                if (showsHeadphonesTag) HeadphonesIcon(subColor)
+                Text(
+                    text  = if (showsHeadphonesTag) "$categoryLabel · headphones" else categoryLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = subColor,
+                )
+            }
         }
 
         // Trailing — add / remove / lock / download

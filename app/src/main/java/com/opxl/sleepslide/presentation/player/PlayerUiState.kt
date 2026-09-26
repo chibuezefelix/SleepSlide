@@ -13,6 +13,7 @@ data class PlayerUiState(
     val notification: NotificationState     = NotificationState.Idle,
     val entitlementTier: Domain.EntitlementTier = Domain.EntitlementTier.FREE,
     val isBluetoothConnected: Boolean       = false,
+    val isHeadphonesConnected: Boolean      = false,
 )
 
 
