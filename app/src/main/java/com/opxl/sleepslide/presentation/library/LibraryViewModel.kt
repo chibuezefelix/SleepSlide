@@ -158,8 +158,8 @@ class LibraryViewModel @Inject constructor(
             }
 
             val current = _layers.value
-            val existingPosition = current.indexOfFirst { it.sound.id == sound.id }
-                .takeIf { it >= 0 }
+            // The layer's slot, not its list index — they diverge once a freed slot is refilled
+            val existingPosition = current.firstOrNull { it.sound.id == sound.id }?.position
 
             if (existingPosition != null) {
                 // Sound already in mix — remove it
