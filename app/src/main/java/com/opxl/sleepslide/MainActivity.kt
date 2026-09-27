@@ -15,11 +15,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.opxl.sleepslide.data.AudioServiceHolder
@@ -35,12 +40,14 @@ import com.opxl.sleepslide.presentation.permission.NotificationPermissionRequest
 import com.opxl.sleepslide.presentation.permission.isNotificationPermissionGranted
 import com.opxl.sleepslide.ui.theme.SleepSlideTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -123,7 +130,22 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
-            SleepSlideTheme {
+            // The Settings theme choice drives the Compose theme; SYSTEM and the fallback
+            // before prefs load follow the device. The hour ticks so SCHEDULED flips on time.
+            val prefs by userPreferencesRepository.observe().collectAsStateWithLifecycle(initialValue = null)
+            val systemDark = isSystemInDarkTheme()
+            val hour by produceState(currentHour()) {
+                while (true) {
+                    delay(60_000L.milliseconds)
+                    value = currentHour()
+                }
+            }
+            val darkTheme = prefs?.let {
+                resolveIsDark(it.themeMode, it.darkModeStartHour, it.darkModeEndHour, systemDark, hour)
+            } ?: systemDark
+            LaunchedEffect(darkTheme) { applyStatusBarAppearance(darkTheme) }
+
+            SleepSlideTheme(darkTheme = darkTheme) {
                 CompositionLocalProvider(
                     LocalNotificationPermissionRequester provides notificationPermissionRequester,
                 ) {
@@ -137,7 +159,6 @@ class MainActivity : ComponentActivity() {
         }
 
         // Start observing after setContent so flows have collectors
-        observeThemeAndNightLock()
         observeAudioStateForWindowFlags()
         observeBatteryOptimisationPrompt()
 
@@ -202,30 +223,6 @@ class MainActivity : ComponentActivity() {
         audioServiceHolder.detach()
         runCatching { unbindService(audioServiceConnection) }
     }
-
-    /**
-     * Observes two concerns in one flow:
-     * 1. Dark/light status bar icons tracking the user's theme choice
-     * 2. keepScreenOn when night-lock is active — prevents accidental taps but
-     *    also means we must NOT dim the screen — that is the system's job via
-     *    the ambient display / proximity sensor.
-     */
-    private fun observeThemeAndNightLock() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                userPreferencesRepository.observe()
-                    .distinctUntilChanged { old, new ->
-                        old.themeMode == new.themeMode &&
-                                old.isNightLockEnabledByDefault == new.isNightLockEnabledByDefault
-                    }
-                    .collectLatest { prefs ->
-                        val isDark = resolveIsDark(prefs.themeMode, prefs.darkModeStartHour, prefs.darkModeEndHour)
-                        applyStatusBarAppearance(isDark)
-                    }
-            }
-        }
-    }
-
 
     private fun observeAudioStateForWindowFlags() {
         lifecycleScope.launch {
@@ -314,25 +311,22 @@ class MainActivity : ComponentActivity() {
         mode: Domain.ThemeMode,
         darkStartHour: Int,
         darkEndHour: Int,
+        systemDark: Boolean,
+        hour: Int,
     ): Boolean = when (mode) {
         Domain.ThemeMode.DARK   -> true
         Domain.ThemeMode.LIGHT  -> false
-        Domain.ThemeMode.SYSTEM -> isSystemInDarkTheme()
-        Domain.ThemeMode.SCHEDULED -> {
-            val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        Domain.ThemeMode.SYSTEM -> systemDark
+        Domain.ThemeMode.SCHEDULED ->
             if (darkStartHour > darkEndHour) {
                 // Overnight window e.g. 21:00 → 07:00
                 hour >= darkStartHour || hour < darkEndHour
             } else {
                 hour in darkStartHour until darkEndHour
             }
-        }
     }
 
-    private fun isSystemInDarkTheme(): Boolean {
-        val uiMode = resources.configuration.uiMode and
-                android.content.res.Configuration.UI_MODE_NIGHT_MASK
-        return uiMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
-    }
+    private fun currentHour(): Int =
+        java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
 
 }

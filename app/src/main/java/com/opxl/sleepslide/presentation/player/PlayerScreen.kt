@@ -99,6 +99,8 @@ import com.opxl.sleepslide.presentation.components.LineSliderColors
 import com.opxl.sleepslide.presentation.scene.SceneBackdrop
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.domain.model.Domain.needsHeadphones
+import com.opxl.sleepslide.ui.theme.OnPanel
+import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.DarkBackground
@@ -463,6 +465,7 @@ private fun PlaybackHub(
 
 @Composable
 private fun TimerArc(progress: Float, color: Color, modifier: Modifier = Modifier) {
+    val track = Border
     Box(modifier = modifier.drawBehind {
         val stroke = 2.dp.toPx()
         val r      = size.minDimension / 2f - stroke / 2f
@@ -470,19 +473,20 @@ private fun TimerArc(progress: Float, color: Color, modifier: Modifier = Modifie
         val tl     = Offset(c.x - r, c.y - r)
         val sz     = Size(r * 2, r * 2)
         val style  = Stroke(stroke, cap = StrokeCap.Round)
-        drawArc(Border, -90f, 360f, false, tl, sz, style = style)
+        drawArc(track, -90f, 360f, false, tl, sz, style = style)
         if (progress > 0f) drawArc(color, -90f, 360f * progress, false, tl, sz, style = style)
     })
 }
 
 @Composable
 private fun FadeInArc(progress: Float, modifier: Modifier = Modifier) {
+    val arc = PaleBlueText.copy(alpha = 0.4f)
     Box(modifier = modifier.drawBehind {
         val stroke = 3.dp.toPx()
         val r      = size.minDimension / 2f - stroke
         val c      = Offset(size.width / 2f, size.height / 2f)
         drawArc(
-            PaleBlueText.copy(alpha = 0.4f), -90f, 360f * progress, false,
+            arc, -90f, 360f * progress, false,
             Offset(c.x - r, c.y - r), Size(r * 2, r * 2),
             style = Stroke(stroke, cap = StrokeCap.Round),
         )
@@ -996,7 +1000,7 @@ private fun NightLockToggleRow(
             .coachMarkAnchor("night_lock")
             .clip(RoundedCornerShape(8.dp))
             .border(1.dp, Border, RoundedCornerShape(8.dp))
-            .background(if (isOn) Charcoal else White)
+            .background(if (isOn) Panel else White)
             .clickable(onClick = if (isOn) onDisable else onEnable)
             .padding(horizontal = 16.dp, vertical = 14.dp)
             .semantics {
@@ -1010,25 +1014,25 @@ private fun NightLockToggleRow(
             Text(
                 "Night lock",
                 style = MaterialTheme.typography.titleSmall,
-                color = if (isOn) White else Charcoal,
+                color = if (isOn) OnPanel else Charcoal,
             )
             Text(
                 if (isOn) "Tap locked — long press to unlock" else "Disable accidental taps while you sleep",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isOn) White.copy(alpha = 0.6f) else MutedGray,
+                color = if (isOn) OnPanel.copy(alpha = 0.6f) else MutedGray,
             )
         }
         Box(
             modifier = Modifier
                 .size(width = 40.dp, height = 24.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(if (isOn) White.copy(alpha = 0.2f) else Border),
+                .background(if (isOn) OnPanel.copy(alpha = 0.2f) else Border),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 if (isOn) "ON" else "OFF",
                 style = MaterialTheme.typography.labelSmall,
-                color = if (isOn) White else MutedGray,
+                color = if (isOn) OnPanel else MutedGray,
             )
         }
     }
@@ -1364,6 +1368,7 @@ private fun LockIcon(tint: Color, sizeDp: Int) {
 
 @Composable
 private fun SaveIcon(tint: Color) {
+    val notch = if (tint == White) DarkSurface else WarmWhite
     Box(Modifier.size(16.dp).drawBehind {
         val p = Path().apply {
             moveTo(2.dp.toPx(), 0f); lineTo(size.width - 2.dp.toPx(), 0f)
@@ -1372,7 +1377,7 @@ private fun SaveIcon(tint: Color) {
         }
         drawPath(p, tint)
         drawRect(
-            color   = if (tint == White) DarkSurface else WarmWhite,
+            color   = notch,
             topLeft = Offset(4.dp.toPx(), 0f),
             size    = Size(size.width - 8.dp.toPx(), 5.dp.toPx()),
         )

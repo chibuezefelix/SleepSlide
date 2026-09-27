@@ -52,6 +52,7 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -90,6 +91,8 @@ import com.opxl.sleepslide.presentation.components.HEADPHONES_NOTE
 import com.opxl.sleepslide.presentation.components.HeadphonesIcon
 import com.opxl.sleepslide.presentation.components.LineSliderColors
 import com.opxl.sleepslide.presentation.components.PremiumPill
+import com.opxl.sleepslide.ui.theme.OnPanel
+import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.MutedGray
@@ -573,8 +576,8 @@ private fun SoundShelf(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(if (isIn) Charcoal else pillBg)
-                    .border(1.dp, if (isIn) Charcoal else Border, RoundedCornerShape(6.dp))
+                    .background(if (isIn) Panel else pillBg)
+                    .border(1.dp, if (isIn) Panel else Border, RoundedCornerShape(6.dp))
                     .clickable { onTap(item) }
                     .padding(horizontal = 14.dp, vertical = 9.dp)
                     .alpha(if (item.isPremiumLocked) 0.5f else 1f)
@@ -591,14 +594,14 @@ private fun SoundShelf(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     if (item.isPremiumLocked) {
-                        LockDot(if (isIn) White.copy(alpha = 0.7f) else pillFg)
+                        LockDot(if (isIn) OnPanel.copy(alpha = 0.7f) else pillFg)
                     } else if (isIn) {
-                        ActiveDot(White.copy(alpha = 0.8f))
+                        ActiveDot(OnPanel.copy(alpha = 0.8f))
                     }
                     Text(
                         text  = item.sound.title,
                         style = MaterialTheme.typography.labelMedium,
-                        color = if (isIn) White else pillFg,
+                        color = if (isIn) OnPanel else pillFg,
                     )
                 }
             }
@@ -621,12 +624,12 @@ private fun SoundRow(
     val showsHeadphonesTag = item.sound.needsHeadphones
 
     val bgColor by animateColorAsState(
-        targetValue   = when { isIn -> Charcoal; previewing -> PaleBlue; else -> White },
+        targetValue   = when { isIn -> Panel; previewing -> PaleBlue; else -> White },
         animationSpec = tween(200),
         label         = "row_bg_${item.sound.id}",
     )
     val borderColor by animateColorAsState(
-        targetValue   = when { isIn -> Charcoal; previewing -> PaleBlueText; else -> Border },
+        targetValue   = when { isIn -> Panel; previewing -> PaleBlueText; else -> Border },
         animationSpec = tween(200),
         label         = "row_border_${item.sound.id}",
     )
@@ -670,13 +673,13 @@ private fun SoundRow(
             Text(
                 text     = item.sound.title,
                 style    = MaterialTheme.typography.titleSmall,
-                color    = when { isIn -> White; previewing -> PaleBlueText; else -> Charcoal },
+                color    = when { isIn -> OnPanel; previewing -> PaleBlueText; else -> Charcoal },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(2.dp))
             val categoryLabel = item.sound.category.name.lowercase().replaceFirstChar { it.uppercase() }
-            val subColor = when { isIn -> White.copy(alpha = 0.6f); previewing -> PaleBlueText.copy(alpha = 0.7f); else -> MutedGray }
+            val subColor = when { isIn -> OnPanel.copy(alpha = 0.6f); previewing -> PaleBlueText.copy(alpha = 0.7f); else -> MutedGray }
             Row(
                 verticalAlignment     = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -697,10 +700,10 @@ private fun SoundRow(
                 modifier = Modifier
                     .size(24.dp)
                     .clip(CircleShape)
-                    .background(White.copy(alpha = 0.2f)),
+                    .background(OnPanel.copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center,
             ) {
-                MinusIcon(White)
+                MinusIcon(OnPanel)
             }
             else -> Box(
                 modifier = Modifier
@@ -739,7 +742,7 @@ private fun MixBuilderPanel(
         modifier = Modifier
             .fillMaxWidth()
             .coachMarkAnchor("mix_panel")
-            .background(Charcoal)
+            .background(Panel)
             .padding(horizontal = 20.dp, vertical = 16.dp),
     ) {
         // Panel header
@@ -751,7 +754,7 @@ private fun MixBuilderPanel(
             Text(
                 "MIX",
                 style = MaterialTheme.typography.labelSmall,
-                color = White.copy(alpha = 0.5f),
+                color = OnPanel.copy(alpha = 0.5f),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 // Play / Pause / Resume
@@ -759,8 +762,8 @@ private fun MixBuilderPanel(
                     modifier = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
-                        .background(White.copy(alpha = 0.1f))
-                        .border(1.dp, White.copy(alpha = 0.2f), CircleShape)
+                        .background(OnPanel.copy(alpha = 0.1f))
+                        .border(1.dp, OnPanel.copy(alpha = 0.2f), CircleShape)
                         .clickable(
                             onClick = when {
                                 isPlaying -> onPause
@@ -776,8 +779,8 @@ private fun MixBuilderPanel(
                     contentAlignment = Alignment.Center,
                 ) {
                     when {
-                        isPlaying -> PauseIcon(White)
-                        else      -> PlayIcon(White)
+                        isPlaying -> PauseIcon(OnPanel)
+                        else      -> PlayIcon(OnPanel)
                     }
                 }
             }
@@ -808,7 +811,7 @@ private fun MixBuilderPanel(
                 Text(
                     "Master",
                     style    = MaterialTheme.typography.labelSmall,
-                    color    = White.copy(alpha = 0.5f),
+                    color    = OnPanel.copy(alpha = 0.5f),
                     modifier = Modifier.width(48.dp),
                 )
                 LineSlider(
@@ -844,18 +847,18 @@ private fun LayerSliderRow(
                 .size(28.dp)
                 .clip(RoundedCornerShape(4.dp))
                 .background(
-                    if (layer.isMuted) White.copy(alpha = 0.05f)
-                    else White.copy(alpha = 0.1f)
+                    if (layer.isMuted) OnPanel.copy(alpha = 0.05f)
+                    else OnPanel.copy(alpha = 0.1f)
                 )
-                .border(1.dp, White.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
+                .border(1.dp, OnPanel.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
                 .clickable(onClick = if (layer.isMuted) onUnmute else onMute)
                 .semantics { contentDescription = if (layer.isMuted) "Unmute ${layer.sound.title}" else "Mute ${layer.sound.title}" },
             contentAlignment = Alignment.Center,
         ) {
             if (layer.isMuted) {
-                Box(Modifier.size(8.dp).clip(RoundedCornerShape(1.dp)).background(White.copy(alpha = 0.3f)))
+                Box(Modifier.size(8.dp).clip(RoundedCornerShape(1.dp)).background(OnPanel.copy(alpha = 0.3f)))
             } else {
-                SpeakerDots(White.copy(alpha = 0.7f))
+                SpeakerDots(OnPanel.copy(alpha = 0.7f))
             }
         }
 
@@ -863,7 +866,7 @@ private fun LayerSliderRow(
         Text(
             text     = layer.sound.title,
             style    = MaterialTheme.typography.labelMedium,
-            color    = if (layer.isMuted) White.copy(alpha = 0.3f) else White.copy(alpha = 0.8f),
+            color    = if (layer.isMuted) OnPanel.copy(alpha = 0.3f) else OnPanel.copy(alpha = 0.8f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.width(80.dp),
@@ -882,7 +885,7 @@ private fun LayerSliderRow(
         Text(
             text  = "${(layer.volume * 100).toInt()}",
             style = MaterialTheme.typography.labelSmall,
-            color = White.copy(alpha = 0.4f),
+            color = OnPanel.copy(alpha = 0.4f),
             modifier = Modifier.width(24.dp),
         )
     }
@@ -1025,13 +1028,13 @@ private fun InMixIndicator(position: Int?) {
         modifier = Modifier
             .size(28.dp)
             .clip(CircleShape)
-            .background(White.copy(alpha = 0.15f)),
+            .background(OnPanel.copy(alpha = 0.15f)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text  = "${(position ?: 0) + 1}",
             style = MaterialTheme.typography.labelSmall,
-            color = White,
+            color = OnPanel,
         )
     }
 }
@@ -1173,6 +1176,7 @@ private fun SpeakerDots(tint: Color) {
     }
 }
 
+@Composable @ReadOnlyComposable
 private fun categoryColors(category: Domain.SoundCategory) = when (category) {
     Domain.SoundCategory.TINNITUS -> PaleBlue to PaleBlueText
     Domain.SoundCategory.NATURE   -> PaleGreen to PaleGreenText

@@ -44,9 +44,9 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.opxl.sleepslide.ui.theme.Charcoal
-import com.opxl.sleepslide.ui.theme.WarmWhite
-import com.opxl.sleepslide.ui.theme.White
+import com.opxl.sleepslide.ui.theme.ImageScrim
+import com.opxl.sleepslide.ui.theme.OverlayMark
+import com.opxl.sleepslide.ui.theme.OnImage
 
 /** Where a coach mark points ([anchor] in root coordinates) and the one-line label it shows. */
 data class CoachMark(val anchor: Rect, val label: String)
@@ -135,8 +135,8 @@ fun CoachMarkOverlay(
     hint: String = "Tap anywhere to continue",
 ) {
     val textMeasurer = rememberTextMeasurer()
-    val labelStyle   = MaterialTheme.typography.labelLarge.copy(color = Charcoal)
-    val hintStyle    = MaterialTheme.typography.labelMedium.copy(color = WarmWhite.copy(alpha = 0.7f))
+    val labelStyle   = MaterialTheme.typography.labelLarge.copy(color = ImageScrim)
+    val hintStyle    = MaterialTheme.typography.labelMedium.copy(color = OverlayMark.copy(alpha = 0.7f))
     var origin by remember { mutableStateOf(Offset.Zero) }
     val description = remember(marks) { marks.joinToString(". ") { it.label } }
 
@@ -174,7 +174,7 @@ fun CoachMarkOverlay(
         val stroke   = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
         val maxTextWidth = (minOf(250.dp.toPx(), w - 2 * margin) - 2 * pad).toInt()
 
-        drawRect(Charcoal.copy(alpha = 0.78f))
+        drawRect(ImageScrim.copy(alpha = 0.78f))
 
         // Targets that are actually inside this overlay; each becomes a spotlight and an obstacle.
         val spots = marks
@@ -185,7 +185,7 @@ fun CoachMarkOverlay(
 
         spots.forEach { (mark, spot) ->
             drawRoundRect(Color.Black, spot.topLeft, spot.size, spotCorner, blendMode = BlendMode.Clear)
-            drawRoundRect(WarmWhite, spot.topLeft, spot.size, spotCorner, style = stroke)
+            drawRoundRect(OverlayMark, spot.topLeft, spot.size, spotCorner, style = stroke)
 
             // Label goes on whichever side of the target has more room, then slides away
             // from anything already drawn so labels never cover each other or a spotlight.
@@ -219,11 +219,11 @@ fun CoachMarkOverlay(
                     lineTo(end.x, end.y)
                     lineTo(end.x + headLen * 0.5f, end.y - dir * headLen * 0.87f)
                 },
-                color = WarmWhite,
+                color = OverlayMark,
                 style = stroke,
             )
 
-            drawRoundRect(White, box.topLeft, box.size, labelCorner)
+            drawRoundRect(OnImage, box.topLeft, box.size, labelCorner)
             drawText(text, topLeft = Offset(box.left + pad, box.top + 0.75f * pad))
         }
 

@@ -25,63 +25,63 @@ import androidx.compose.ui.unit.dp
 // Light color scheme
 
 private val LightColors = lightColorScheme(
-    primary = Charcoal,
-    onPrimary = White,
+    primary = LightPalette.Charcoal,
+    onPrimary = LightPalette.White,
 
-    primaryContainer = Charcoal,
-    onPrimaryContainer = White,
+    primaryContainer = LightPalette.Charcoal,
+    onPrimaryContainer = LightPalette.White,
 
-    secondary = DarkGray,
-    onSecondary = White,
+    secondary = LightPalette.DarkGray,
+    onSecondary = LightPalette.White,
 
-    secondaryContainer = Bone,
-    onSecondaryContainer = Charcoal,
+    secondaryContainer = LightPalette.Bone,
+    onSecondaryContainer = LightPalette.Charcoal,
 
-    tertiary = PaleBlueText,
-    onTertiary = White,
+    tertiary = LightPalette.PaleBlueText,
+    onTertiary = LightPalette.White,
 
-    tertiaryContainer = PaleBlue,
-    onTertiaryContainer = PaleBlueText,
+    tertiaryContainer = LightPalette.PaleBlue,
+    onTertiaryContainer = LightPalette.PaleBlueText,
 
-    background = WarmWhite,
-    onBackground = Charcoal,
+    background = LightPalette.WarmWhite,
+    onBackground = LightPalette.Charcoal,
 
-    surface = White,
-    onSurface = Charcoal,
+    surface = LightPalette.White,
+    onSurface = LightPalette.Charcoal,
 
-    surfaceVariant = SurfaceMuted,
-    onSurfaceVariant = MutedGray,
+    surfaceVariant = LightPalette.SurfaceMuted,
+    onSurfaceVariant = LightPalette.MutedGray,
 
-    outline = Border,
-    outlineVariant = Border,
+    outline = LightPalette.Border,
+    outlineVariant = LightPalette.Border,
 
-    error = PaleRedText,
-    onError = White,
+    error = LightPalette.PaleRedText,
+    onError = LightPalette.White,
 
-    errorContainer = PaleRed,
-    onErrorContainer = PaleRedText
+    errorContainer = LightPalette.PaleRed,
+    onErrorContainer = LightPalette.PaleRedText
 )
 
 // Dark color scheme
 
 private val DarkColors = darkColorScheme(
     primary = DarkText,
-    onPrimary = Charcoal,
+    onPrimary = LightPalette.Charcoal,
 
     primaryContainer = DarkText,
-    onPrimaryContainer = Charcoal,
+    onPrimaryContainer = LightPalette.Charcoal,
 
     secondary = DarkTextSecondary,
-    onSecondary = Charcoal,
+    onSecondary = LightPalette.Charcoal,
 
     secondaryContainer = DarkSurfaceVariant,
     onSecondaryContainer = DarkText,
 
-    tertiary = PaleBlue,
-    onTertiary = PaleBlueText,
+    tertiary = LightPalette.PaleBlue,
+    onTertiary = LightPalette.PaleBlueText,
 
     tertiaryContainer = Color(0xFF173044),
-    onTertiaryContainer = PaleBlue,
+    onTertiaryContainer = LightPalette.PaleBlue,
 
     background = DarkBackground,
     onBackground = DarkText,
@@ -123,6 +123,15 @@ val SleepSlideShapes = Shapes(
 
 @Immutable
 data class SleepSlideExtendedColors(
+    val bone: Color,
+    val ground: Color,
+    val surface: Color,
+    val ink: Color,
+    val inkSoft: Color,
+    val muted: Color,
+    val panel: Color,
+    val onPanel: Color,
+
     val border: Color,
     val mutedSurface: Color,
 
@@ -140,23 +149,41 @@ data class SleepSlideExtendedColors(
 )
 
 private val LightExtendedColors = SleepSlideExtendedColors(
-    border = Border,
-    mutedSurface = SurfaceMuted,
+    bone = LightPalette.Bone,
+    ground = LightPalette.WarmWhite,
+    surface = LightPalette.White,
+    ink = LightPalette.Charcoal,
+    inkSoft = LightPalette.DarkGray,
+    muted = LightPalette.MutedGray,
+    panel = LightPalette.Charcoal,
+    onPanel = LightPalette.White,
 
-    paleRed = PaleRed,
-    paleRedText = PaleRedText,
+    border = LightPalette.Border,
+    mutedSurface = LightPalette.SurfaceMuted,
 
-    paleBlue = PaleBlue,
-    paleBlueText = PaleBlueText,
+    paleRed = LightPalette.PaleRed,
+    paleRedText = LightPalette.PaleRedText,
 
-    paleGreen = PaleGreen,
-    paleGreenText = PaleGreenText,
+    paleBlue = LightPalette.PaleBlue,
+    paleBlueText = LightPalette.PaleBlueText,
 
-    paleYellow = PaleYellow,
-    paleYellowText = PaleYellowText
+    paleGreen = LightPalette.PaleGreen,
+    paleGreenText = LightPalette.PaleGreenText,
+
+    paleYellow = LightPalette.PaleYellow,
+    paleYellowText = LightPalette.PaleYellowText
 )
 
 private val DarkExtendedColors = SleepSlideExtendedColors(
+    bone = DarkSurfaceVariant,
+    ground = DarkBackground,
+    surface = DarkSurface,
+    ink = DarkText,
+    inkSoft = DarkTextSecondary,
+    muted = DarkTextSecondary,
+    panel = DarkPanel,
+    onPanel = DarkText,
+
     border = DarkBorder,
     mutedSurface = DarkSurfaceVariant,
 

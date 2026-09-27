@@ -72,6 +72,8 @@ import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
 import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
 import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
 import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
+import com.opxl.sleepslide.ui.theme.OnPanel
+import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.DarkBackground
@@ -377,7 +379,7 @@ private fun ActivePlaybackBar(
             .padding(horizontal = 24.dp, vertical = 12.dp)
             .coachMarkAnchor("now_playing")
             .clip(RoundedCornerShape(8.dp))
-            .background(if (interrupted) PaleYellow else Charcoal)
+            .background(if (interrupted) PaleYellow else Panel)
             .clickable(onClick = onExpandPlayer)
             .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
@@ -394,7 +396,7 @@ private fun ActivePlaybackBar(
                         else        -> "Paused"
                     },
                     style    = MaterialTheme.typography.titleSmall,
-                    color    = if (interrupted) PaleYellowText else White,
+                    color    = if (interrupted) PaleYellowText else OnPanel,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -404,7 +406,7 @@ private fun ActivePlaybackBar(
                         text  = "Stops in ${timer.remainingLabel}",
                         style = MaterialTheme.typography.bodySmall,
                         color = if (interrupted) PaleYellowText.copy(alpha = 0.7f)
-                        else White.copy(alpha = 0.6f),
+                        else OnPanel.copy(alpha = 0.6f),
                     )
                 }
                 if (playback is HomeViewState.PlaybackUiState.AudioFocusLost &&
@@ -428,12 +430,12 @@ private fun ActivePlaybackBar(
                 if (!interrupted) {
                     PlayPauseButton(
                         isPlaying = isPlaying,
-                        tint      = White,
+                        tint      = OnPanel,
                         onClick   = onPlayPause,
                     )
                 }
                 StopButton(
-                    tint    = if (interrupted) PaleYellowText else White.copy(alpha = 0.5f),
+                    tint    = if (interrupted) PaleYellowText else OnPanel.copy(alpha = 0.5f),
                     onClick = onStop,
                 )
             }
@@ -617,9 +619,9 @@ private fun PresetCard(
 ) {
     val extended = LocalSleepSlideColors.current
 
-    val bgColor    = if (isActive) Charcoal else White
-    val textColor  = if (isActive) White else Charcoal
-    val subColor   = if (isActive) White.copy(alpha = 0.6f) else MutedGray
+    val bgColor    = if (isActive) Panel else White
+    val textColor  = if (isActive) OnPanel else Charcoal
+    val subColor   = if (isActive) OnPanel.copy(alpha = 0.6f) else MutedGray
     val borderColor = if (isActive) Color.Transparent else Border
 
     val soundNames = preset.mix.layers

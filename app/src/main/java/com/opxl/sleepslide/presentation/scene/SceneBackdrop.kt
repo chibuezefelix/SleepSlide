@@ -51,8 +51,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.opxl.sleepslide.domain.model.Domain
-import com.opxl.sleepslide.ui.theme.Charcoal
-import com.opxl.sleepslide.ui.theme.White
+import com.opxl.sleepslide.ui.theme.ImageScrim
+import com.opxl.sleepslide.ui.theme.OnImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
@@ -107,7 +107,7 @@ fun SceneBackdrop(
             .padding(horizontal = 20.dp)
             .height(height.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Charcoal)
+            .background(ImageScrim)
             .clickable { onTap?.invoke() ?: run { userScene = scene.next() } }
             .semantics {
                 contentDescription = if (onTap != null) "Scene: ${scene.title}. Tap to open player."
@@ -148,7 +148,7 @@ fun SceneBackdrop(
                 .background(
                     Brush.verticalGradient(
                         0.45f to Color.Transparent,
-                        1.0f  to Charcoal.copy(alpha = 0.72f),
+                        1.0f  to ImageScrim.copy(alpha = 0.72f),
                     )
                 )
         )
@@ -160,20 +160,20 @@ fun SceneBackdrop(
             Text(
                 text  = scene.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = White,
+                color = OnImage,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text  = scene.caption,
                     style = MaterialTheme.typography.bodySmall,
-                    color = White.copy(alpha = 0.78f),
+                    color = OnImage.copy(alpha = 0.78f),
                 )
                 if (userScene != null) {
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text  = "· your pick",
                         style = MaterialTheme.typography.bodySmall,
-                        color = White.copy(alpha = 0.55f),
+                        color = OnImage.copy(alpha = 0.55f),
                     )
                 }
             }

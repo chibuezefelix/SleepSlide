@@ -635,13 +635,15 @@ private fun FeaturePill(label: String) {
 
 @Composable
 private fun MoonGlyph() {
+    val ink    = Charcoal
+    val ground = WarmWhite
     Box(
         modifier = Modifier
             .size(80.dp)
             .drawBehind {
                 val r = size.minDimension / 2f
                 drawArc(
-                    color      = Charcoal,
+                    color      = ink,
                     startAngle = -90f,
                     sweepAngle = 360f,
                     useCenter  = false,
@@ -649,7 +651,7 @@ private fun MoonGlyph() {
                 )
                 // Inner cut-out circle for crescent effect
                 drawCircle(
-                    color  = WarmWhite,
+                    color  = ground,
                     radius = r * 0.7f,
                     center = androidx.compose.ui.geometry.Offset(size.width * 0.65f, size.height * 0.35f),
                 )

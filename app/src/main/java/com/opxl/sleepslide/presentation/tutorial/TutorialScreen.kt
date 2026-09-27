@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
@@ -135,10 +136,11 @@ fun TutorialScreen(onClose: () -> Unit) {
                     .semantics { contentDescription = "Close" },
                 contentAlignment = Alignment.Center,
             ) {
+                val ink = Charcoal
                 Canvas(Modifier.size(12.dp)) {
                     val s = 1.5.dp.toPx()
-                    drawLine(Charcoal, Offset(0f, 0f), Offset(size.width, size.height), s, StrokeCap.Round)
-                    drawLine(Charcoal, Offset(size.width, 0f), Offset(0f, size.height), s, StrokeCap.Round)
+                    drawLine(ink, Offset(0f, 0f), Offset(size.width, size.height), s, StrokeCap.Round)
+                    drawLine(ink, Offset(size.width, 0f), Offset(0f, size.height), s, StrokeCap.Round)
                 }
             }
         }
@@ -156,6 +158,8 @@ fun TutorialScreen(onClose: () -> Unit) {
         // Dot indicator — the pill slides with the swipe rather than jumping page to page.
         val dotStep = 14.dp
         val pillWidth = 16.dp
+        val dotColor = Border
+        val pillColor = Charcoal
         Canvas(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
@@ -166,11 +170,11 @@ fun TutorialScreen(onClose: () -> Unit) {
             val step = dotStep.toPx()
             val pill = pillWidth.toPx()
             repeat(cards.size) { i ->
-                drawCircle(Border, radius = size.height / 2f, center = Offset(i * step + pill / 2f, size.height / 2f))
+                drawCircle(dotColor, radius = size.height / 2f, center = Offset(i * step + pill / 2f, size.height / 2f))
             }
             val position = pagerState.currentPage + pagerState.currentPageOffsetFraction
             drawRoundRect(
-                color        = Charcoal,
+                color        = pillColor,
                 topLeft      = Offset(position * step, 0f),
                 size         = Size(pill, size.height),
                 cornerRadius = CornerRadius(size.height / 2f),
@@ -183,6 +187,10 @@ fun TutorialScreen(onClose: () -> Unit) {
 
 @Composable
 private fun FeatureCard(card: TutorialCard) {
+    val ink = IllustrationInk(
+        ink = Charcoal, line = Border, muted = MutedGray,
+        accent = PaleBlueText, fill = SurfaceMuted, surface = White,
+    )
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -198,9 +206,9 @@ private fun FeatureCard(card: TutorialCard) {
                 .aspectRatio(1.5f)
                 .semantics { contentDescription = "${card.title} illustration" },
         ) {
-            drawRoundRect(SurfaceMuted, cornerRadius = CornerRadius(10.dp.toPx()))
-            drawRoundRect(Border, cornerRadius = CornerRadius(10.dp.toPx()), style = Stroke(1.dp.toPx()))
-            drawIllustration(card)
+            drawRoundRect(ink.fill, cornerRadius = CornerRadius(10.dp.toPx()))
+            drawRoundRect(ink.line, cornerRadius = CornerRadius(10.dp.toPx()), style = Stroke(1.dp.toPx()))
+            drawIllustration(card, ink)
         }
 
         Spacer(Modifier.height(24.dp))
@@ -214,8 +222,18 @@ private fun FeatureCard(card: TutorialCard) {
     }
 }
 
+/** Theme colours for [drawIllustration], read in composition since draw scopes can't. */
+private data class IllustrationInk(
+    val ink: Color,
+    val line: Color,
+    val muted: Color,
+    val accent: Color,
+    val fill: Color,
+    val surface: Color,
+)
+
 /** Stroked-path glyphs in the same hand as the app's tab icons. `s` is the glyph's working size. */
-private fun DrawScope.drawIllustration(card: TutorialCard) {
+private fun DrawScope.drawIllustration(card: TutorialCard, ink: IllustrationInk) {
     val cx = size.width / 2f
     val cy = size.height / 2f
     val s  = minOf(size.width, size.height) * 0.72f
@@ -230,9 +248,9 @@ private fun DrawScope.drawIllustration(card: TutorialCard) {
             knobs.forEachIndexed { i, k ->
                 val y = cy + (i - 1) * s * 0.26f
                 val kx = x0 + (x1 - x0) * k
-                drawLine(Border,   Offset(x0, y), Offset(x1, y), stroke.width, StrokeCap.Round)
-                drawLine(Charcoal, Offset(x0, y), Offset(kx, y), stroke.width, StrokeCap.Round)
-                drawCircle(Charcoal, radius = 5.dp.toPx(), center = Offset(kx, y))
+                drawLine(ink.line,   Offset(x0, y), Offset(x1, y), stroke.width, StrokeCap.Round)
+                drawLine(ink.ink, Offset(x0, y), Offset(kx, y), stroke.width, StrokeCap.Round)
+                drawCircle(ink.ink, radius = 5.dp.toPx(), center = Offset(kx, y))
             }
         }
 
@@ -240,8 +258,8 @@ private fun DrawScope.drawIllustration(card: TutorialCard) {
             // Timer ring with the fade envelope (rise, hold, fall) inside it
             val r = s * 0.44f
             val arcRect = Rect(cx - r, cy - r, cx + r, cy + r)
-            drawArc(Border,    135f, 270f, false, arcRect.topLeft, arcRect.size, style = stroke)
-            drawArc(Charcoal,  135f, 190f, false, arcRect.topLeft, arcRect.size, style = stroke)
+            drawArc(ink.line,    135f, 270f, false, arcRect.topLeft, arcRect.size, style = stroke)
+            drawArc(ink.ink,  135f, 190f, false, arcRect.topLeft, arcRect.size, style = stroke)
             drawPath(
                 Path().apply {
                     moveTo(cx - r * 0.55f, cy + r * 0.32f)
@@ -249,7 +267,7 @@ private fun DrawScope.drawIllustration(card: TutorialCard) {
                     lineTo(cx + r * 0.10f, cy - r * 0.22f)
                     lineTo(cx + r * 0.55f, cy + r * 0.32f)
                 },
-                PaleBlueText,
+                ink.accent,
                 style = thin,
             )
         }
@@ -259,7 +277,7 @@ private fun DrawScope.drawIllustration(card: TutorialCard) {
             val bodyW = s * 0.42f; val bodyH = s * 0.32f
             val bodyTop = cy - s * 0.02f
             drawRoundRect(
-                Charcoal,
+                ink.ink,
                 topLeft = Offset(cx - bodyW / 2f, bodyTop),
                 size = Size(bodyW, bodyH),
                 cornerRadius = CornerRadius(6.dp.toPx()),
@@ -267,19 +285,19 @@ private fun DrawScope.drawIllustration(card: TutorialCard) {
             )
             val shackleR = s * 0.14f
             drawArc(
-                Charcoal, 180f, 180f, false,
+                ink.ink, 180f, 180f, false,
                 topLeft = Offset(cx - shackleR, bodyTop - s * 0.14f - shackleR),
                 size = Size(shackleR * 2, shackleR * 2),
                 style = stroke,
             )
-            drawLine(Charcoal, Offset(cx - shackleR, bodyTop - s * 0.14f), Offset(cx - shackleR, bodyTop), stroke.width, StrokeCap.Round)
-            drawLine(Charcoal, Offset(cx + shackleR, bodyTop - s * 0.14f), Offset(cx + shackleR, bodyTop), stroke.width, StrokeCap.Round)
-            drawCircle(Charcoal, radius = 3.dp.toPx(), center = Offset(cx, bodyTop + bodyH * 0.5f))
+            drawLine(ink.ink, Offset(cx - shackleR, bodyTop - s * 0.14f), Offset(cx - shackleR, bodyTop), stroke.width, StrokeCap.Round)
+            drawLine(ink.ink, Offset(cx + shackleR, bodyTop - s * 0.14f), Offset(cx + shackleR, bodyTop), stroke.width, StrokeCap.Round)
+            drawCircle(ink.ink, radius = 3.dp.toPx(), center = Offset(cx, bodyTop + bodyH * 0.5f))
 
             val tip = Offset(cx + s * 0.40f, cy + s * 0.30f)
-            drawCircle(PaleBlueText, radius = 4.dp.toPx(), center = tip)
-            drawCircle(PaleBlueText.copy(alpha = 0.55f), radius = 10.dp.toPx(), center = tip, style = thin)
-            drawCircle(PaleBlueText.copy(alpha = 0.25f), radius = 16.dp.toPx(), center = tip, style = thin)
+            drawCircle(ink.accent, radius = 4.dp.toPx(), center = tip)
+            drawCircle(ink.accent.copy(alpha = 0.55f), radius = 10.dp.toPx(), center = tip, style = thin)
+            drawCircle(ink.accent.copy(alpha = 0.25f), radius = 16.dp.toPx(), center = tip, style = thin)
         }
 
         TutorialCard.PRESETS -> {
@@ -288,10 +306,10 @@ private fun DrawScope.drawIllustration(card: TutorialCard) {
             val back  = Offset(cx - cardW / 2f - s * 0.04f, cy - cardH / 2f - s * 0.06f)
             val front = Offset(cx - cardW / 2f + s * 0.04f, cy - cardH / 2f + s * 0.06f)
             val corner = CornerRadius(8.dp.toPx())
-            drawRoundRect(White,  back,  Size(cardW, cardH), corner)
-            drawRoundRect(Border, back,  Size(cardW, cardH), corner, style = thin)
-            drawRoundRect(White,    front, Size(cardW, cardH), corner)
-            drawRoundRect(Charcoal, front, Size(cardW, cardH), corner, style = stroke)
+            drawRoundRect(ink.surface,  back,  Size(cardW, cardH), corner)
+            drawRoundRect(ink.line, back,  Size(cardW, cardH), corner, style = thin)
+            drawRoundRect(ink.surface,    front, Size(cardW, cardH), corner)
+            drawRoundRect(ink.ink, front, Size(cardW, cardH), corner, style = stroke)
 
             val starC = Offset(front.x + s * 0.10f, front.y + s * 0.11f)
             val outer = s * 0.055f; val inner = outer * 0.45f
@@ -305,11 +323,11 @@ private fun DrawScope.drawIllustration(card: TutorialCard) {
                     }
                     close()
                 },
-                Charcoal,
+                ink.ink,
             )
             val lineY = front.y + cardH - s * 0.12f
-            drawLine(MutedGray, Offset(front.x + s * 0.06f, lineY),               Offset(front.x + cardW * 0.62f, lineY),               thin.width, StrokeCap.Round)
-            drawLine(Border,    Offset(front.x + s * 0.06f, lineY + s * 0.06f),  Offset(front.x + cardW * 0.42f, lineY + s * 0.06f),  thin.width, StrokeCap.Round)
+            drawLine(ink.muted, Offset(front.x + s * 0.06f, lineY),               Offset(front.x + cardW * 0.62f, lineY),               thin.width, StrokeCap.Round)
+            drawLine(ink.line,    Offset(front.x + s * 0.06f, lineY + s * 0.06f),  Offset(front.x + cardW * 0.42f, lineY + s * 0.06f),  thin.width, StrokeCap.Round)
         }
 
         TutorialCard.WIND_DOWN -> {
@@ -324,14 +342,14 @@ private fun DrawScope.drawIllustration(card: TutorialCard) {
                     lineTo(cx + s * 0.21f, base)
                     close()
                 },
-                Charcoal,
+                ink.ink,
                 style = stroke,
             )
-            drawArc(Charcoal, 0f, 180f, false, Offset(cx - s * 0.06f, base - s * 0.04f), Size(s * 0.12f, s * 0.12f), style = stroke)
+            drawArc(ink.ink, 0f, 180f, false, Offset(cx - s * 0.06f, base - s * 0.04f), Size(s * 0.12f, s * 0.12f), style = stroke)
 
             val moon = Offset(cx + s * 0.34f, cy - s * 0.30f)
-            drawCircle(PaleBlueText, radius = s * 0.09f, center = moon)
-            drawCircle(SurfaceMuted, radius = s * 0.08f, center = moon + Offset(s * 0.045f, -s * 0.03f))
+            drawCircle(ink.accent, radius = s * 0.09f, center = moon)
+            drawCircle(ink.fill, radius = s * 0.08f, center = moon + Offset(s * 0.045f, -s * 0.03f))
         }
 
         TutorialCard.TINNITUS -> {
@@ -348,11 +366,11 @@ private fun DrawScope.drawIllustration(card: TutorialCard) {
                         if (i == 0) moveTo(x, y) else lineTo(x, y)
                     }
                 },
-                Charcoal,
+                ink.ink,
                 style = stroke,
             )
             drawLine(
-                PaleBlueText,
+                ink.accent,
                 Offset(cx, cy - s * 0.30f), Offset(cx, cy + s * 0.30f),
                 thin.width, StrokeCap.Round,
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx())),
@@ -363,11 +381,11 @@ private fun DrawScope.drawIllustration(card: TutorialCard) {
             // Headphones with the Bluetooth rune beside them
             val bandR = s * 0.30f
             val bandC = Offset(cx, cy + s * 0.04f)
-            drawArc(Charcoal, 180f, 180f, false, Offset(bandC.x - bandR, bandC.y - bandR), Size(bandR * 2, bandR * 2), style = stroke)
+            drawArc(ink.ink, 180f, 180f, false, Offset(bandC.x - bandR, bandC.y - bandR), Size(bandR * 2, bandR * 2), style = stroke)
             val cupW = s * 0.12f; val cupH = s * 0.20f
             val corner = CornerRadius(4.dp.toPx())
-            drawRoundRect(Charcoal, Offset(bandC.x - bandR - cupW * 0.5f, bandC.y - s * 0.02f), Size(cupW, cupH), corner)
-            drawRoundRect(Charcoal, Offset(bandC.x + bandR - cupW * 0.5f, bandC.y - s * 0.02f), Size(cupW, cupH), corner)
+            drawRoundRect(ink.ink, Offset(bandC.x - bandR - cupW * 0.5f, bandC.y - s * 0.02f), Size(cupW, cupH), corner)
+            drawRoundRect(ink.ink, Offset(bandC.x + bandR - cupW * 0.5f, bandC.y - s * 0.02f), Size(cupW, cupH), corner)
 
             val rx = cx + s * 0.42f; val ry = cy - s * 0.40f
             val rw = s * 0.14f;      val rh = s * 0.26f
@@ -378,7 +396,7 @@ private fun DrawScope.drawIllustration(card: TutorialCard) {
                     moveTo(rx + rw * 0.5f, ry);             lineTo(rx + rw * 0.85f, ry + rh * 0.25f)
                     lineTo(rx + rw * 0.15f, ry + rh * 0.75f)
                 },
-                PaleBlueText,
+                ink.accent,
                 style = thin,
             )
         }

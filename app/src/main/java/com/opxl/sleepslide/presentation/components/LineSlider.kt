@@ -11,6 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.opxl.sleepslide.ui.theme.OnPanel
+import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.MutedGray
@@ -109,17 +112,19 @@ data class LineSliderColors(
 ) {
     companion object {
         /** On white cards / the grey ground. */
+        @Composable @ReadOnlyComposable
         fun light(muted: Boolean = false) = LineSliderColors(
             active   = if (muted) MutedGray else Charcoal,
             inactive = Border,
             thumb    = if (muted) MutedGray else Charcoal,
         )
 
-        /** On charcoal surfaces such as the Library mix sheet. */
+        /** On [Panel] surfaces such as the Library mix sheet. */
+        @Composable @ReadOnlyComposable
         fun dark(muted: Boolean = false) = LineSliderColors(
-            active   = if (muted) White.copy(alpha = 0.25f) else White,
-            inactive = White.copy(alpha = 0.18f),
-            thumb    = if (muted) White.copy(alpha = 0.25f) else White,
+            active   = if (muted) OnPanel.copy(alpha = 0.25f) else OnPanel,
+            inactive = OnPanel.copy(alpha = 0.18f),
+            thumb    = if (muted) OnPanel.copy(alpha = 0.25f) else OnPanel,
         )
     }
 }

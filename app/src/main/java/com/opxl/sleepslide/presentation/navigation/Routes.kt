@@ -615,11 +615,12 @@ private fun TabButton(
         )
 
         // Active indicator — always laid out so selecting a tab never shifts the column
+        val indicator = Charcoal
         Box(
             modifier = Modifier
                 .size(width = 16.dp, height = 2.dp)
                 .drawBehind {
-                    if (selected) drawRoundRect(Charcoal, cornerRadius = CornerRadius(1.dp.toPx()))
+                    if (selected) drawRoundRect(indicator, cornerRadius = CornerRadius(1.dp.toPx()))
                 },
         )
     }

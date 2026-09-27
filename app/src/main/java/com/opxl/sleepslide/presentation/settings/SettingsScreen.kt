@@ -69,6 +69,8 @@ import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
 import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
 import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
 import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
+import com.opxl.sleepslide.ui.theme.OnPanel
+import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.MutedGray
@@ -493,7 +495,7 @@ private fun AccountSection(
 
             is SettingsVMState.AccountState.Free -> {
                 // Upgrade CTA
-                SettingsCard(bg = Charcoal, border = Charcoal) {
+                SettingsCard(bg = Panel, border = Panel) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(
                             modifier              = Modifier.fillMaxWidth(),
@@ -504,12 +506,12 @@ private fun AccountSection(
                                 Text(
                                     "Unlock All Sounds",
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = White,
+                                    color = OnPanel,
                                 )
                                 Text(
                                     "One-time purchase · No subscription",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = White.copy(alpha = 0.6f),
+                                    color = OnPanel.copy(alpha = 0.6f),
                                 )
                             }
                             Spacer(Modifier.width(12.dp))
@@ -551,7 +553,7 @@ private fun PurchaseButton(
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(6.dp))
-            .background(White)
+            .background(OnPanel)
             .border(1.dp, Border, RoundedCornerShape(6.dp))
             .clickable(enabled = canPurchase && purchase is SettingsVMState.PurchaseOperationState.Idle, onClick = onClick)
             .alpha(if (canPurchase) 1f else 0.5f)
@@ -560,13 +562,13 @@ private fun PurchaseButton(
     ) {
         when (purchase) {
             is SettingsVMState.PurchaseOperationState.Purchasing ->
-                LoadingDots(Charcoal)
+                LoadingDots(Panel)
             is SettingsVMState.PurchaseOperationState.PurchaseSuccess ->
                 Text("Unlocked ✓", style = MaterialTheme.typography.labelLarge, color = PaleGreenText)
             is SettingsVMState.PurchaseOperationState.Error ->
                 Text("Try again", style = MaterialTheme.typography.labelLarge, color = PaleRedText)
             else ->
-                Text("Unlock All", style = MaterialTheme.typography.labelLarge, color = Charcoal)
+                Text("Unlock All", style = MaterialTheme.typography.labelLarge, color = Panel)
         }
     }
 }

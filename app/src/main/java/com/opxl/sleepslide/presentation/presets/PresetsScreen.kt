@@ -82,6 +82,8 @@ import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
 import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
 import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
 import com.opxl.sleepslide.presentation.components.PremiumPill
+import com.opxl.sleepslide.ui.theme.OnPanel
+import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.MutedGray
@@ -772,15 +774,15 @@ private fun PresetCard(
     )
     val borderColor by animateColorAsState(
         targetValue   = when {
-            item.isActive   -> Charcoal
+            item.isActive   -> Panel
             item.isSelected -> PaleBlueText
             else            -> Border
         },
         animationSpec = tween(250),
         label         = "card_border_${preset.id}",
     )
-    val textColor   = if (item.isActive) White else Charcoal
-    val subColor    = if (item.isActive) White.copy(alpha = 0.6f) else MutedGray
+    val textColor   = if (item.isActive) OnPanel else Charcoal
+    val subColor    = if (item.isActive) OnPanel.copy(alpha = 0.6f) else MutedGray
 
     Box(
         modifier = modifier
@@ -812,7 +814,7 @@ private fun PresetCard(
                     isSelected = item.isSelected,
                     isActive   = item.isActive,
                 )
-                reorderMode -> ReorderHandle(tint = if (item.isActive) White.copy(alpha = 0.5f) else MutedGray)
+                reorderMode -> ReorderHandle(tint = if (item.isActive) OnPanel.copy(alpha = 0.5f) else MutedGray)
                 else        -> PresetLeadingIcon(
                     preset   = preset,
                     isActive = item.isActive,
@@ -860,13 +862,13 @@ private fun PresetCard(
                             .size(32.dp)
                             .clip(RoundedCornerShape(6.dp))
                             .background(
-                                if (item.isActive) White.copy(alpha = 0.1f) else SurfaceMuted
+                                if (item.isActive) OnPanel.copy(alpha = 0.1f) else SurfaceMuted
                             )
                             .clickable { showMenu = true }
                             .semantics { contentDescription = "More options for ${preset.name}" },
                         contentAlignment = Alignment.Center,
                     ) {
-                        DotsIcon(tint = if (item.isActive) White.copy(alpha = 0.7f) else MutedGray)
+                        DotsIcon(tint = if (item.isActive) OnPanel.copy(alpha = 0.7f) else MutedGray)
                     }
 
                     PresetContextMenu(
@@ -924,7 +926,7 @@ private fun SelectionIndicator(isSelected: Boolean, isActive: Boolean) {
             .clip(CircleShape)
             .background(
                 when {
-                    isSelected && isActive -> White
+                    isSelected && isActive -> OnPanel
                     isSelected            -> PaleBlueText
                     else                  -> Color.Transparent
                 }
@@ -932,9 +934,9 @@ private fun SelectionIndicator(isSelected: Boolean, isActive: Boolean) {
             .border(
                 width = 1.5.dp,
                 color = when {
-                    isSelected && isActive -> White
+                    isSelected && isActive -> OnPanel
                     isSelected            -> PaleBlueText
-                    isActive              -> White.copy(alpha = 0.5f)
+                    isActive              -> OnPanel.copy(alpha = 0.5f)
                     else                  -> Border
                 },
                 shape = CircleShape,
@@ -942,7 +944,7 @@ private fun SelectionIndicator(isSelected: Boolean, isActive: Boolean) {
         contentAlignment = Alignment.Center,
     ) {
         if (isSelected) {
-            CheckIcon(tint = if (isActive) Charcoal else White, size = 10.dp)
+            CheckIcon(tint = if (isActive) Panel else White, size = 10.dp)
         }
     }
 }
@@ -959,7 +961,7 @@ private fun ActiveWaveform() {
                     .width(2.dp)
                     .height(h)
                     .clip(RoundedCornerShape(1.dp))
-                    .background(White.copy(alpha = 0.8f)),
+                    .background(OnPanel.copy(alpha = 0.8f)),
             )
         }
     }
