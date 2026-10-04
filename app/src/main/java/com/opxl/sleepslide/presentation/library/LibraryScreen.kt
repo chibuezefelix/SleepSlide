@@ -6,9 +6,12 @@ import com.opxl.sleepslide.domain.model.Domain.needsHeadphones
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -66,6 +69,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -87,6 +91,7 @@ import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
 import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
 import com.opxl.sleepslide.presentation.components.LineSlider
 import com.opxl.sleepslide.presentation.components.ChevronLeft
+import com.opxl.sleepslide.presentation.components.ChevronRight
 import com.opxl.sleepslide.presentation.components.HEADPHONES_NOTE
 import com.opxl.sleepslide.presentation.components.HeadphonesIcon
 import com.opxl.sleepslide.presentation.components.LineSliderColors
@@ -737,6 +742,8 @@ private fun MixBuilderPanel(
 ) {
     val isPlaying = playback is LibraryVMState.LibraryPlaybackState.Playing
     val isPaused  = playback is LibraryVMState.LibraryPlaybackState.Paused
+    var isExpanded by rememberSaveable { mutableStateOf(true) }
+    val chevronRotation by animateFloatAsState(if (isExpanded) 90f else -90f, label = "mix_chevron")
 
     Column(
         modifier = Modifier
@@ -752,11 +759,25 @@ private fun MixBuilderPanel(
             verticalAlignment     = Alignment.CenterVertically,
         ) {
             Text(
-                "MIX",
+                if (isExpanded) "MIX" else "MIX · ${mix.layers.size} ${if (mix.layers.size == 1) "sound" else "sounds"}",
                 style = MaterialTheme.typography.labelSmall,
                 color = OnPanel.copy(alpha = 0.5f),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Collapse / expand
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(OnPanel.copy(alpha = 0.1f))
+                        .border(1.dp, OnPanel.copy(alpha = 0.2f), CircleShape)
+                        .clickable { isExpanded = !isExpanded }
+                        .semantics { contentDescription = if (isExpanded) "Collapse mix" else "Expand mix" },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    ChevronRight(OnPanel, Modifier.rotate(chevronRotation))
+                }
+
                 // Play / Pause / Resume
                 Box(
                     modifier = Modifier
@@ -786,41 +807,49 @@ private fun MixBuilderPanel(
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter   = expandVertically() + fadeIn(tween(200)),
+            exit    = shrinkVertically() + fadeOut(tween(150)),
+        ) {
+            Column {
+                Spacer(Modifier.height(12.dp))
 
-        // Layer rows
-        mix.layers.sortedBy { it.position }.forEach { layer ->
-            LayerSliderRow(
-                layer     = layer,
-                onVolume  = { onLayerVolume(layer.position, it) },
-                onDragEnd = { onDragEnd(layer.position) },
-                onMute    = { onMute(layer.position) },
-                onUnmute  = { onUnmute(layer.position) },
-            )
-            Spacer(Modifier.height(8.dp))
-        }
+                // Layer rows
+                mix.layers.sortedBy { it.position }.forEach { layer ->
+                    LayerSliderRow(
+                        layer     = layer,
+                        onVolume  = { onLayerVolume(layer.position, it) },
+                        onDragEnd = { onDragEnd(layer.position) },
+                        onMute    = { onMute(layer.position) },
+                        onUnmute  = { onUnmute(layer.position) },
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
 
-        // Master volume when 2+ layers
-        if (mix.layers.size > 1) {
-            Spacer(Modifier.height(4.dp))
-            Row(
-                modifier          = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    "Master",
-                    style    = MaterialTheme.typography.labelSmall,
-                    color    = OnPanel.copy(alpha = 0.5f),
-                    modifier = Modifier.width(48.dp),
-                )
-                LineSlider(
-                    value                 = mix.masterVolume,
-                    onValueChange         = onMasterVolume,
-                    onValueChangeFinished = onMasterDragEnd,
-                    modifier              = Modifier.weight(1f),
-                    colors                = LineSliderColors.dark(),
-                )
+                // Master volume when 2+ layers
+                if (mix.layers.size > 1) {
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier          = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            "Master",
+                            style    = MaterialTheme.typography.labelSmall,
+                            color    = OnPanel.copy(alpha = 0.5f),
+                            modifier = Modifier.width(48.dp),
+                        )
+                        LineSlider(
+                            value                 = mix.masterVolume,
+                            onValueChange         = onMasterVolume,
+                            onValueChangeFinished = onMasterDragEnd,
+                            modifier              = Modifier.weight(1f),
+                            colors                = LineSliderColors.dark(),
+                        )
+                    }
+                }
             }
         }
 
