@@ -126,6 +126,15 @@ class MainActivity : ComponentActivity() {
         // Keep splash visible until preferences are loaded for the first time
         var preferencesReady = false
         splashScreen.setKeepOnScreenCondition { !preferencesReady }
+        // Fade the system splash out (mark lifting slightly) into the in-app BrandSplash.
+        splashScreen.setOnExitAnimationListener { provider ->
+            provider.iconView.animate().scaleX(1.15f).scaleY(1.15f).setDuration(300L).start()
+            provider.view.animate()
+                .alpha(0f)
+                .setDuration(300L)
+                .withEndAction { provider.remove() }
+                .start()
+        }
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
