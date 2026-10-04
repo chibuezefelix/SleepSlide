@@ -37,9 +37,14 @@ google-services.json
 # Files already tracked here stay tracked; only new ones are ignored.
 app/src/main/assets/sounds/
 app/src/main/assets/images/
+app/src/main/assets/keys/
+app/build/
 
 # macOS
 .DS_Store
 
 # Local asset-generation scripts (gen_noise.py, gen_binaural.py, oggtool.py)
 tools/
+
+# Store screenshots (generated, not committed)
+screenshots/
