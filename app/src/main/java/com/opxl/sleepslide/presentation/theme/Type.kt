@@ -4,6 +4,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.opxl.sleepslide.R
@@ -22,6 +23,8 @@ private val Exo2 = FontFamily(
     Font(R.font.exo_semi_bold,  FontWeight.SemiBold),
     Font(R.font.exo_bold,       FontWeight.Bold),
     Font(R.font.exo_extra_bold, FontWeight.ExtraBold),
+    Font(R.font.exo_italic,        FontWeight.Normal, FontStyle.Italic),
+    Font(R.font.exo_medium_italic, FontWeight.Medium, FontStyle.Italic),
 )
 
 private val UiFont = Exo2

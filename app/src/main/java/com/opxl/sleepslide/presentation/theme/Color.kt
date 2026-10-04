@@ -79,6 +79,11 @@ val OnImage = Color(0xFFFFFFFF)
 val ImageScrim = Color(0xFF111111)
 val OverlayMark = Color(0xFFEEEEEB)
 
+// Brand — the launcher icon's yellow tile and black mark. Fixed in both themes.
+
+val BrandYellow = Color(0xFFFBED34)
+val BrandInk = Color(0xFF111111)
+
 // Dark theme neutrals
 
 val DarkBackground = Color(0xFF151514)
