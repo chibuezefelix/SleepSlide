@@ -19,6 +19,10 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.produceState
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
@@ -38,6 +42,7 @@ import com.opxl.sleepslide.presentation.navigation.UpgradeRequests
 import com.opxl.sleepslide.presentation.permission.LocalNotificationPermissionRequester
 import com.opxl.sleepslide.presentation.permission.NotificationPermissionRequester
 import com.opxl.sleepslide.presentation.permission.isNotificationPermissionGranted
+import com.opxl.sleepslide.presentation.splash.BrandSplash
 import com.opxl.sleepslide.ui.theme.SleepSlideTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -135,6 +140,8 @@ class MainActivity : ComponentActivity() {
                 .withEndAction { provider.remove() }
                 .start()
         }
+        // Cold start only — not on rotation or theme recreation.
+        val playIntro = savedInstanceState == null
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -158,11 +165,15 @@ class MainActivity : ComponentActivity() {
                 CompositionLocalProvider(
                     LocalNotificationPermissionRequester provides notificationPermissionRequester,
                 ) {
-                    NavGraph(
-                        userPreferencesRepository = userPreferencesRepository,
-                        playbackGate              = playbackGate,
-                        upgradeRequests           = upgradeRequests,
-                    )
+                    var showIntro by rememberSaveable { mutableStateOf(playIntro) }
+                    Box {
+                        NavGraph(
+                            userPreferencesRepository = userPreferencesRepository,
+                            playbackGate              = playbackGate,
+                            upgradeRequests           = upgradeRequests,
+                        )
+                        if (showIntro) BrandSplash(onFinished = { showIntro = false })
+                    }
                 }
             }
         }
