@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SleepSlide Privacy Policy</title>
+  <meta name="description" content="Privacy policy for SleepSlide, the Android sleep sounds app. No account, no analytics, no ads. Your presets and history stay on your device.">
+  <meta name="author" content="Chibueze Felix Anyanwu">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1A1A2E">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SleepSlide">
+  <meta property="og:title" content="SleepSlide Privacy Policy">
+  <meta property="og:description" content="Your sleep. Your data. Your device. How SleepSlide handles your information: no account, no analytics, no ads.">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SleepSlide Privacy Policy">
+  <meta name="twitter:description" content="Your sleep. Your data. Your device. No account, no analytics, no ads.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #FFFFFF;
+      --text: #111111;
+      --muted: #55556A;
+      --divider: #F4F4F4;
+      --line: #E6E6EC;
+      --accent: #1A1A2E;
+      --accent-soft: #EEEEF4;
+      --on-accent: #FFFFFF;
+      --on-accent-muted: #B9B9CF;
+      --measure: 44rem;
+      --nav-h: 3.25rem;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: calc(var(--nav-h) + 1.25rem);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 1.0625rem;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    a { color: var(--accent); text-underline-offset: 0.18em; text-decoration-thickness: 1px; }
+    a:hover { text-decoration-thickness: 2px; }
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: 1rem;
+      top: -3rem;
+      background: var(--accent);
+      color: var(--on-accent);
+      padding: 0.5rem 0.875rem;
+      border-radius: 6px;
+      z-index: 100;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .skip-link:focus { top: 0.75rem; }
+
+    /* ---------- Header band ---------- */
+    .site-header {
+      background: var(--accent);
+      color: var(--on-accent);
+      padding: 4.5rem 1rem 3.75rem;
+    }
+    .site-header .inner { max-width: var(--measure); margin: 0 auto; }
+    .eyebrow {
+      margin: 0 0 1rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--on-accent-muted);
+    }
+    .site-header h1 {
+      margin: 0;
+      font-size: clamp(2.75rem, 9vw, 4.5rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.02;
+    }
+    .tagline {
+      margin: 1rem 0 0;
+      font-size: clamp(1.125rem, 3.4vw, 1.375rem);
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      color: var(--on-accent);
+    }
+    .meta {
+      margin: 2rem 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      font-size: 0.9375rem;
+      color: var(--on-accent-muted);
+    }
+    .meta strong { color: var(--on-accent); font-weight: 600; }
+
+    /* ---------- Sticky nav ---------- */
+    .toc {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.94);
+      -webkit-backdrop-filter: saturate(180%) blur(10px);
+      backdrop-filter: saturate(180%) blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    .toc ol {
+      list-style: none;
+      margin: 0 auto;
+      padding: 0 1rem;
+      max-width: 75rem;
+      height: var(--nav-h);
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .toc ol::-webkit-scrollbar { display: none; }
+    .toc a {
+      display: block;
+      white-space: nowrap;
+      padding: 0.375rem 0.625rem;
+      border-radius: 6px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .toc a:hover { background: var(--divider); color: var(--accent); }
+    .toc a[aria-current="true"] { background: var(--accent-soft); color: var(--accent); }
+    .toc .num { font-variant-numeric: tabular-nums; opacity: 0.6; margin-right: 0.3rem; }
+
+    /* ---------- Content ---------- */
+    main { padding: 0 1rem; }
+    article { max-width: var(--measure); margin: 0 auto; padding: 3.5rem 0 2rem; }
+
+    .summary {
+      margin: 0 0 3rem;
+      padding: 1.5rem 1.5rem 1.25rem;
+      background: var(--divider);
+      border-radius: 12px;
+    }
+    .summary h2 {
+      margin: 0 0 0.875rem;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .summary dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr));
+      gap: 1rem 1.5rem;
+    }
+    .summary dt { font-weight: 700; color: var(--accent); font-size: 0.9375rem; }
+    .summary dd { margin: 0.125rem 0 0; font-size: 0.9375rem; line-height: 1.55; color: var(--muted); }
+
+    .policy-section {
+      padding: 2.5rem 0;
+      border-top: 1px solid var(--divider);
+    }
+    .policy-section:first-of-type { border-top: 0; padding-top: 0; }
+
+    .policy-section h2 {
+      display: flex;
+      align-items: baseline;
+      gap: 0.875rem;
+      margin: 0 0 1.125rem;
+      font-size: clamp(1.375rem, 3.6vw, 1.625rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      color: var(--accent);
+    }
+    .policy-section h2 .num {
+      flex: none;
+      font-size: 0.875rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-radius: 6px;
+      padding: 0.125rem 0.5rem;
+      transform: translateY(-0.2em);
+    }
+    .policy-section h3 {
+      margin: 1.75rem 0 0.5rem;
+      font-size: 1.0625rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--accent);
+    }
+    .policy-section p { margin: 0 0 1rem; }
+    .policy-section p:last-child { margin-bottom: 0; }
+
+    .note {
+      margin: 1.25rem 0 0;
+      padding: 1rem 1.25rem;
+      border-left: 3px solid var(--accent);
+      background: var(--divider);
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9688rem;
+    }
+
+    .contact-card {
+      margin-top: 1.25rem;
+      padding: 1.5rem;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .contact-card address { font-style: normal; line-height: 1.8; }
+    .contact-card .label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .contact-card .row + .row { margin-top: 0.875rem; }
+    .contact-card .value { font-weight: 600; color: var(--accent); }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.875em;
+      background: var(--divider);
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+
+    /* ---------- Footer ---------- */
+    .site-footer {
+      margin-top: 2rem;
+      border-top: 1px solid var(--line);
+      padding: 2rem 1rem 2.5rem;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+    .site-footer .inner {
+      max-width: var(--measure);
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem 1.5rem;
+    }
+    .site-footer p { margin: 0; }
+    .site-footer a { font-weight: 600; text-decoration: none; }
+    .site-footer a:hover { text-decoration: underline; }
+
+    @media (min-width: 900px) {
+      body { font-size: 1.0938rem; }
+      .site-header { padding: 6rem 1.5rem 4.5rem; }
+      article { padding-top: 4.5rem; }
+      .toc ol { justify-content: center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .toc a { transition: none; }
+    }
+
+    /* ---------- Print ---------- */
+    @media print {
+      @page { margin: 2cm; }
+      :root { --measure: 100%; }
+      body { font-size: 11pt; line-height: 1.5; color: #000; background: #fff; }
+      .toc, .skip-link, .back-to-top { display: none !important; }
+      .site-header { background: none; color: #000; padding: 0 0 1.5rem; border-bottom: 2px solid #000; }
+      .eyebrow, .meta, .tagline, .meta strong { color: #000; }
+      .site-header h1 { font-size: 28pt; }
+      main { padding: 0; }
+      article { padding: 1.5rem 0 0; }
+      .summary, .note { background: none; border: 1px solid #999; }
+      .policy-section { padding: 1.25rem 0; border-top: 1px solid #ccc; break-inside: auto; }
+      .policy-section h2 { break-after: avoid; color: #000; }
+      .policy-section h2 .num { background: none; padding: 0; }
+      .policy-section h3, .summary dt, .contact-card .value { color: #000; }
+      a { color: #000; text-decoration: underline; }
+      .policy-section a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 0.85em; word-break: break-all; }
+      .site-footer { border-top: 1px solid #999; color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#policy">Skip to policy</a>
+
+  <header class="site-header" id="top">
+    <div class="inner">
+      <p class="eyebrow">Privacy Policy</p>
+      <h1>SleepSlide</h1>
+      <p class="tagline">Your sleep. Your data. Your device.</p>
+      <p class="meta">
+        <span>Effective <strong><time datetime="2026-09-29">September 29, 2026</time></strong></span>
+        <span>Android app by <strong>Chibueze Felix Anyanwu</strong></span>
+      </p>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Policy sections">
+    <ol>
+      <li><a href="#introduction"><span class="num">1</span>Introduction</a></li>
+      <li><a href="#information-we-collect"><span class="num">2</span>What we collect</a></li>
+      <li><a href="#how-we-use"><span class="num">3</span>How we use it</a></li>
+      <li><a href="#third-parties"><span class="num">4</span>Third parties</a></li>
+      <li><a href="#notifications"><span class="num">5</span>Notifications</a></li>
+      <li><a href="#retention"><span class="num">6</span>Retention</a></li>
+      <li><a href="#children"><span class="num">7</span>Children</a></li>
+      <li><a href="#your-rights"><span class="num">8</span>Your rights</a></li>
+      <li><a href="#changes"><span class="num">9</span>Changes</a></li>
+      <li><a href="#contact"><span class="num">10</span>Contact</a></li>
+    </ol>
+  </nav>
+
+  <main id="policy">
+    <article>
+
+      <aside class="summary" aria-labelledby="summary-title">
+        <h2 id="summary-title">The short version</h2>
+        <dl>
+          <div>
+            <dt>No account</dt>
+            <dd>You never sign up, log in, or give us your name or email address.</dd>
+          </div>
+          <div>
+            <dt>No tracking</dt>
+            <dd>There are no analytics, advertising, or crash-reporting tools in the app.</dd>
+          </div>
+          <div>
+            <dt>On your device</dt>
+            <dd>Your mixes, presets, settings, and listening history are stored on your phone.</dd>
+          </div>
+        </dl>
+      </aside>
+
+      <section class="policy-section" id="introduction" aria-labelledby="introduction-title">
+        <h2 id="introduction-title"><span class="num">1</span>Introduction</h2>
+        <p>SleepSlide is an Android app that plays sleep and relaxation sounds, including white noise, nature recordings, and tinnitus relief audio. You can layer sounds into your own mixes, save them as presets, set a sleep timer, use night lock to prevent accidental taps while you rest, and schedule a daily wind-down reminder.</p>
+        <p>SleepSlide is developed and operated by Chibueze Felix Anyanwu, an independent developer (“we”, “us”, or “the developer” in this policy). This policy explains what information the app handles, where that information lives, and the choices you have.</p>
+        <p>Our commitment is simple. SleepSlide is built to work without knowing who you are. It has no accounts, no advertising, and no analytics. Almost everything the app remembers about how you use it stays on your own device, and the small amount of information that does leave it exists only so that a purchase you make can be verified and restored.</p>
+      </section>
+
+      <section class="policy-section" id="information-we-collect" aria-labelledby="collect-title">
+        <h2 id="collect-title"><span class="num">2</span>Information we collect</h2>
+        <p>It helps to think of the information SleepSlide touches in three groups: a small amount that is sent automatically to verify purchases, information that is kept only on your device, and information the app never collects at all.</p>
+
+        <h3>Information collected automatically</h3>
+        <p>When you open SleepSlide, our purchase provider, RevenueCat, assigns your installation a random, anonymous identifier known as an app user ID. It is generated by the software itself and is not derived from your name, email address, phone number, or Google account. We never link it to your identity, and we have no way to do so.</p>
+        <p>When you buy the premium unlock, Google Play processes the payment and issues a purchase token, which is a receipt confirming that the transaction took place. SleepSlide passes this token, together with the anonymous app user ID and the product purchased, to RevenueCat so the purchase can be validated with Google Play. As part of normal network communication, RevenueCat also receives basic technical details such as your device’s IP address, the Android version, the app version, and your store country, which it uses to operate and secure its service.</p>
+        <p>Your payment details, such as your card number and billing address, are handled entirely by Google Play. They are never shared with SleepSlide or with the developer.</p>
+
+        <h3>Information stored only on your device</h3>
+        <p>To make the app useful from one night to the next, SleepSlide saves your preferences, your custom mixes and presets, the sounds you have recently played, your volume levels, your sleep timer and night lock settings, and the time you have chosen for your wind-down reminder. This information is stored in the app’s private storage on your phone. It is not sent to the developer, it is not uploaded to any server we operate, and we cannot see it.</p>
+        <p>If you have Android’s built-in backup turned on for your Google account, Android may include this app data in your personal device backup so it can be restored when you set up a new phone. That backup is created, encrypted, and stored by Google under your own account and is governed by Google’s privacy policy. The developer has no access to it, and you can turn it off at any time in your phone’s backup settings.</p>
+
+        <h3>Information we never collect</h3>
+        <p>SleepSlide does not ask for or collect your name, email address, phone number, or any other contact details. It does not access your location, your contacts, your photos or files, your microphone, or your camera, and it does not request permission to do so. It does not contain advertising identifiers, analytics tools, or tracking code of any kind.</p>
+        <p>The permissions the app does request are limited to what its features need: permission to show notifications for your reminder and playback controls, permission to schedule the reminder at an exact time, permission to keep audio playing in the background while your screen is off, permission to restore your reminder after the phone restarts, and an optional request to exempt the app from battery optimisation so playback is not cut off during the night. None of these give the app access to personal information.</p>
+      </section>
+
+      <section class="policy-section" id="how-we-use" aria-labelledby="use-title">
+        <h2 id="use-title"><span class="num">3</span>How we use information</h2>
+        <p>The anonymous app user ID and purchase token are used for one purpose: to confirm that your purchase is genuine and to unlock the premium sounds and features you paid for. Because the purchase is tied to your Google Play account, you can use the restore option in the app to recover it after reinstalling SleepSlide or moving to a new device, without creating an account with us.</p>
+        <p>We do not use any information to build a profile of you, to show you advertising, to measure your behaviour, or to contact you. We do not sell, rent, or trade information about you, and we do not share it with anyone other than the purchase provider described in the next section.</p>
+        <p>The information stored on your device is used only by the app itself, on your phone, to remember your mixes and settings and to show you what you have played recently.</p>
+      </section>
+
+      <section class="policy-section" id="third-parties" aria-labelledby="third-title">
+        <h2 id="third-title"><span class="num">4</span>Third-party services</h2>
+        <p>SleepSlide uses a single third-party service that receives any data: <strong>RevenueCat</strong>, which handles purchase validation on our behalf. RevenueCat receives the anonymous app user ID, the Google Play purchase token and product details, and the basic technical information described in section 2. It uses this to check your purchase with Google Play and to report back to the app whether premium features should be unlocked. RevenueCat processes this information under its own privacy policy, which you can read at <a href="https://www.revenuecat.com/privacy" rel="noopener">revenuecat.com/privacy</a>.</p>
+        <p>Audio playback uses ExoPlayer, an open-source media library published by Google as part of Android Jetpack Media3. It runs entirely inside the app, plays sound files that are bundled with SleepSlide, and does not send any information anywhere.</p>
+        <p>Purchases themselves are made through <strong>Google Play</strong>, which is subject to the <a href="https://policies.google.com/privacy" rel="noopener">Google Privacy Policy</a>. Google Play may also provide us with aggregated, anonymous statistics about installs and app stability, such as crash and freeze rates, when users have allowed their device to share diagnostic data with Google. These reports do not identify you.</p>
+      </section>
+
+      <section class="policy-section" id="notifications" aria-labelledby="notifications-title">
+        <h2 id="notifications-title"><span class="num">5</span>Notifications</h2>
+        <p>The daily wind-down reminder is entirely optional and is off until you turn it on. You choose whether to receive it and at what time, and you can change or switch it off at any time in the app’s settings or in your phone’s notification settings.</p>
+        <p>The reminder is scheduled by your phone’s own alarm system, and the notification is created by the app on your device. No server is involved, no push notification service is used, and no information about your reminder or your bedtime leaves your phone.</p>
+        <p>While sound is playing, SleepSlide also shows a media notification with playback controls. Android requires this so audio can keep playing with the screen off. It disappears when playback stops and sends no data anywhere.</p>
+      </section>
+
+      <section class="policy-section" id="retention" aria-labelledby="retention-title">
+        <h2 id="retention-title"><span class="num">6</span>Data retention</h2>
+        <p>Information stored on your device stays there for as long as SleepSlide is installed. Clearing the app’s data in Android settings, or uninstalling the app, permanently deletes it from your phone. If the data was included in your personal Android backup, that copy is kept by Google according to your Google account’s backup settings.</p>
+        <p>RevenueCat keeps records of the anonymous app user ID and the associated purchase for as long as needed to validate and restore your purchase, to meet legal and accounting obligations, and otherwise in line with its own privacy policy. Because these records contain no name, email, or contact details, they cannot be used to identify you.</p>
+        <p>The developer does not operate its own servers or databases for SleepSlide and does not keep any separate copy of your information.</p>
+      </section>
+
+      <section class="policy-section" id="children" aria-labelledby="children-title">
+        <h2 id="children-title"><span class="num">7</span>Children’s privacy</h2>
+        <p>SleepSlide is a general audience app and is not directed at children under the age of 13. We do not knowingly collect personal information from children. The app does not ask for personal information from anyone, and in-app purchases on Google Play are subject to the parental controls and family settings on the Google account used.</p>
+        <p>If you are a parent or guardian and believe your child has provided personal information through SleepSlide, please contact us using the details in section 10 and we will help you have it removed.</p>
+      </section>
+
+      <section class="policy-section" id="your-rights" aria-labelledby="rights-title">
+        <h2 id="rights-title"><span class="num">8</span>Your rights</h2>
+        <p>Depending on where you live, laws such as the GDPR in the European Union and United Kingdom, or the CCPA in California, give you the right to know what information is held about you, to have it corrected or deleted, and to object to how it is used. SleepSlide is designed so that these rights are easy to exercise.</p>
+        <p>You can delete everything the app stores on your device at any time by clearing its data in your phone’s settings or by uninstalling it. There is no account to close, because SleepSlide never creates one. If you would like the purchase record held by RevenueCat to be deleted, or you have any other question about your information, contact us at the address below. Include the anonymous user ID shown in the app if you can, since without it we have no way of finding your record. Please note that deleting a purchase record may mean the purchase can no longer be restored automatically.</p>
+        <p>You also have the right to lodge a complaint with the data protection authority in your country if you believe your information has been handled improperly.</p>
+      </section>
+
+      <section class="policy-section" id="changes" aria-labelledby="changes-title">
+        <h2 id="changes-title"><span class="num">9</span>Changes to this policy</h2>
+        <p>If we change how SleepSlide handles information, for example by adding a new feature or service, we will update this policy before the change takes effect and revise the effective date at the top of this page. If a change significantly affects how your information is used, we will also mention it in the app’s release notes on Google Play.</p>
+        <p>We encourage you to review this page from time to time. Continuing to use SleepSlide after an update means the revised policy applies from its effective date.</p>
+      </section>
+
+      <section class="policy-section" id="contact" aria-labelledby="contact-title">
+        <h2 id="contact-title"><span class="num">10</span>Contact</h2>
+        <p>If you have a question about this policy, want to make a request about your information, or have any other privacy concern, please get in touch. We aim to reply within 30 days.</p>
+        <div class="contact-card">
+          <address>
+            <div class="row">
+              <span class="label">Developer</span>
+              <span class="value">Chibueze Felix Anyanwu</span>
+            </div>
+            <div class="row">
+              <span class="label">Email</span>
+              <a class="value" href="mailto:[YOUR EMAIL]">[YOUR EMAIL]</a>
+            </div>
+            <div class="row">
+              <span class="label">App</span>
+              <span class="value">SleepSlide for Android</span>
+            </div>
+          </address>
+        </div>
+      </section>
+
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <div class="inner">
+      <p>© 2026 Chibueze Felix Anyanwu · SleepSlide Privacy Policy · Effective <time datetime="2026-09-29">September 29, 2026</time></p>
+      <p><a class="back-to-top" href="#top">Back to top ↑</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // Highlight the nav link for the section currently in view.
+    (function () {
+      if (!('IntersectionObserver' in window)) return;
+      var links = {};
+      document.querySelectorAll('.toc a').forEach(function (a) {
+        links[a.getAttribute('href').slice(1)] = a;
+      });
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          Object.keys(links).forEach(function (id) { links[id].removeAttribute('aria-current'); });
+          var active = links[entry.target.id];
+          if (active) {
+            active.setAttribute('aria-current', 'true');
+            // Keep the active link visible in the nav strip without scrolling the page.
+            var strip = active.closest('ol');
+            strip.scrollLeft = active.offsetLeft - (strip.clientWidth - active.offsetWidth) / 2;
+          }
+        });
+      }, { rootMargin: '-20% 0px -70% 0px' });
+      document.querySelectorAll('.policy-section').forEach(function (s) { observer.observe(s); });
+    })();
+  </script>
+</body>
+</html>
