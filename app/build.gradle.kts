@@ -42,8 +42,18 @@ android {
 
     buildTypes {
         release {
+            // R8: shrink, obfuscate and optimize code + strip unused resources.
+            // The mapping file is packaged into the AAB and Play picks it up
+            // automatically. App rules live in src/main/keepRules/.
             optimization {
-                enable = false
+                enable = true
+            }
+            // Package native debug symbols into the AAB for Play crash/ANR reports.
+            // Today's only .so files (androidx graphics-path, datastore) ship
+            // pre-stripped, so there is nothing to extract until native code
+            // with symbols is added.
+            ndk {
+                debugSymbolLevel = "FULL"
             }
         }
 

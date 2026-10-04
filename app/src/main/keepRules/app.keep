@@ -1,0 +1,14 @@
+# App-specific R8 rules. Libraries (Hilt, Room, Media3, WorkManager, RevenueCat)
+# ship their own consumer rules — only add what R8 cannot see here.
+
+# Readable stack traces in Play Console once de-obfuscated with the mapping file.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# Enum names are persisted (Room columns, DataStore, MixSerializer JSON) and read
+# back with valueOf(); keep them stable so stored data survives optimization.
+-keepclassmembers enum com.opxl.sleepslide.** {
+    <fields>;
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
