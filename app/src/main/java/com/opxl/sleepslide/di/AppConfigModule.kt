@@ -15,16 +15,17 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppConfigModule {
-    private const val IS_TESTING_MODE = true
+    // Set per build type in app/build.gradle.kts — always false in release, opt-in for
+    // debug via TESTING_MODE=true in local.properties. Grants PREMIUM without a purchase.
 
     @Provides
     @Singleton
     @RevenueCatApiKey
-    fun provideRevenueCatApiKey(): String = if (IS_TESTING_MODE) BuildConfig.TEST_REVENUECAT_KEY else BuildConfig.REVENUECAT_KEY
+    fun provideRevenueCatApiKey(): String = if (BuildConfig.TESTING_MODE) BuildConfig.TEST_REVENUECAT_KEY else BuildConfig.REVENUECAT_KEY
 
 
     @Provides
     @Singleton
     @IsTestingMode
-    fun provideIsTestingMode(): Boolean = IS_TESTING_MODE
+    fun provideIsTestingMode(): Boolean = BuildConfig.TESTING_MODE
 }

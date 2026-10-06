@@ -151,7 +151,7 @@ class PurchaseServiceImpl @Inject constructor(
         }
 
     private fun CustomerInfo.toEntitlementTier(): Domain.EntitlementTier =
-        if (entitlements["premium"]?.isActive == true) Domain.EntitlementTier.PREMIUM
+        if (entitlements[PurchaseRepositoryImpl.ENTITLEMENT_ID]?.isActive == true) Domain.EntitlementTier.PREMIUM
         else Domain.EntitlementTier.FREE
 }
 

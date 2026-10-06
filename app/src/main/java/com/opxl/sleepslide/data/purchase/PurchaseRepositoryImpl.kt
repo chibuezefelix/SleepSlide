@@ -86,7 +86,10 @@ class PurchaseRepositoryImpl @Inject constructor(
                 purchases.getCustomerInfo(object : ReceiveCustomerInfoCallback {
                     override fun onReceived(customerInfo: CustomerInfo) {
                         _entitlement.value = _entitlement.value.copy(
-                            tier             = customerInfo.toEntitlementTier(),
+                            // Testing mode grants PREMIUM without a purchase — don't let the
+                            // real CustomerInfo (usually no entitlement) downgrade it.
+                            tier             = if (isTestingMode) EntitlementTier.PREMIUM
+                                               else customerInfo.toEntitlementTier(),
                             revenueCatUserId = purchases.appUserID,
                         )
                         cont.resume(Unit)
