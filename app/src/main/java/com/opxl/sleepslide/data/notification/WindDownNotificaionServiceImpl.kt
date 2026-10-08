@@ -8,6 +8,8 @@ import android.Manifest
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -27,7 +29,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG                   = "WindDownService"
-private const val CHANNEL_ID            = "wind_down_reminder"
+private const val CHANNEL_ID            = "wind_down_reminder_v2"
+private const val LEGACY_CHANNEL_ID     = "wind_down_reminder"
 private const val CHANNEL_NAME          = "Sleep & Wind-Down"
 private const val NOTIFICATION_ID       = 9_001
 private const val REQUEST_CODE_DAILY    = 9_002
@@ -161,10 +164,9 @@ class WindDownNotificationServiceImpl @Inject constructor(
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            // No vibration — this is a sleep-context notification
+            // No vibration — this is a sleep-context notification. Sound comes from the
+            // channel (API 26+ ignores per-notification sound).
             .setVibrate(null)
-            // No sound — alarm already fires at user-defined quiet hour
-            .setSilent(true)
             .build()
 
         runCatching {
@@ -183,10 +185,19 @@ class WindDownNotificationServiceImpl @Inject constructor(
         ).apply {
             description           = "Daily wind-down reminder before sleep"
             enableVibration(false)
-            setSound(null, null)
+            setSound(
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build(),
+            )
             lockscreenVisibility  = NotificationCompat.VISIBILITY_PUBLIC
         }
-        runCatching { notificationManager.createNotificationChannel(channel) }
+        runCatching {
+            notificationManager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
+            notificationManager.createNotificationChannel(channel)
+        }
     }
 
 
