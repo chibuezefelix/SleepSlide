@@ -17,6 +17,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,12 +26,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.produceState
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.util.Consumer
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.compose.rememberNavController
 import com.opxl.sleepslide.data.AudioServiceHolder
 import com.opxl.sleepslide.data.audio.AudioServiceImpl
 import com.opxl.sleepslide.data.purchase.PurchaseServiceImpl
@@ -142,6 +145,8 @@ class MainActivity : ComponentActivity() {
         }
         // Cold start only — not on rotation or theme recreation.
         val playIntro = savedInstanceState == null
+        // NavHost handles the launch intent's deep link itself; see [inPlaceDeepLink].
+        intent = inPlaceDeepLink(intent)
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -166,11 +171,22 @@ class MainActivity : ComponentActivity() {
                     LocalNotificationPermissionRequester provides notificationPermissionRequester,
                 ) {
                     var showIntro by rememberSaveable { mutableStateOf(playIntro) }
+                    val navController = rememberNavController()
+                    // A notification tap while the app is running arrives here (SINGLE_TOP),
+                    // not in onCreate — NavHost only reads the launch intent.
+                    DisposableEffect(navController) {
+                        val listener = Consumer<Intent> { newIntent ->
+                            navController.handleDeepLink(inPlaceDeepLink(newIntent))
+                        }
+                        addOnNewIntentListener(listener)
+                        onDispose { removeOnNewIntentListener(listener) }
+                    }
                     Box {
                         NavGraph(
                             userPreferencesRepository = userPreferencesRepository,
                             playbackGate              = playbackGate,
                             upgradeRequests           = upgradeRequests,
+                            navController             = navController,
                         )
                         if (showIntro) BrandSplash(onFinished = { showIntro = false })
                     }
@@ -345,6 +361,15 @@ class MainActivity : ComponentActivity() {
                 hour in darkStartHour until darkEndHour
             }
     }
+
+    /**
+     * Navigation treats a deep link carrying FLAG_ACTIVITY_NEW_TASK (without CLEAR_TASK) as
+     * "rebuild the task": it relaunches MainActivity and finishes this one, replaying the
+     * splash. Notifications must set NEW_TASK, so drop it and let the graph navigate in place.
+     */
+    private fun inPlaceDeepLink(source: Intent): Intent =
+        if (source.data == null) source
+        else Intent(source).apply { flags = flags and Intent.FLAG_ACTIVITY_NEW_TASK.inv() }
 
     private fun currentHour(): Int =
         java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)

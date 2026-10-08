@@ -17,6 +17,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.opxl.sleepslide.MainActivity
 import com.opxl.sleepslide.R
 
 import com.opxl.sleepslide.domain.service.WindDownNotificationService
@@ -138,8 +139,10 @@ class WindDownNotificationServiceImpl @Inject constructor(
         val (title, body) = resolveNotificationCopy()
 
         val deepLinkIntent = Intent(Intent.ACTION_VIEW, Uri.parse(DEEP_LINK_URI)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            setPackage(context.packageName)
+            setClass(context, MainActivity::class.java)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         val contentIntent = PendingIntent.getActivity(
             context,
