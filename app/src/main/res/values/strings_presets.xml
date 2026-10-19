@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Presets messages -->
+    <string name="presets_error_load">Could not load presets</string>
+    <string name="presets_error_no_sounds">No sounds in %1$s</string>
+    <string name="presets_error_launch">Could not launch %1$s</string>
+    <string name="presets_error_rename">Could not rename preset</string>
+    <string name="presets_error_emoji">Could not update emoji</string>
+    <string name="presets_error_delete">Could not delete preset</string>
+    <string name="presets_error_restore">Could not restore preset</string>
+    <plurals name="presets_error_bulk_delete">
+        <item quantity="one">%1$d preset could not be deleted</item>
+        <item quantity="other">%1$d presets could not be deleted</item>
+    </plurals>
+    <string name="presets_error_name_empty">Name cannot be empty</string>
+    <string name="presets_error_pin">Could not pin preset</string>
+    <string name="presets_error_unpin">Could not unpin preset</string>
+    <string name="presets_error_nothing_to_undo">Nothing to undo</string>
+    <string name="presets_error_save_new_order">Could not save new order</string>
+    <string name="presets_error_save_order">Could not save order</string>
+
+    <!-- Presets screen -->
+    <string name="presets_snack_deleted">%1$s deleted</string>
+    <string name="presets_fallback_name">Preset</string>
+    <string name="presets_snack_restored">%1$s restored</string>
+    <string name="presets_snack_limit_reached">%1$d preset limit reached — upgrade to unlock all</string>
+    <string name="presets_count_saved">%1$d saved</string>
+    <string name="presets_cd_add">Add preset</string>
+    <string name="presets_cd_exit_selection">Exit selection</string>
+    <string name="presets_selected_count">%1$d of %2$d selected</string>
+    <string name="presets_select_all">All</string>
+    <string name="presets_cd_delete_selected">Delete selected</string>
+    <string name="presets_drag_to_reorder">Drag to reorder</string>
+    <string name="presets_search_hint">Search presets or sounds</string>
+    <string name="presets_empty_title">No presets yet</string>
+    <string name="presets_empty_body">Build a mix in the library and save it here for quick access.</string>
+    <string name="presets_browse_sounds">Browse sounds</string>
+    <string name="presets_section_pinned">Pinned</string>
+    <string name="presets_section_saved">Saved</string>
+    <string name="presets_no_match">No presets match</string>
+    <string name="presets_cd_playing">currently playing</string>
+    <string name="presets_cd_selected">selected</string>
+    <string name="presets_cd_pinned">pinned</string>
+    <string name="presets_cd_locked_layers">has premium sounds that will be skipped</string>
+    <string name="presets_cd_more_options">More options for %1$s</string>
+    <plurals name="presets_sound_count">
+        <item quantity="one">%1$d sound</item>
+        <item quantity="other">%1$d sounds</item>
+    </plurals>
+    <string name="presets_menu_unpin">Unpin</string>
+    <string name="presets_menu_pin">Pin to top</string>
+    <string name="presets_menu_rename">Rename</string>
+    <string name="presets_limit_banner">%1$d preset limit reached — upgrade to save more</string>
+    <string name="presets_delete_title">Delete preset?</string>
+    <string name="presets_delete_body">"%1$s" will be removed. You can undo this immediately after.</string>
+    <plurals name="presets_bulk_delete_title">
+        <item quantity="one">Delete %1$d preset?</item>
+        <item quantity="other">Delete %1$d presets?</item>
+    </plurals>
+    <string name="presets_bulk_delete_body">This cannot be undone for bulk deletions.</string>
+    <string name="presets_delete_all">Delete all</string>
+    <string name="presets_rename_title">Rename preset</string>
+</resources>

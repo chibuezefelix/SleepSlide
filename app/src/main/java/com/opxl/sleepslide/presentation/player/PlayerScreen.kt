@@ -94,7 +94,6 @@ import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
 import com.opxl.sleepslide.presentation.components.LineSlider
 import com.opxl.sleepslide.presentation.components.ChevronLeft
 import com.opxl.sleepslide.presentation.components.ClockIcon
-import com.opxl.sleepslide.presentation.components.HEADPHONES_NOTE
 import com.opxl.sleepslide.presentation.components.LineSliderColors
 import com.opxl.sleepslide.presentation.scene.SceneBackdrop
 import com.opxl.sleepslide.domain.model.Domain
@@ -121,6 +120,11 @@ import com.opxl.sleepslide.ui.theme.SurfaceMuted
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import com.opxl.sleepslide.ui.theme.White
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.opxl.sleepslide.R
+import com.opxl.sleepslide.presentation.components.displayTitle
+import com.opxl.sleepslide.presentation.components.labelRes
+import com.opxl.sleepslide.presentation.components.shortDuration
 
 
 
@@ -161,27 +165,29 @@ fun PlayerScreen(
                         viewModel.onNotificationPermissionResult(granted)
                     }
                 is PlayerEvent.ShowError                ->
-                    scope.launch { snackbarHostState.showSnackbar(event.message) }
+                    scope.launch { snackbarHostState.showSnackbar(event.message.asString(context)) }
                 is PlayerEvent.ShowInfo                 ->
-                    scope.launch { snackbarHostState.showSnackbar(event.message) }
+                    scope.launch { snackbarHostState.showSnackbar(event.message.asString(context)) }
                 is PlayerEvent.ShowServiceUnavailable   ->
                     scope.launch { /*snackbarHostState.showSnackbar("Audio service is starting") */ }
                 is PlayerEvent.AudioInterrupted         ->
                     scope.launch {
                         snackbarHostState.showSnackbar(
-                            when (event.reason) {
-                                InterruptionReason.PHONE_CALL     -> "Sound paused for call — will resume"
-                                InterruptionReason.ANOTHER_APP    -> "Sound paused by another app"
-                                InterruptionReason.BLUETOOTH_LOST -> "Headphones disconnected"
-                            }
+                            context.getString(
+                                when (event.reason) {
+                                    InterruptionReason.PHONE_CALL     -> R.string.player_snack_paused_call
+                                    InterruptionReason.ANOTHER_APP    -> R.string.player_snack_paused_other_app
+                                    InterruptionReason.BLUETOOTH_LOST -> R.string.player_headphones_disconnected
+                                }
+                            )
                         )
                     }
                 is PlayerEvent.AudioRestoredAfterCall   ->
-                    scope.launch { snackbarHostState.showSnackbar("Sound resumed") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.player_snack_resumed)) }
                 is PlayerEvent.TimerFinished            ->
-                    scope.launch { snackbarHostState.showSnackbar("Sleep timer ended") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.player_snack_timer_ended)) }
                 is PlayerEvent.NightLockEnabled         ->
-                    scope.launch { snackbarHostState.showSnackbar("Night lock on — long press to unlock") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.player_snack_night_lock_on)) }
                 else -> Unit
             }
         }
@@ -332,12 +338,12 @@ fun PlayerScreen(
 
 /** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
 private val PLAYER_COACH_MARKS = listOf(
-    "save"       to "Save this mix as a preset",
-    "transport"  to "Play or pause the whole mix",
-    "timer"      to "Set a sleep timer that fades out",
-    "layer"      to "Drag to balance each sound; mute or remove it",
-    "add_sound"  to "Add up to three sounds",
-    "night_lock" to "Lock the screen against sleepy taps",
+    "save"       to R.string.coach_player_save,
+    "transport"  to R.string.coach_player_transport,
+    "timer"      to R.string.coach_player_timer,
+    "layer"      to R.string.coach_player_layer,
+    "add_sound"  to R.string.coach_player_add_sound,
+    "night_lock" to R.string.coach_player_night_lock,
 )
 
 // Top bar
@@ -360,7 +366,7 @@ private fun PlayerTopBar(
     ) {
         IconButton(
             onClick             = onBack,
-            contentDescription  = "Back",
+            contentDescription  = stringResource(R.string.cd_back),
         ) { ChevronLeft(tint = Charcoal) }
 
         Column(
@@ -372,8 +378,8 @@ private fun PlayerTopBar(
             Text(
                 text      = when (preset) {
                     is ActivePresetState.Loaded  -> preset.preset.name
-                    is ActivePresetState.Saving  -> "Saving…"
-                    else                         -> "Now playing"
+                    is ActivePresetState.Saving  -> stringResource(R.string.player_saving)
+                    else                         -> stringResource(R.string.player_now_playing)
                 },
                 style     = MaterialTheme.typography.titleMedium,
                 color     = if (preset is ActivePresetState.Saving) MutedGray else Charcoal,
@@ -383,7 +389,7 @@ private fun PlayerTopBar(
             )
             if (isDirtyLoaded) {
                 Text(
-                    text  = "Unsaved changes",
+                    text  = stringResource(R.string.player_unsaved_changes),
                     style = MaterialTheme.typography.labelSmall,
                     color = MutedGray,
                 )
@@ -394,7 +400,7 @@ private fun PlayerTopBar(
             onClick             = { if (isDirtyLoaded) onUpdate() else onSave() },
             background          = if (isDirtyLoaded) Charcoal else SurfaceMuted,
             borderColor         = if (isDirtyLoaded) Charcoal else Border,
-            contentDescription  = if (isDirtyLoaded) "Save changes" else "Save as preset",
+            contentDescription  = stringResource(if (isDirtyLoaded) R.string.player_cd_save_changes else R.string.player_cd_save_as_preset),
             modifier            = Modifier.coachMarkAnchor("save"),
         ) {
             SaveIcon(tint = if (isDirtyLoaded) White else MutedGray)
@@ -501,6 +507,9 @@ private fun MainTransportButton(
 ) {
     val isLoading = playback is PlayerPlaybackState.Loading || playback is PlayerPlaybackState.FadingIn
     val isPlaying = playback is PlayerPlaybackState.Playing
+    val transportLabel = stringResource(
+        when { isLoading -> R.string.player_cd_loading; isPlaying -> R.string.player_cd_pause; else -> R.string.player_cd_play }
+    )
 
     val bgColor  by animateColorAsState(if (isPlaying) Charcoal else White,  tween(300), "tb")
     val iconTint by animateColorAsState(if (isPlaying) White    else Charcoal, tween(300), "ti")
@@ -513,11 +522,7 @@ private fun MainTransportButton(
             .background(bgColor)
             .border(1.dp, Border, CircleShape)
             .clickable(enabled = !isLoading, onClick = if (isPlaying) onPause else onPlay)
-            .semantics {
-                contentDescription = when {
-                    isLoading -> "Loading"; isPlaying -> "Pause"; else -> "Play"
-                }
-            },
+            .semantics { contentDescription = transportLabel },
         contentAlignment = Alignment.Center,
     ) {
         AnimatedContent(
@@ -536,6 +541,7 @@ private fun MainTransportButton(
 
 @Composable
 private fun StopButtonSmall(onClick: () -> Unit) {
+    val stopLabel = stringResource(R.string.player_cd_stop)
     Box(
         modifier = Modifier
             .size(32.dp)
@@ -543,7 +549,7 @@ private fun StopButtonSmall(onClick: () -> Unit) {
             .background(SurfaceMuted)
             .border(1.dp, Border, CircleShape)
             .clickable(onClick = onClick)
-            .semantics { contentDescription = "Stop" },
+            .semantics { contentDescription = stopLabel },
         contentAlignment = Alignment.Center,
     ) {
         Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(MutedGray))
@@ -554,23 +560,23 @@ private fun StopButtonSmall(onClick: () -> Unit) {
 private fun PlaybackStatusLine(playback: PlayerPlaybackState, bluetooth: Boolean) {
     val (label, color) = when (playback) {
         is PlayerPlaybackState.Playing      ->
-            if (playback.isPlayingInBackground) "Playing " to PaleGreenText
-            else "Playing" to MutedGray
-        is PlayerPlaybackState.Paused       -> "Paused" to MutedGray
-        is PlayerPlaybackState.FadingIn     -> "Fading in…" to PaleBlueText
+            if (playback.isPlayingInBackground) R.string.player_status_playing to PaleGreenText
+            else R.string.player_status_playing to MutedGray
+        is PlayerPlaybackState.Paused       -> R.string.player_status_paused to MutedGray
+        is PlayerPlaybackState.FadingIn     -> R.string.player_status_fading_in to PaleBlueText
         is PlayerPlaybackState.FadingOut    -> when (playback.triggeredBy) {
-            FadeOutTrigger.TIMER -> "Timer ending…" to PaleYellowText
-            FadeOutTrigger.USER  -> "Fading out…" to MutedGray
+            FadeOutTrigger.TIMER -> R.string.player_status_timer_ending to PaleYellowText
+            FadeOutTrigger.USER  -> R.string.player_status_fading_out to MutedGray
         }
-        is PlayerPlaybackState.Loading      -> "Starting…" to MutedGray
+        is PlayerPlaybackState.Loading      -> R.string.player_status_starting to MutedGray
         is PlayerPlaybackState.Interrupted  -> when (playback.reason) {
-            InterruptionReason.PHONE_CALL     -> "Call in progress" to PaleYellowText
-            InterruptionReason.ANOTHER_APP    -> "Interrupted" to PaleRedText
-            InterruptionReason.BLUETOOTH_LOST -> "Headphones disconnected" to PaleRedText
+            InterruptionReason.PHONE_CALL     -> R.string.player_status_call to PaleYellowText
+            InterruptionReason.ANOTHER_APP    -> R.string.player_status_interrupted to PaleRedText
+            InterruptionReason.BLUETOOTH_LOST -> R.string.player_headphones_disconnected to PaleRedText
         }
-        is PlayerPlaybackState.Error        -> "Error — tap play to retry" to PaleRedText
-        is PlayerPlaybackState.ServiceUnavailable -> "Connecting…" to MutedGray
-        is PlayerPlaybackState.Idle         -> "Ready" to MutedGray
+        is PlayerPlaybackState.Error        -> R.string.player_status_error to PaleRedText
+        is PlayerPlaybackState.ServiceUnavailable -> R.string.player_status_connecting to MutedGray
+        is PlayerPlaybackState.Idle         -> R.string.player_status_ready to MutedGray
     }
 
     Row(
@@ -580,17 +586,19 @@ private fun PlaybackStatusLine(playback: PlayerPlaybackState, bluetooth: Boolean
         if (bluetooth && playback is PlayerPlaybackState.Playing) {
             Box(Modifier.size(6.dp).clip(CircleShape).background(PaleBlueText))
         }
-        Text(text = label, style = MaterialTheme.typography.bodySmall, color = color)
+        Text(text = stringResource(label), style = MaterialTheme.typography.bodySmall, color = color)
     }
 }
 
 @Composable
 private fun TimerTriggerButton(timer: PlayerTimerState, onClick: () -> Unit) {
     val active   = timer as? PlayerTimerState.Active
-    val label    = active?.remainingLabel ?: if (timer is PlayerTimerState.Finished) "Timer ended" else "Set timer"
+    val label    = active?.remainingLabel
+        ?: stringResource(if (timer is PlayerTimerState.Finished) R.string.player_timer_ended else R.string.player_set_timer)
     val bg       = if (active?.isFading == true) PaleYellow else SurfaceMuted
     val fg       = if (active?.isFading == true) PaleYellowText else if (active != null) Charcoal else MutedGray
-    val desc     = active?.let { "Timer: ${it.remainingLabel}. Tap to adjust" } ?: "Set sleep timer"
+    val desc     = active?.let { stringResource(R.string.player_cd_timer_active, it.remainingLabel) }
+        ?: stringResource(R.string.player_cd_set_sleep_timer)
 
     Row(
         modifier = Modifier
@@ -617,9 +625,9 @@ private fun TimerTriggerButton(timer: PlayerTimerState, onClick: () -> Unit) {
 private fun InterruptionBanner(reason: InterruptionReason?) {
     reason ?: return
     val (bg, fg, msg) = when (reason) {
-        InterruptionReason.PHONE_CALL     -> Triple(PaleYellow,  PaleYellowText, "Sound paused — will resume after call")
-        InterruptionReason.ANOTHER_APP    -> Triple(PaleRed,     PaleRedText,    "Another app took audio — tap play to resume")
-        InterruptionReason.BLUETOOTH_LOST -> Triple(PaleRed,     PaleRedText,    "Headphones disconnected")
+        InterruptionReason.PHONE_CALL     -> Triple(PaleYellow,  PaleYellowText, stringResource(R.string.player_banner_call))
+        InterruptionReason.ANOTHER_APP    -> Triple(PaleRed,     PaleRedText,    stringResource(R.string.player_banner_other_app))
+        InterruptionReason.BLUETOOTH_LOST -> Triple(PaleRed,     PaleRedText,    stringResource(R.string.player_headphones_disconnected))
     }
     Box(
         modifier = Modifier
@@ -656,7 +664,7 @@ private fun MixerSection(
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
     ) {
-        SectionDivider("Mix")
+        SectionDivider(stringResource(R.string.player_section_mix))
         Spacer(Modifier.height(16.dp))
 
         if (mixer.layers.isEmpty()) {
@@ -703,9 +711,9 @@ private fun EmptyMixerCard(onAddSound: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("No sounds yet",             style = MaterialTheme.typography.titleSmall, color = Charcoal)
+            Text(stringResource(R.string.player_empty_title), style = MaterialTheme.typography.titleSmall, color = Charcoal)
             Spacer(Modifier.height(4.dp))
-            Text("Tap to browse the library", style = MaterialTheme.typography.bodySmall,  color = MutedGray)
+            Text(stringResource(R.string.player_empty_subtitle), style = MaterialTheme.typography.bodySmall,  color = MutedGray)
         }
     }
 }
@@ -746,9 +754,9 @@ private fun LayerRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                CategoryPill(label = layer.sound.category.name, bg = pillBg, fg = pillFg)
+                CategoryPill(label = stringResource(layer.sound.category.labelRes).uppercase(), bg = pillBg, fg = pillFg)
                 Text(
-                    text     = layer.sound.title,
+                    text     = layer.sound.displayTitle(),
                     style    = MaterialTheme.typography.titleSmall,
                     color    = if (layer.isMuted) MutedGray else Charcoal,
                     maxLines = 1,
@@ -783,7 +791,7 @@ private fun LayerRow(
         if (showHeadphonesNote) {
             Spacer(Modifier.height(6.dp))
             Text(
-                text  = HEADPHONES_NOTE,
+                text  = stringResource(R.string.headphones_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = MutedGray,
             )
@@ -815,7 +823,7 @@ private fun MasterVolumeRow(volume: Float, onChange: (Float) -> Unit, onDragEnd:
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text("Master", style = MaterialTheme.typography.labelSmall, color = MutedGray,
+        Text(stringResource(R.string.player_master), style = MaterialTheme.typography.labelSmall, color = MutedGray,
             modifier = Modifier.width(48.dp))
         LineSlider(
             value                 = volume,
@@ -847,12 +855,13 @@ private fun AddLayerButton(onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         PlusCircle()
-        Text("Add a sound", style = MaterialTheme.typography.bodySmall, color = MutedGray)
+        Text(stringResource(R.string.player_add_sound), style = MaterialTheme.typography.bodySmall, color = MutedGray)
     }
 }
 
 @Composable
 private fun MuteButton(isMuted: Boolean, onMute: () -> Unit, onUnmute: () -> Unit) {
+    val muteLabel = stringResource(if (isMuted) R.string.cd_unmute else R.string.cd_mute)
     Box(
         modifier = Modifier
             .size(28.dp)
@@ -860,7 +869,7 @@ private fun MuteButton(isMuted: Boolean, onMute: () -> Unit, onUnmute: () -> Uni
             .background(if (isMuted) SurfaceMuted else White)
             .border(1.dp, Border, RoundedCornerShape(4.dp))
             .clickable(onClick = if (isMuted) onUnmute else onMute)
-            .semantics { contentDescription = if (isMuted) "Unmute" else "Mute" },
+            .semantics { contentDescription = muteLabel },
         contentAlignment = Alignment.Center,
     ) {
         if (isMuted) {
@@ -876,6 +885,7 @@ private fun MuteButton(isMuted: Boolean, onMute: () -> Unit, onUnmute: () -> Uni
 
 @Composable
 private fun RemoveButton(onClick: () -> Unit) {
+    val removeLabel = stringResource(R.string.player_cd_remove_layer)
     Box(
         modifier = Modifier
             .size(28.dp)
@@ -883,7 +893,7 @@ private fun RemoveButton(onClick: () -> Unit) {
             .background(White)
             .border(1.dp, Border, RoundedCornerShape(4.dp))
             .clickable(onClick = onClick)
-            .semantics { contentDescription = "Remove layer" },
+            .semantics { contentDescription = removeLabel },
         contentAlignment = Alignment.Center,
     ) {
         Box(Modifier.width(10.dp).height(1.5.dp).background(MutedGray))
@@ -903,12 +913,12 @@ private fun TimerStrip(
     onSetTimer: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-        SectionDivider("Timer")
+        SectionDivider(stringResource(R.string.player_section_timer))
         Spacer(Modifier.height(12.dp))
         when (timer) {
             is PlayerTimerState.Active   -> ActiveTimerCard(timer, onAddTime, onReduceTime, onCancel)
-            is PlayerTimerState.Finished -> TimerIdleCard("Timer ended — set another", onSetTimer)
-            is PlayerTimerState.Idle     -> TimerIdleCard("Set a sleep timer", onSetTimer)
+            is PlayerTimerState.Finished -> TimerIdleCard(stringResource(R.string.player_timer_ended_set_another), onSetTimer)
+            is PlayerTimerState.Idle     -> TimerIdleCard(stringResource(R.string.player_set_a_sleep_timer), onSetTimer)
         }
     }
 }
@@ -956,13 +966,13 @@ private fun ActiveTimerCard(
             Column {
                 Text(timer.remainingLabel, style = MaterialTheme.typography.headlineSmall, color = fg)
                 Text(
-                    if (fading) "Fading out now" else "Until sleep",
+                    stringResource(if (fading) R.string.player_timer_fading_now else R.string.player_timer_until_sleep),
                     style = MaterialTheme.typography.bodySmall, color = sub,
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                TimerChip("−5m", onReduce, fg)
-                TimerChip("+5m", onAdd,    fg)
+                TimerChip(stringResource(R.string.player_timer_minus_5), onReduce, fg)
+                TimerChip(stringResource(R.string.player_timer_plus_5), onAdd,    fg)
                 TimerChip("✕",  onCancel, sub)
             }
         }
@@ -993,6 +1003,7 @@ private fun NightLockToggleRow(
     onDisable: () -> Unit,
 ) {
     val isOn = nightLock != NightLockState.Disabled
+    val toggleLabel = stringResource(if (isOn) R.string.player_cd_night_lock_on else R.string.player_cd_night_lock_off)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1003,21 +1014,18 @@ private fun NightLockToggleRow(
             .background(if (isOn) Panel else White)
             .clickable(onClick = if (isOn) onDisable else onEnable)
             .padding(horizontal = 16.dp, vertical = 14.dp)
-            .semantics {
-                contentDescription =
-                    if (isOn) "Night lock enabled — tap to disable" else "Enable night lock"
-            },
+            .semantics { contentDescription = toggleLabel },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment     = Alignment.CenterVertically,
     ) {
         Column {
             Text(
-                "Night lock",
+                stringResource(R.string.player_night_lock),
                 style = MaterialTheme.typography.titleSmall,
                 color = if (isOn) OnPanel else Charcoal,
             )
             Text(
-                if (isOn) "Tap locked — long press to unlock" else "Disable accidental taps while you sleep",
+                stringResource(if (isOn) R.string.player_night_lock_on_subtitle else R.string.player_night_lock_off_subtitle),
                 style = MaterialTheme.typography.bodySmall,
                 color = if (isOn) OnPanel.copy(alpha = 0.6f) else MutedGray,
             )
@@ -1030,7 +1038,7 @@ private fun NightLockToggleRow(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                if (isOn) "ON" else "OFF",
+                stringResource(if (isOn) R.string.toggle_on else R.string.toggle_off),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (isOn) OnPanel else MutedGray,
             )
@@ -1047,6 +1055,7 @@ fun NightLockOverlay(
     onLongPressCancelled: () -> Unit,
 ) {
     val unlocking = state == NightLockState.Unlocking
+    val overlayLabel = stringResource(R.string.player_cd_night_lock_overlay)
     val progress by animateFloatAsState(
         targetValue      = if (unlocking) 1f else 0f,
         animationSpec    = if (unlocking) tween(1_500) else tween(100),
@@ -1067,7 +1076,7 @@ fun NightLockOverlay(
                     },
                 )
             }
-            .semantics { contentDescription = "Night lock active. Long press to unlock." },
+            .semantics { contentDescription = overlayLabel },
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -1075,9 +1084,9 @@ fun NightLockOverlay(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             LockIcon(tint = if (unlocking) DarkText.copy(alpha = 0.5f) else DarkText, sizeDp = 32)
-            Text(if (unlocking) "Keep holding…" else "Night lock",
+            Text(stringResource(if (unlocking) R.string.player_keep_holding else R.string.player_night_lock),
                 style = MaterialTheme.typography.titleMedium, color = DarkText)
-            Text("Long press to unlock",
+            Text(stringResource(R.string.player_long_press_unlock),
                 style = MaterialTheme.typography.bodySmall, color = DarkTextSecondary)
 
             if (unlocking) {
@@ -1132,13 +1141,13 @@ private fun TimerPickerSheet(
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 40.dp),
         ) {
-            Text("Sleep timer",       style = MaterialTheme.typography.headlineSmall, color = Charcoal)
+            Text(stringResource(R.string.player_timer_sheet_title), style = MaterialTheme.typography.headlineSmall, color = Charcoal)
             Spacer(Modifier.height(4.dp))
-            Text("Sound fades out gently before stopping",
+            Text(stringResource(R.string.player_timer_sheet_subtitle),
                 style = MaterialTheme.typography.bodySmall, color = MutedGray)
             Spacer(Modifier.height(24.dp))
 
-            val labels = listOf("15m", "30m", "45m", "1h", "1h 30m", "2h")
+            val labels = TIMER_PRESETS_MS.map { shortDuration(it) }
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(TIMER_PRESETS_MS.zip(labels)) { (ms, label) ->
                     val active = currentTimer is PlayerTimerState.Active &&
@@ -1168,7 +1177,7 @@ private fun TimerPickerSheet(
                         .padding(16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Cancel timer", style = MaterialTheme.typography.labelLarge, color = PaleRedText)
+                    Text(stringResource(R.string.player_cancel_timer), style = MaterialTheme.typography.labelLarge, color = PaleRedText)
                 }
             }
         }
@@ -1189,25 +1198,25 @@ private fun SavePresetDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor   = WarmWhite,
-        title   = { Text("Save preset",  style = MaterialTheme.typography.headlineSmall, color = Charcoal) },
+        title   = { Text(stringResource(R.string.player_save_preset_title), style = MaterialTheme.typography.headlineSmall, color = Charcoal) },
         text    = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SleepTextField(value = name, label = "Name", onValueChange = { name = it })
+                SleepTextField(value = name, label = stringResource(R.string.preset_field_name), onValueChange = { name = it })
                 SleepTextField(
                     value         = emoji,
-                    label         = "Emoji (optional)",
+                    label         = stringResource(R.string.preset_field_emoji),
                     onValueChange = { if (it.length <= 2) emoji = it },
                 )
             }
         },
         confirmButton = {
             TextButton(onClick = { if (name.isNotBlank()) onSave(name, emoji.ifBlank { null }) }) {
-                Text("Save", style = MaterialTheme.typography.labelLarge, color = Charcoal)
+                Text(stringResource(R.string.action_save), style = MaterialTheme.typography.labelLarge, color = Charcoal)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", style = MaterialTheme.typography.labelLarge, color = MutedGray)
+                Text(stringResource(R.string.action_cancel), style = MaterialTheme.typography.labelLarge, color = MutedGray)
             }
         },
     )
@@ -1222,21 +1231,21 @@ private fun UnsavedChangesDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor   = WarmWhite,
-        title   = { Text("Save changes?",  style = MaterialTheme.typography.headlineSmall, color = Charcoal) },
+        title   = { Text(stringResource(R.string.player_unsaved_title), style = MaterialTheme.typography.headlineSmall, color = Charcoal) },
         text    = {
             Text(
-                "You've modified this mix. Save changes to your preset before leaving?",
+                stringResource(R.string.player_unsaved_body),
                 style = MaterialTheme.typography.bodyMedium, color = MutedGray,
             )
         },
         confirmButton  = {
             TextButton(onClick = onSave) {
-                Text("Save",    style = MaterialTheme.typography.labelLarge, color = Charcoal)
+                Text(stringResource(R.string.action_save), style = MaterialTheme.typography.labelLarge, color = Charcoal)
             }
         },
         dismissButton  = {
             TextButton(onClick = onDiscard) {
-                Text("Discard", style = MaterialTheme.typography.labelLarge, color = PaleRedText)
+                Text(stringResource(R.string.action_discard), style = MaterialTheme.typography.labelLarge, color = PaleRedText)
             }
         },
     )

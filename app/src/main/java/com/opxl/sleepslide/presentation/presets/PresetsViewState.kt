@@ -1,6 +1,7 @@
 package com.opxl.sleepslide.presentation.presets
 
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.presentation.components.UiText
 
 
 data class PresetsUiState(
@@ -26,7 +27,7 @@ sealed interface PresetsScreenState {
         val filtered: List<PresetItemState>,
         val isFiltered: Boolean,
     ) : PresetsScreenState
-    data class Error(val message: String) : PresetsScreenState
+    data class Error(val message: UiText) : PresetsScreenState
 }
 
 data class PresetItemState(
@@ -34,7 +35,6 @@ data class PresetItemState(
     val isActive: Boolean,
     val isSelected: Boolean,
     val totalListenedMs: Long,
-    val totalListenedLabel: String,
     val playCount: Int,
     /** Contains premium layers the current tier can't play — they're skipped at launch. */
     val hasLockedLayers: Boolean = false,
@@ -53,11 +53,11 @@ sealed interface PresetsEvent {
     data class ShowDeleteConfirmation(val presetId: Long, val presetName: String) : PresetsEvent
     data class ShowBulkDeleteConfirmation(val count: Int) : PresetsEvent
 
-    data class PresetDeleted(val presetName: String) : PresetsEvent
+    data class PresetDeleted(val presetName: String?) : PresetsEvent
     data class UndoDelete(val preset: Domain.Preset) : PresetsEvent
     data class ShowPresetLimitReached(val limit: Int) : PresetsEvent
 
-    data class ShowError(val message: String) : PresetsEvent
-    data class ShowInfo(val message: String) : PresetsEvent
+    data class ShowError(val message: UiText) : PresetsEvent
+    data class ShowInfo(val message: UiText) : PresetsEvent
     data object ShowServiceUnavailable : PresetsEvent
 }

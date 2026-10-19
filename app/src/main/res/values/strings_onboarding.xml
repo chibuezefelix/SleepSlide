@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_headline">Sound that works while you sleep.</string>
+    <string name="onboarding_welcome_subtext">No account. No subscription. No ads during playback.</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_feature_offline">Offline sounds</string>
+    <string name="onboarding_feature_no_subscription">No subscription</string>
+    <string name="onboarding_feature_gapless">Gapless loop</string>
+    <string name="onboarding_path_headline">What brings you here?</string>
+    <string name="onboarding_path_subtext">We\'ll show you the most useful sounds first. You can change this later.</string>
+    <string name="onboarding_setting_up">Setting up…</string>
+    <string name="onboarding_skip">Skip — I\'ll explore on my own</string>
+    <string name="onboarding_cd_skip">Skip onboarding</string>
+    <string name="onboarding_cd_path_selected">%1$s, selected</string>
+    <string name="onboarding_cd_path_not_selected">%1$s, not selected</string>
+    <string name="onboarding_path_tinnitus_title">Tinnitus relief</string>
+    <string name="onboarding_path_tinnitus_description">White, pink, brown and grey noise to mask ear ringing and help you sleep.</string>
+    <string name="onboarding_path_tinnitus_who">For Jeff — veterans, hearing loss, tinnitus sufferers</string>
+    <string name="onboarding_path_general_title">Wind down</string>
+    <string name="onboarding_path_general_description">Rain, ocean, forest and ambient sounds to help you relax after a long day.</string>
+    <string name="onboarding_path_general_who">For Sandra — stress relief, daily wind-down</string>
+    <string name="onboarding_pill_white_noise">White noise</string>
+    <string name="onboarding_pill_brown_noise">Brown noise</string>
+    <string name="onboarding_pill_pink_noise">Pink noise</string>
+    <string name="onboarding_pill_grey_noise">Grey noise</string>
+    <string name="onboarding_pill_rain">Rain</string>
+    <string name="onboarding_pill_ocean">Ocean</string>
+    <string name="onboarding_pill_forest">Forest</string>
+    <string name="onboarding_pill_fireplace">Fireplace</string>
+    <string name="onboarding_permissions_headline">One more thing</string>
+    <string name="onboarding_permissions_subtext">These help your sound play all night without stopping.</string>
+    <string name="onboarding_permission_notifications_title">Notifications</string>
+    <string name="onboarding_permission_notifications_description">Shows a persistent control so you can pause or stop from the lock screen.</string>
+    <string name="onboarding_permission_battery_title">Background audio</string>
+    <string name="onboarding_permission_battery_description">Prevents Android from stopping the sound at night when your phone is idle.</string>
+    <string name="onboarding_all_set">All set — let\'s go</string>
+    <string name="onboarding_continue_anyway">Continue anyway</string>
+    <string name="onboarding_permissions_footer">You can always enable these in Settings</string>
+    <string name="onboarding_cd_enable">Enable %1$s</string>
+    <string name="onboarding_enable">Enable</string>
+    <string name="onboarding_error_save">Could not save your preference — please try again</string>
+</resources>

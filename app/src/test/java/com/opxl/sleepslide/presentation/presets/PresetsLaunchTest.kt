@@ -63,6 +63,7 @@ class PresetsLaunchTest {
                 audioStateObserver        = audioStateObserver,
                 entitlementObserver       = Fixtures.entitlementObserver(Domain.EntitlementTier.FREE),
                 playbackGate              = gate,
+                soundText                 = mockk(relaxed = true),
             )
             val preset = Domain.Preset(id = 7L, name = "Deep sleep", mix = Fixtures.deltaAndRain())
 
@@ -73,7 +74,7 @@ class PresetsLaunchTest {
             coVerify(exactly = 1) { audioService.play(capture(played)) }
             assertEquals(listOf("rain_light"), played.captured.layers.map { it.sound.id })
             assertEquals(
-                LockedLayersNotice(listOf("Delta Beats · 2 Hz"), playingRest = true),
+                LockedLayersNotice(listOf(Fixtures.delta), playingRest = true),
                 gate.notices.first(),
             )
             // The saved preset is untouched — Delta comes back if they resubscribe

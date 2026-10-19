@@ -2,6 +2,8 @@ package com.opxl.sleepslide.presentation.scene
 
 import com.opxl.sleepslide.domain.model.Domain
 import java.util.Calendar
+import androidx.annotation.StringRes
+import com.opxl.sleepslide.R
 
 /**
  * A backdrop photo shipped in `assets/images/`, with the vocabulary it "answers to".
@@ -12,29 +14,29 @@ import java.util.Calendar
  */
 enum class Scene(
     val assetPath: String,
-    val title: String,
-    val caption: String,
+    @StringRes val title: Int,
+    @StringRes val caption: Int,
     val tags: Set<String>,
     val hours: IntRange,
 ) {
     GARDEN(
         assetPath = "images/garden.jpg",
-        title     = "Dahlia garden",
-        caption   = "Late-summer flowers, still air",
+        title     = R.string.scene_garden_title,
+        caption   = R.string.scene_garden_caption,
         tags      = setOf("garden", "day", "calm", "birds", "forest", "baby"),
         hours     = 6..16,
     ),
     MOUNTAIN_LAKE(
         assetPath = "images/mountain_lake.jpg",
-        title     = "Fuji through the maples",
-        caption   = "Cool water, drifting mist",
+        title     = R.string.scene_mountain_lake_title,
+        caption   = R.string.scene_mountain_lake_caption,
         tags      = setOf("water", "rain", "forest", "calm", "night", "deep", "hearing", "noise", "masking"),
         hours     = 21..23,
     ),
     SUNSET_VALLEY(
         assetPath = "images/sunset_valley.jpg",
-        title     = "Dusk over the valley",
-        caption   = "The last warm light of the day",
+        title     = R.string.scene_sunset_valley_title,
+        caption   = R.string.scene_sunset_valley_caption,
         tags      = setOf("evening", "fire", "cozy", "storm", "dramatic", "indoor", "city"),
         hours     = 17..20,
     );

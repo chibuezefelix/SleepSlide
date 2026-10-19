@@ -466,8 +466,8 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
             )
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("SleepSlide")
-            .setContentText("Playing")
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.notif_playback_playing))
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
@@ -479,10 +479,10 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Playback",
+            getString(R.string.notif_playback_channel_name),
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
-            description = "SleepSlide background playback"
+            description = getString(R.string.notif_playback_channel_description)
             setShowBadge(false)
             setSound(null, null)
             enableVibration(false)

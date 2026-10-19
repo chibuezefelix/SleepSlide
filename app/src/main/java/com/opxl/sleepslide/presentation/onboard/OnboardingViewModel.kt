@@ -21,6 +21,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.util.Log
+import com.opxl.sleepslide.R
+import com.opxl.sleepslide.presentation.components.UiText
+
+private const val TAG = "OnboardingViewModel"
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
@@ -149,11 +154,10 @@ class OnboardingViewModel @Inject constructor(
             }.onSuccess {
                 _events.trySend(OnboardingVMState.OnboardingEvent.NavigateToHome)
             }.onFailure { e ->
+                Log.w(TAG, "Could not complete onboarding", e)
                 _isSaving.value = false
                 _events.trySend(
-                    OnboardingVMState.OnboardingEvent.ShowError(
-                        e.message ?: "Could not save your preference — please try again"
-                    )
+                    OnboardingVMState.OnboardingEvent.ShowError(UiText(R.string.onboarding_error_save))
                 )
             }
         }

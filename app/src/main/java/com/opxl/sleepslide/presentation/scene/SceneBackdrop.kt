@@ -56,6 +56,8 @@ import com.opxl.sleepslide.ui.theme.OnImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
+import androidx.compose.ui.res.stringResource
+import com.opxl.sleepslide.R
 
 /**
  * Photo hero for the player. Picks a [Scene] for the current mix (see [Scene.pick]),
@@ -79,6 +81,10 @@ fun SceneBackdrop(
 
     var userScene by remember(mixKey) { mutableStateOf<Scene?>(null) }
     val scene = userScene ?: autoScene
+    val sceneDescription = stringResource(
+        if (onTap != null) R.string.scene_cd_open_player else R.string.scene_cd_change,
+        stringResource(scene.title),
+    )
 
     val height by animateFloatAsState(
         targetValue   = when {
@@ -109,10 +115,7 @@ fun SceneBackdrop(
             .clip(RoundedCornerShape(16.dp))
             .background(ImageScrim)
             .clickable { onTap?.invoke() ?: run { userScene = scene.next() } }
-            .semantics {
-                contentDescription = if (onTap != null) "Scene: ${scene.title}. Tap to open player."
-                                     else "Scene: ${scene.title}. Tap to change."
-            },
+            .semantics { contentDescription = sceneDescription },
     ) {
         AnimatedContent(
             targetState    = scene,
@@ -158,20 +161,20 @@ fun SceneBackdrop(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
             Text(
-                text  = scene.title,
+                text  = stringResource(scene.title),
                 style = MaterialTheme.typography.titleMedium,
                 color = OnImage,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text  = scene.caption,
+                    text  = stringResource(scene.caption),
                     style = MaterialTheme.typography.bodySmall,
                     color = OnImage.copy(alpha = 0.78f),
                 )
                 if (userScene != null) {
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text  = "· your pick",
+                        text  = stringResource(R.string.scene_your_pick),
                         style = MaterialTheme.typography.bodySmall,
                         color = OnImage.copy(alpha = 0.55f),
                     )

@@ -12,6 +12,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.opxl.sleepslide.ui.theme.PaleYellow
 import com.opxl.sleepslide.ui.theme.PaleYellowText
+import androidx.compose.ui.res.stringResource
+import com.opxl.sleepslide.R
 
 /** "Premium" tag for content the free tier can't play — Library sound rows, Presets cards. */
 @Composable
@@ -22,6 +24,6 @@ fun PremiumPill(modifier: Modifier = Modifier) {
             .background(PaleYellow)
             .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
-        Text("Premium", style = MaterialTheme.typography.labelSmall, color = PaleYellowText)
+        Text(stringResource(R.string.premium_pill), style = MaterialTheme.typography.labelSmall, color = PaleYellowText)
     }
 }

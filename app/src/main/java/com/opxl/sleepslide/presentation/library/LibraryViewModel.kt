@@ -42,7 +42,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+import android.util.Log
+import com.opxl.sleepslide.R
+import com.opxl.sleepslide.presentation.components.UiText
+import com.opxl.sleepslide.presentation.components.titleText
+import com.opxl.sleepslide.presentation.components.labelRes
+import com.opxl.sleepslide.presentation.components.SoundTextResolver
 
+private const val TAG                       = "LibraryViewModel"
 private const val SHARING_STOP_TIMEOUT_MS   = 5_000L
 private const val SEARCH_DEBOUNCE_MS        = 200L
 private const val VOLUME_DEBOUNCE_MS        = 400L
@@ -62,6 +69,7 @@ class LibraryViewModel @Inject constructor(
     private val headphonesObserver: HeadphonesObserver,
     private val mixSerializer: MixSerializer,
     private val playbackGate: PlaybackGate,
+    private val soundText: SoundTextResolver,
 ) : ViewModel() {
 
 
@@ -100,11 +108,10 @@ class LibraryViewModel @Inject constructor(
 
     val uiState: StateFlow<LibraryVMState.LibraryUiState> = buildUiState()
         .catch { e ->
+            Log.e(TAG, "Library UI state failed", e)
             emit(
                 LibraryVMState.LibraryUiState(
-                    catalogue = LibraryVMState.CatalogueState.Error(
-                        e.message ?: "Could not load sounds"
-                    )
+                    catalogue = LibraryVMState.CatalogueState.Error(UiText(R.string.library_error_load))
                 )
             )
         }
@@ -153,7 +160,7 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             val tier = entitlementObserver.entitlement.value.tier
             if (sound.isLockedFor(tier)) {
-                _events.trySend(LibraryVMState.LibraryEvent.ShowUpgradePrompt(sound.title))
+                _events.trySend(LibraryVMState.LibraryEvent.ShowUpgradePrompt(sound.titleText()))
                 return@launch
             }
 
@@ -180,7 +187,7 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             val tier = entitlementObserver.entitlement.value.tier
             if (sound.isLockedFor(tier)) {
-                _events.trySend(LibraryVMState.LibraryEvent.ShowUpgradePrompt(sound.title))
+                _events.trySend(LibraryVMState.LibraryEvent.ShowUpgradePrompt(sound.titleText()))
                 return@launch
             }
             // Long press previews the sound solo — does not add to mix
@@ -218,7 +225,8 @@ class LibraryViewModel @Inject constructor(
             }.onFailure { e ->
                 // Rollback optimistic update
                 _layers.update { layers -> layers.filter { it.position != position } }
-                _events.trySend(LibraryVMState.LibraryEvent.ShowError(e.message ?: "Could not add ${sound.title}"))
+                Log.w(TAG, "Could not add ${sound.id}", e)
+                _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_add_sound, sound.titleText())))
             }.isSuccess
             // Only after the add sticks, so a rolled-back add doesn't spend the one-time hint
             if (added) maybeShowHeadphonesHint(sound)
@@ -248,7 +256,8 @@ class LibraryViewModel @Inject constructor(
         val service = audioServiceHolder.current ?: return
         runCatching { service.removeLayer(position) }
             .onFailure { e ->
-                _events.trySend(LibraryVMState.LibraryEvent.ShowError(e.message ?: "Could not remove sound"))
+                Log.w(TAG, "Could not remove layer $position", e)
+                _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_remove_sound)))
             }
     }
 
@@ -269,7 +278,7 @@ class LibraryViewModel @Inject constructor(
                     volumeMemoryRepository.saveVolume(layer.sound.id, clamped)
                 }
             }.onFailure {
-                _events.trySend(LibraryVMState.LibraryEvent.ShowError("Volume update failed"))
+                _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_volume)))
             }
             volumeMutex.withLock { _dragging.update { it - position } }
         }
@@ -286,7 +295,7 @@ class LibraryViewModel @Inject constructor(
                 audioServiceHolder.current?.setLayerVolume(position, layer.volume)
                 volumeMemoryRepository.saveVolume(layer.sound.id, layer.volume)
             }.onFailure {
-                _events.trySend(LibraryVMState.LibraryEvent.ShowError("Could not save volume"))
+                _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_save_volume)))
             }
         }
     }
@@ -296,7 +305,7 @@ class LibraryViewModel @Inject constructor(
         _masterVolume.value = clamped
         scheduleVolumeWrite("master") {
             runCatching { audioServiceHolder.current?.setMasterVolume(clamped) }
-                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError("Master volume update failed")) }
+                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_master_volume))) }
         }
     }
 
@@ -304,7 +313,7 @@ class LibraryViewModel @Inject constructor(
         volumeJobs["master"]?.cancel()
         viewModelScope.launch {
             runCatching { audioServiceHolder.current?.setMasterVolume(_masterVolume.value) }
-                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError("Could not save master volume")) }
+                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_save_master_volume))) }
         }
     }
 
@@ -314,7 +323,7 @@ class LibraryViewModel @Inject constructor(
                 layers.map { if (it.position == position) it.copy(isMuted = true) else it }
             }
             runCatching { audioServiceHolder.current?.muteLayer(position) }
-                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError("Could not mute")) }
+                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_mute))) }
         }
     }
 
@@ -324,7 +333,7 @@ class LibraryViewModel @Inject constructor(
                 layers.map { if (it.position == position) it.copy(isMuted = false) else it }
             }
             runCatching { audioServiceHolder.current?.unmuteLayer(position) }
-                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError("Could not unmute")) }
+                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_unmute))) }
         }
     }
 
@@ -338,7 +347,7 @@ class LibraryViewModel @Inject constructor(
             }
             val layers = _layers.value
             if (layers.isEmpty()) {
-                _events.trySend(LibraryVMState.LibraryEvent.ShowInfo("Add at least one sound to play"))
+                _events.trySend(LibraryVMState.LibraryEvent.ShowInfo(UiText(R.string.library_info_add_sound_to_play)))
                 return@launch
             }
             val mix = buildMix(layers, _masterVolume.value)
@@ -348,7 +357,7 @@ class LibraryViewModel @Inject constructor(
                 is PlaybackGate.Decision.Play          -> decision.mix
                 is PlaybackGate.Decision.AllLocked     -> return@launch
                 is PlaybackGate.Decision.NothingToPlay -> {
-                    _events.trySend(LibraryVMState.LibraryEvent.ShowInfo("Add at least one sound to play"))
+                    _events.trySend(LibraryVMState.LibraryEvent.ShowInfo(UiText(R.string.library_info_add_sound_to_play)))
                     return@launch
                 }
             }
@@ -362,7 +371,8 @@ class LibraryViewModel @Inject constructor(
                     _events.trySend(LibraryVMState.LibraryEvent.NavigateToPlayer)
                 }
                 .onFailure { e ->
-                    _events.trySend(LibraryVMState.LibraryEvent.ShowError(e.message ?: "Could not start playback"))
+                    Log.w(TAG, "Could not start playback", e)
+                    _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_start_playback)))
                 }
         }
     }
@@ -370,7 +380,7 @@ class LibraryViewModel @Inject constructor(
     fun pausePlayback() {
         viewModelScope.launch {
             runCatching { audioServiceHolder.current?.pause() }
-                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError("Could not pause")) }
+                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_pause))) }
         }
     }
 
@@ -381,7 +391,7 @@ class LibraryViewModel @Inject constructor(
                 return@launch
             }
             runCatching { service.resume() }
-                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError("Could not resume")) }
+                .onFailure { _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_resume))) }
         }
     }
 
@@ -427,7 +437,7 @@ class LibraryViewModel @Inject constructor(
     fun requestSaveAsPreset() {
         viewModelScope.launch {
             if (_layers.value.isEmpty()) {
-                _events.trySend(LibraryVMState.LibraryEvent.ShowInfo("Add sounds before saving a preset"))
+                _events.trySend(LibraryVMState.LibraryEvent.ShowInfo(UiText(R.string.library_info_add_before_save)))
                 return@launch
             }
             _events.send(LibraryVMState.LibraryEvent.ShowSavePresetDialog)
@@ -438,12 +448,12 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             val trimmed = name.trim()
             if (trimmed.isBlank()) {
-                _events.trySend(LibraryVMState.LibraryEvent.ShowError("Preset name cannot be empty"))
+                _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_name_empty)))
                 return@launch
             }
             val layers = _layers.value
             if (layers.isEmpty()) {
-                _events.trySend(LibraryVMState.LibraryEvent.ShowError("No sounds to save"))
+                _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_no_sounds_to_save)))
                 return@launch
             }
 
@@ -460,8 +470,9 @@ class LibraryViewModel @Inject constructor(
                     _events.trySend(LibraryVMState.LibraryEvent.PresetSaved(trimmed))
                 }
                 .onFailure { e ->
-                    _saveState.value = LibraryVMState.SavePresetState.Error(e.message ?: "Could not save preset")
-                    _events.trySend(LibraryVMState.LibraryEvent.ShowError(e.message ?: "Could not save preset"))
+                    Log.w(TAG, "Could not save preset", e)
+                    _saveState.value = LibraryVMState.SavePresetState.Error(UiText(R.string.library_error_save_preset))
+                    _events.trySend(LibraryVMState.LibraryEvent.ShowError(UiText(R.string.library_error_save_preset)))
                 }
         }
     }
@@ -564,13 +575,13 @@ class LibraryViewModel @Inject constructor(
         // Category tabs — Tinnitus first (Jeff's primary need), then alpha
         val categoryCounts = sound.all.groupBy { it.category }
         val tabs = buildList {
-            add(LibraryVMState.CategoryTab(null, "All", sound.all.size))
+            add(LibraryVMState.CategoryTab(null, R.string.sound_category_all, sound.all.size))
             // Tinnitus pinned first regardless of sort
            Domain. SoundCategory.values()
                 .sortedWith(compareBy { if (it == Domain.SoundCategory.TINNITUS) 0 else 1 })
                 .forEach { cat ->
                     val count = categoryCounts[cat]?.size ?: 0
-                    if (count > 0) add(LibraryVMState.CategoryTab(cat, cat.name.lowercase().replaceFirstChar { it.uppercase() }, count))
+                    if (count > 0) add(LibraryVMState.CategoryTab(cat, cat.labelRes, count))
                 }
         }
 
@@ -579,8 +590,8 @@ class LibraryViewModel @Inject constructor(
         // Displayed sounds — filter by search or category
         val displayed = when {
             sound.query.isNotBlank() -> sound.all.filter { s ->
-                s.title.contains(sound.query, ignoreCase = true) ||
-                        s.category.name.contains(sound.query, ignoreCase = true) ||
+                soundText.title(s).contains(sound.query, ignoreCase = true) ||
+                        soundText.category(s.category).contains(sound.query, ignoreCase = true) ||
                         s.tags.any { tag -> tag.contains(sound.query, ignoreCase = true) }
             }
             mix.selectedCategory != null -> sound.all.filter { it.category == mix.selectedCategory }

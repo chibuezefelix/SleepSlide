@@ -97,6 +97,12 @@ import com.opxl.sleepslide.ui.theme.SurfaceMuted
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import com.opxl.sleepslide.ui.theme.White
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
+import com.opxl.sleepslide.R
+import com.opxl.sleepslide.presentation.components.displayTitle
+import com.opxl.sleepslide.presentation.components.listenedDuration
 
 // Screen entry point
 
@@ -111,6 +117,7 @@ fun PresetsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     var pendingDeleteId: Long? by rememberSaveable { mutableStateOf(null) }
     var pendingDeleteName: String by rememberSaveable { mutableStateOf("") }
@@ -141,8 +148,11 @@ fun PresetsScreen(
                 is PresetsEvent.PresetDeleted -> {
                     scope.launch {
                         val result = snackbarHostState.showSnackbar(
-                            message     = "${event.presetName} deleted",
-                            actionLabel = "Undo",
+                            message     = context.getString(
+                                R.string.presets_snack_deleted,
+                                event.presetName ?: context.getString(R.string.presets_fallback_name),
+                            ),
+                            actionLabel = context.getString(R.string.action_undo),
                             duration    = SnackbarDuration.Short,
                         )
                         if (result == SnackbarResult.ActionPerformed) {
@@ -152,21 +162,21 @@ fun PresetsScreen(
                 }
 
                 is PresetsEvent.UndoDelete ->
-                    scope.launch { snackbarHostState.showSnackbar("${event.preset.name} restored") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.presets_snack_restored, event.preset.name)) }
 
                 is PresetsEvent.ShowPresetLimitReached ->
                     scope.launch {
-                        snackbarHostState.showSnackbar("${event.limit} preset limit reached — upgrade to unlock all")
+                        snackbarHostState.showSnackbar(context.getString(R.string.presets_snack_limit_reached, event.limit))
                     }
 
                 is PresetsEvent.ShowServiceUnavailable ->
-                    scope.launch { snackbarHostState.showSnackbar("Audio service is starting") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.library_snack_service_starting)) }
 
                 is PresetsEvent.ShowError ->
-                    scope.launch { snackbarHostState.showSnackbar(event.message) }
+                    scope.launch { snackbarHostState.showSnackbar(event.message.asString(context)) }
 
                 is PresetsEvent.ShowInfo ->
-                    scope.launch { snackbarHostState.showSnackbar(event.message) }
+                    scope.launch { snackbarHostState.showSnackbar(event.message.asString(context)) }
             }
         }
     }
@@ -225,7 +235,7 @@ fun PresetsScreen(
                     is PresetsScreenState.Empty   -> PresetsEmptyState(
                         onBrowse = { viewModel.navigateToLibrary() }
                     )
-                    is PresetsScreenState.Error   -> PresetsErrorState(screen.message)
+                    is PresetsScreenState.Error   -> PresetsErrorState(screen.message.asString())
                     is PresetsScreenState.Ready   -> PresetsReadyBody(
                         screen       = screen,
                         uiState      = uiState,
@@ -290,10 +300,10 @@ fun PresetsScreen(
 
 /** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
 private val PRESETS_COACH_MARKS = listOf(
-    "add"    to "Build a new preset from the library",
-    "search" to "Find a preset by name",
-    "preset" to "Tap to play, long-press to select or reorder",
-    "browse" to "Save your first mix to see it here",
+    "add"    to R.string.coach_presets_add,
+    "search" to R.string.coach_presets_search,
+    "preset" to R.string.coach_presets_preset,
+    "browse" to R.string.coach_presets_browse,
 )
 
 @Composable
@@ -347,19 +357,19 @@ private fun DefaultTopBar(
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        SmallIconButton(onClick = onBack, description = "Back") {
+        SmallIconButton(onClick = onBack, description = stringResource(R.string.cd_back)) {
             ChevronLeft(Charcoal)
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text  = "Presets",
+                text  = stringResource(R.string.tab_presets),
                 style = MaterialTheme.typography.titleMedium,
                 color = Charcoal,
             )
             if (presetCount > 0) {
                 Text(
-                    text  = "$presetCount saved",
+                    text  = stringResource(R.string.presets_count_saved, presetCount),
                     style = MaterialTheme.typography.labelSmall,
                     color = MutedGray,
                 )
@@ -368,7 +378,7 @@ private fun DefaultTopBar(
 
         SmallIconButton(
             onClick     = onAdd,
-            description = "Add preset",
+            description = stringResource(R.string.presets_cd_add),
             background  = if (hasReachedLimit) SurfaceMuted else Charcoal,
             borderColor = if (hasReachedLimit) Border else Charcoal,
             modifier    = Modifier.coachMarkAnchor("add"),
@@ -393,12 +403,12 @@ private fun SelectionTopBar(
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        SmallIconButton(onClick = onClose, description = "Exit selection") {
+        SmallIconButton(onClick = onClose, description = stringResource(R.string.presets_cd_exit_selection)) {
             CloseIcon(Charcoal)
         }
 
         Text(
-            text  = "$count of $total selected",
+            text  = stringResource(R.string.presets_selected_count, count, total),
             style = MaterialTheme.typography.titleSmall,
             color = Charcoal,
         )
@@ -407,7 +417,7 @@ private fun SelectionTopBar(
             if (count < total) {
                 TextButton(onClick = onSelectAll) {
                     Text(
-                        text  = "All",
+                        text  = stringResource(R.string.presets_select_all),
                         style = MaterialTheme.typography.labelLarge,
                         color = Charcoal,
                     )
@@ -415,7 +425,7 @@ private fun SelectionTopBar(
             }
             SmallIconButton(
                 onClick     = onDelete,
-                description = "Delete selected",
+                description = stringResource(R.string.presets_cd_delete_selected),
                 background  = if (count > 0) PaleRed else SurfaceMuted,
                 borderColor = if (count > 0) PaleRedText else Border,
             ) {
@@ -435,13 +445,13 @@ private fun ReorderTopBar(onDone: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text  = "Drag to reorder",
+            text  = stringResource(R.string.presets_drag_to_reorder),
             style = MaterialTheme.typography.titleSmall,
             color = MutedGray,
         )
         TextButton(onClick = onDone) {
             Text(
-                text  = "Done",
+                text  = stringResource(R.string.action_done),
                 style = MaterialTheme.typography.labelLarge,
                 color = Charcoal,
             )
@@ -459,6 +469,7 @@ private fun SearchBar(
     enabled: Boolean,
 ) {
     val focusRequester = remember { FocusRequester() }
+    val clearSearchLabel = stringResource(R.string.library_cd_clear_search)
 
     Box(
         modifier = Modifier
@@ -489,7 +500,7 @@ private fun SearchBar(
                     Box {
                         if (query.isEmpty()) {
                             Text(
-                                text  = "Search presets or sounds",
+                                text  = stringResource(R.string.presets_search_hint),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MutedGray,
                             )
@@ -505,7 +516,7 @@ private fun SearchBar(
                         .clip(CircleShape)
                         .background(MutedGray.copy(alpha = 0.2f))
                         .clickable(onClick = onClear)
-                        .semantics { contentDescription = "Clear search" },
+                        .semantics { contentDescription = clearSearchLabel },
                     contentAlignment = Alignment.Center,
                 ) {
                     CloseIcon(MutedGray)
@@ -547,12 +558,12 @@ private fun PresetsEmptyState(onBrowse: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            text  = "No presets yet",
+            text  = stringResource(R.string.presets_empty_title),
             style = MaterialTheme.typography.headlineSmall,
             color = Charcoal,
         )
         Text(
-            text  = "Build a mix in the library and save it here for quick access.",
+            text  = stringResource(R.string.presets_empty_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MutedGray,
         )
@@ -566,7 +577,7 @@ private fun PresetsEmptyState(onBrowse: () -> Unit) {
                 .padding(horizontal = 24.dp, vertical = 12.dp),
         ) {
             Text(
-                text  = "Browse sounds",
+                text  = stringResource(R.string.presets_browse_sounds),
                 style = MaterialTheme.typography.labelLarge,
                 color = White,
             )
@@ -590,7 +601,7 @@ private fun PresetsErrorState(message: String) {
                 .padding(horizontal = 10.dp, vertical = 4.dp),
         ) {
             Text(
-                text  = "Error",
+                text  = stringResource(R.string.label_error),
                 style = MaterialTheme.typography.labelSmall,
                 color = PaleRedText,
             )
@@ -648,7 +659,7 @@ private fun PresetsReadyBody(
         // Pinned section header
         if (screen.pinned.isNotEmpty() && !screen.isFiltered) {
             item(key = "pinned_header") {
-                SectionLabel("Pinned")
+                SectionLabel(stringResource(R.string.presets_section_pinned))
             }
             items(
                 items    = screen.pinned,
@@ -675,7 +686,7 @@ private fun PresetsReadyBody(
         if (screen.unpinned.isNotEmpty() && !screen.isFiltered) {
             item(key = "unpinned_header") {
                 if (screen.pinned.isNotEmpty()) {
-                    SectionLabel("Saved")
+                    SectionLabel(stringResource(R.string.presets_section_saved))
                 }
             }
             items(
@@ -710,7 +721,7 @@ private fun PresetsReadyBody(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text  = "No presets match",
+                            text  = stringResource(R.string.presets_no_match),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MutedGray,
                         )
@@ -782,6 +793,14 @@ private fun PresetCard(
         label         = "card_border_${preset.id}",
     )
     val textColor   = if (item.isActive) OnPanel else Charcoal
+    val cardDescription = listOfNotNull(
+        preset.name,
+        stringResource(R.string.presets_cd_playing).takeIf { item.isActive },
+        stringResource(R.string.presets_cd_selected).takeIf { item.isSelected },
+        stringResource(R.string.presets_cd_pinned).takeIf { preset.isPinned },
+        stringResource(R.string.presets_cd_locked_layers).takeIf { item.hasLockedLayers },
+    ).joinToString(", ")
+    val moreLabel = stringResource(R.string.presets_cd_more_options, preset.name)
     val subColor    = if (item.isActive) OnPanel.copy(alpha = 0.6f) else MutedGray
 
     Box(
@@ -791,15 +810,7 @@ private fun PresetCard(
             .background(bgColor)
             .border(1.dp, borderColor, RoundedCornerShape(8.dp))
             .clickable(onClick = onTap)
-            .semantics {
-                contentDescription = buildString {
-                    append(preset.name)
-                    if (item.isActive) append(", currently playing")
-                    if (item.isSelected) append(", selected")
-                    if (preset.isPinned) append(", pinned")
-                    if (item.hasLockedLayers) append(", has premium sounds that will be skipped")
-                }
-            },
+            .semantics { contentDescription = cardDescription },
     ) {
         Row(
             modifier              = Modifier
@@ -833,18 +844,21 @@ private fun PresetCard(
                 Spacer(Modifier.height(2.dp))
                 val layerSummary = preset.mix.layers
                     .take(3)
-                    .joinToString(" · ") { it.sound.title }
+                    .map { it.sound.displayTitle() }
+                    .joinToString(" · ")
                 Text(
-                    text     = layerSummary.ifBlank { "${preset.mix.layers.size} sounds" },
+                    text     = layerSummary.ifBlank {
+                        pluralStringResource(R.plurals.presets_sound_count, preset.mix.layers.size, preset.mix.layers.size)
+                    },
                     style    = MaterialTheme.typography.bodySmall,
                     color    = subColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (item.totalListenedLabel.isNotEmpty()) {
+                if (item.totalListenedMs > 0L) {
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text  = item.totalListenedLabel,
+                        text  = listenedDuration(item.totalListenedMs),
                         style = MaterialTheme.typography.labelSmall,
                         color = subColor.copy(alpha = 0.7f),
                     )
@@ -865,7 +879,7 @@ private fun PresetCard(
                                 if (item.isActive) OnPanel.copy(alpha = 0.1f) else SurfaceMuted
                             )
                             .clickable { showMenu = true }
-                            .semantics { contentDescription = "More options for ${preset.name}" },
+                            .semantics { contentDescription = moreLabel },
                         contentAlignment = Alignment.Center,
                     ) {
                         DotsIcon(tint = if (item.isActive) OnPanel.copy(alpha = 0.7f) else MutedGray)
@@ -1005,15 +1019,15 @@ private fun PresetContextMenu(
             .border(1.dp, Border, RoundedCornerShape(8.dp)),
     ) {
         DropdownMenuItem(
-            text    = { MenuLabel(if (isPinned) "Unpin" else "Pin to top") },
+            text    = { MenuLabel(stringResource(if (isPinned) R.string.presets_menu_unpin else R.string.presets_menu_pin)) },
             onClick = if (isPinned) onUnpin else onPin,
         )
         DropdownMenuItem(
-            text    = { MenuLabel("Rename") },
+            text    = { MenuLabel(stringResource(R.string.presets_menu_rename)) },
             onClick = onRename,
         )
         DropdownMenuItem(
-            text    = { MenuLabel("Delete", color = PaleRedText) },
+            text    = { MenuLabel(stringResource(R.string.action_delete), color = PaleRedText) },
             onClick = onDelete,
         )
     }
@@ -1048,7 +1062,7 @@ private fun LimitBanner() {
                 .background(PaleYellowText),
         )
         Text(
-            text  = "${FREE_PRESET_LIMIT} preset limit reached — upgrade to save more",
+            text  = stringResource(R.string.presets_limit_banner, FREE_PRESET_LIMIT),
             style = MaterialTheme.typography.bodySmall,
             color = PaleYellowText,
             modifier = Modifier.weight(1f),
@@ -1079,26 +1093,26 @@ private fun DeleteConfirmDialog(
         containerColor   = WarmWhite,
         title = {
             Text(
-                text  = "Delete preset?",
+                text  = stringResource(R.string.presets_delete_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = Charcoal,
             )
         },
         text = {
             Text(
-                text  = "\"$presetName\" will be removed. You can undo this immediately after.",
+                text  = stringResource(R.string.presets_delete_body, presetName),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MutedGray,
             )
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Delete", style = MaterialTheme.typography.labelLarge, color = PaleRedText)
+                Text(stringResource(R.string.action_delete), style = MaterialTheme.typography.labelLarge, color = PaleRedText)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", style = MaterialTheme.typography.labelLarge, color = MutedGray)
+                Text(stringResource(R.string.action_cancel), style = MaterialTheme.typography.labelLarge, color = MutedGray)
             }
         },
     )
@@ -1115,26 +1129,26 @@ private fun BulkDeleteConfirmDialog(
         containerColor   = WarmWhite,
         title = {
             Text(
-                text  = "Delete $count preset${if (count > 1) "s" else ""}?",
+                text  = pluralStringResource(R.plurals.presets_bulk_delete_title, count, count),
                 style = MaterialTheme.typography.headlineSmall,
                 color = Charcoal,
             )
         },
         text = {
             Text(
-                text  = "This cannot be undone for bulk deletions.",
+                text  = stringResource(R.string.presets_bulk_delete_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MutedGray,
             )
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Delete all", style = MaterialTheme.typography.labelLarge, color = PaleRedText)
+                Text(stringResource(R.string.presets_delete_all), style = MaterialTheme.typography.labelLarge, color = PaleRedText)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", style = MaterialTheme.typography.labelLarge, color = MutedGray)
+                Text(stringResource(R.string.action_cancel), style = MaterialTheme.typography.labelLarge, color = MutedGray)
             }
         },
     )
@@ -1157,7 +1171,7 @@ private fun RenameDialog(
         containerColor   = WarmWhite,
         title = {
             Text(
-                text  = "Rename preset",
+                text  = stringResource(R.string.presets_rename_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = Charcoal,
             )
@@ -1189,7 +1203,7 @@ private fun RenameDialog(
                 enabled = isValid,
             ) {
                 Text(
-                    text  = "Save",
+                    text  = stringResource(R.string.action_save),
                     style = MaterialTheme.typography.labelLarge,
                     color = if (isValid) Charcoal else MutedGray,
                 )
@@ -1197,7 +1211,7 @@ private fun RenameDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", style = MaterialTheme.typography.labelLarge, color = MutedGray)
+                Text(stringResource(R.string.action_cancel), style = MaterialTheme.typography.labelLarge, color = MutedGray)
             }
         },
     )

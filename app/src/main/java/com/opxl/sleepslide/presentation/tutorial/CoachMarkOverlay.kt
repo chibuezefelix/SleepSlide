@@ -47,6 +47,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opxl.sleepslide.ui.theme.ImageScrim
 import com.opxl.sleepslide.ui.theme.OverlayMark
 import com.opxl.sleepslide.ui.theme.OnImage
+import androidx.compose.ui.res.stringResource
+import com.opxl.sleepslide.R
 
 /** Where a coach mark points ([anchor] in root coordinates) and the one-line label it shows. */
 data class CoachMark(val anchor: Rect, val label: String)
@@ -86,12 +88,12 @@ fun Modifier.coachMarkAnchor(key: String): Modifier {
  * onGloballyPositioned write per anchored element per layout pass — every frame of a nav
  * transition or a scroll — which is wasted work on every visit after the first.
  *
- * @param labels anchor key → label, in the order the marks should be resolved.
+ * @param labels anchor key → label string resource, in the order the marks should be resolved.
  */
 @Composable
 fun CoachMarkHost(
     viewModel: TutorialViewModel,
-    labels: List<Pair<String, String>>,
+    labels: List<Pair<String, Int>>,
     content: @Composable () -> Unit,
 ) {
     val show by viewModel.showCoachMarks.collectAsStateWithLifecycle()
@@ -114,7 +116,7 @@ fun CoachMarkHost(
             ) {
                 // Resolved inside so the arrows stay put while the overlay fades out.
                 val marks = labels.mapNotNull { (key, label) ->
-                    anchors.bounds[key]?.let { CoachMark(anchor = it, label = label) }
+                    anchors.bounds[key]?.let { CoachMark(anchor = it, label = stringResource(label)) }
                 }
                 CoachMarkOverlay(marks = marks, onDismiss = viewModel::dismiss)
             }
@@ -132,7 +134,7 @@ fun CoachMarkOverlay(
     marks: List<CoachMark>,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    hint: String = "Tap anywhere to continue",
+    hint: String = stringResource(R.string.coach_mark_hint),
 ) {
     val textMeasurer = rememberTextMeasurer()
     val labelStyle   = MaterialTheme.typography.labelLarge.copy(color = ImageScrim)

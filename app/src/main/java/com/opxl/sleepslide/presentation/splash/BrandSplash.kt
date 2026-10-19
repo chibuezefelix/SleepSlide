@@ -56,9 +56,8 @@ import com.opxl.sleepslide.ui.theme.MutedGray
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
 
-private const val TAGLINE = "Calm sounds, mixed your way,\nfor deeper, longer sleep."
-private const val FOOTER = "SleepSlide"
 
 private val TileSize = 48.dp
 // The adaptive-icon foreground is a 108dp canvas whose visible area is the middle 72dp.
@@ -141,7 +140,7 @@ fun BrandSplash(onFinished: () -> Unit, modifier: Modifier = Modifier) {
                     Row {
                         Spacer(Modifier.width(12.dp))
                         Text(
-                            text = "SleepSlide",
+                            text = stringResource(R.string.app_name),
                             style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.SemiBold),
                             color = Charcoal,
                             maxLines = 1,
@@ -157,7 +156,7 @@ fun BrandSplash(onFinished: () -> Unit, modifier: Modifier = Modifier) {
                 enter = fadeIn(tween(500)) + slideInVertically(tween(500)) { it / 3 },
             ) {
                 Text(
-                    text = TAGLINE,
+                    text = stringResource(R.string.splash_tagline),
                     style = MaterialTheme.typography.bodyLarge.copy(fontStyle = FontStyle.Italic),
                     color = MutedGray,
                     textAlign = TextAlign.Center,
@@ -174,7 +173,7 @@ fun BrandSplash(onFinished: () -> Unit, modifier: Modifier = Modifier) {
                 .padding(bottom = 32.dp),
         ) {
             Text(
-                text = FOOTER,
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.labelLarge,
                 color = MutedGray,
             )

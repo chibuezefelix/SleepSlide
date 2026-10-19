@@ -58,6 +58,10 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
+import android.content.Context
+import com.opxl.sleepslide.presentation.components.displayTitle
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -113,11 +117,11 @@ object Routes {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Top-level destinations reachable from the bottom bar. Player, Tutorial and Onboarding are not tabs. */
-private enum class AppTab(val route: String, val label: String, @DrawableRes val icon: Int) {
-    HOME(Routes.HOME,         "Home",     R.drawable.ic_tab_home),
-    LIBRARY(Routes.LIBRARY,   "Library",  R.drawable.ic_tab_library),
-    PRESETS(Routes.PRESETS,   "Presets",  R.drawable.ic_tab_presets),
-    SETTINGS(Routes.SETTINGS, "Settings", R.drawable.ic_tab_settings);
+private enum class AppTab(val route: String, @StringRes val label: Int, @DrawableRes val icon: Int) {
+    HOME(Routes.HOME,         R.string.tab_home,     R.drawable.ic_tab_home),
+    LIBRARY(Routes.LIBRARY,   R.string.tab_library,  R.drawable.ic_tab_library),
+    PRESETS(Routes.PRESETS,   R.string.tab_presets,  R.drawable.ic_tab_presets),
+    SETTINGS(Routes.SETTINGS, R.string.tab_settings, R.drawable.ic_tab_settings);
 
     companion object {
         /**
@@ -386,11 +390,12 @@ private fun LockedLayersNoticeHost(
     val hostState = remember { SnackbarHostState() }
     val currentOnUpgrade by rememberUpdatedState(onUpgrade)
 
+    val context = LocalContext.current
     LaunchedEffect(notices) {
         notices.collect { notice ->
             val result = hostState.showSnackbar(
-                message     = notice.message(),
-                actionLabel = "Upgrade",
+                message     = notice.message(context),
+                actionLabel = context.getString(R.string.action_upgrade),
                 duration    = SnackbarDuration.Long,
             )
             if (result == SnackbarResult.ActionPerformed) currentOnUpgrade()
@@ -425,12 +430,16 @@ private fun LockedLayersNoticeHost(
 }
 
 /** "Delta Beats is premium — playing the rest of your mix". Drops the " · 2 Hz" detail. */
-private fun LockedLayersNotice.message(): String {
-    val names = lockedTitles.map { it.substringBefore(" · ") }
-    val subject = if (names.size == 1) "${names.single()} is"
-                  else "${names.dropLast(1).joinToString(", ")} and ${names.last()} are"
-    return if (playingRest) "$subject premium — playing the rest of your mix"
-           else "$subject premium — upgrade to listen"
+private fun LockedLayersNotice.message(context: Context): String {
+    val names = lockedSounds.map { it.displayTitle(context).substringBefore(" · ") }
+    val joined = if (names.size == 1) names.single()
+                 else context.getString(
+                     R.string.list_and,
+                     names.dropLast(1).joinToString(context.getString(R.string.list_separator)),
+                     names.last(),
+                 )
+    val res = if (playingRest) R.plurals.notice_locked_playing_rest else R.plurals.notice_locked_upgrade
+    return context.resources.getQuantityString(res, names.size, joined)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -608,7 +617,7 @@ private fun TabButton(
         )
 
         Text(
-            text     = tab.label,
+            text     = stringResource(tab.label),
             style    = MaterialTheme.typography.labelSmall,
             color    = tint,
             maxLines = 1,

@@ -1,6 +1,7 @@
 package com.opxl.sleepslide.presentation.player
 
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.presentation.components.UiText
 
 
 data class PlayerUiState(
@@ -30,7 +31,7 @@ sealed interface PlayerPlaybackState {
     data object FadingIn : PlayerPlaybackState
     data class FadingOut(val triggeredBy: FadeOutTrigger) : PlayerPlaybackState
     data class Interrupted(val reason: InterruptionReason) : PlayerPlaybackState
-    data class Error(val message: String) : PlayerPlaybackState
+    data class Error(val message: UiText) : PlayerPlaybackState
 }
 
 enum class FadeOutTrigger { TIMER, USER }
@@ -90,7 +91,7 @@ sealed interface ActivePresetState {
         val isDirty: Boolean,
     ) : ActivePresetState
     data class Saving(val name: String) : ActivePresetState
-    data class SaveError(val message: String) : ActivePresetState
+    data class SaveError(val message: UiText) : ActivePresetState
 }
 
 
@@ -133,8 +134,8 @@ sealed interface PlayerEvent {
     data object NightLockEnabled : PlayerEvent
     data object NightLockDisabled : PlayerEvent
 
-    data class ShowError(val message: String) : PlayerEvent
-    data class ShowInfo(val message: String) : PlayerEvent
+    data class ShowError(val message: UiText) : PlayerEvent
+    data class ShowInfo(val message: UiText) : PlayerEvent
     data object ShowServiceUnavailable : PlayerEvent
     data object RequestNotificationPermission : PlayerEvent
     data class AudioInterrupted(val reason: InterruptionReason) : PlayerEvent

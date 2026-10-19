@@ -42,9 +42,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+import android.util.Log
+import com.opxl.sleepslide.R
+import com.opxl.sleepslide.presentation.components.UiText
+import com.opxl.sleepslide.presentation.components.titleText
 
 // Constants
 
+private const val TAG                       = "PlayerViewModel"
 private const val VOLUME_DEBOUNCE_MS        = 400L
 private const val SHARING_STOP_TIMEOUT_MS   = 5_000L
 private const val MAX_LAYERS                = 3
@@ -123,11 +128,10 @@ class PlayerViewModel @Inject constructor(
 
     val uiState: StateFlow<PlayerUiState> = buildUiState()
         .catch { e ->
+            Log.e(TAG, "Player UI state failed", e)
             emit(
                 PlayerUiState(
-                    playback = PlayerPlaybackState.Error(
-                        e.message ?: "An unexpected error occurred"
-                    )
+                    playback = PlayerPlaybackState.Error(UiText(R.string.player_error_unexpected))
                 )
             )
         }
@@ -167,7 +171,7 @@ class PlayerViewModel @Inject constructor(
                 is PlaybackGate.Decision.Play          -> decision.mix
                 is PlaybackGate.Decision.AllLocked     -> return@launch
                 is PlaybackGate.Decision.NothingToPlay -> {
-                    _events.trySend(PlayerEvent.ShowError("No sounds in this mix"))
+                    _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_no_sounds)))
                     return@launch
                 }
             }
@@ -203,11 +207,8 @@ class PlayerViewModel @Inject constructor(
                 sessionId?.let { safeCloseSessionById(it, Domain.StopReason.ERROR) }
                 _sessionId.value   = null
                 _sessionStart.value = null
-                _events.trySend(
-                    PlayerEvent.ShowError(
-                        playResult.exceptionOrNull()?.message ?: "Could not start playback"
-                    )
-                )
+                Log.w(TAG, "Could not start playback", playResult.exceptionOrNull())
+                _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_start_playback)))
                 return@launch
             }
 
@@ -227,7 +228,7 @@ class PlayerViewModel @Inject constructor(
                     presetRepository.recordUsed(preset.id)
                     userPreferencesRepository.setLastPlayedPreset(preset.id)
                 } else {
-                    // The full mix, locked layers included — they come back on resubscribe
+                    // The full mix, locked layers included — they come back once premium is unlocked
                     userPreferencesRepository.setLastPlayedEphemeralMix(
                         mixSerializer.serialize(mix)
                     )
@@ -240,7 +241,7 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val service = gateService() ?: return@launch
             runCatching { service.pause() }
-                .onFailure { _events.trySend(PlayerEvent.ShowError("Could not pause")) }
+                .onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_pause))) }
         }
     }
 
@@ -249,7 +250,7 @@ class PlayerViewModel @Inject constructor(
             if (!gateNotificationPermission { resume() }) return@launch
             val service = gateService() ?: return@launch
             runCatching { service.resume() }
-                .onFailure { _events.trySend(PlayerEvent.ShowError("Could not resume")) }
+                .onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_resume))) }
         }
     }
 
@@ -259,7 +260,7 @@ class PlayerViewModel @Inject constructor(
             runCatching {
                 audioServiceHolder.current?.stop()
                 timerService.cancel()
-            }.onFailure { _events.trySend(PlayerEvent.ShowError("Could not stop playback")) }
+            }.onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_stop))) }
             clearMixState()
         }
     }
@@ -287,7 +288,7 @@ class PlayerViewModel @Inject constructor(
                 if (soundId != null) {
                     volumeMemoryRepository.saveVolume(soundId, clamped)
                 }
-            }.onFailure { _events.trySend(PlayerEvent.ShowError("Volume update failed")) }
+            }.onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_volume))) }
             volumeMutex.withLock { _dragging.update { it - position } }
         }
     }
@@ -310,7 +311,7 @@ class PlayerViewModel @Inject constructor(
                 if (soundId != null) {
                     volumeMemoryRepository.saveVolume(soundId, volume)
                 }
-            }.onFailure { _events.trySend(PlayerEvent.ShowError("Could not save volume")) }
+            }.onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_save_volume))) }
         }
     }
 
@@ -323,7 +324,7 @@ class PlayerViewModel @Inject constructor(
         scheduleVolumeWrite("master") {
             runCatching {
                 audioServiceHolder.current?.setMasterVolume(clamped)
-            }.onFailure { _events.trySend(PlayerEvent.ShowError("Master volume update failed")) }
+            }.onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_master_volume))) }
         }
     }
 
@@ -333,7 +334,7 @@ class PlayerViewModel @Inject constructor(
             val volume = volumeMutex.withLock { _masterVolume.value }
             runCatching {
                 audioServiceHolder.current?.setMasterVolume(volume)
-            }.onFailure { _events.trySend(PlayerEvent.ShowError("Could not save master volume")) }
+            }.onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_save_master_volume))) }
         }
     }
 
@@ -342,7 +343,7 @@ class PlayerViewModel @Inject constructor(
             val service = gateService() ?: return@launch
             runCatching { service.muteLayer(position) }
                 .onSuccess { _isMixDirty.value = true }
-                .onFailure { _events.trySend(PlayerEvent.ShowError("Could not mute layer")) }
+                .onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_mute))) }
         }
     }
 
@@ -351,7 +352,7 @@ class PlayerViewModel @Inject constructor(
             val service = gateService() ?: return@launch
             runCatching { service.unmuteLayer(position) }
                 .onSuccess { _isMixDirty.value = true }
-                .onFailure { _events.trySend(PlayerEvent.ShowError("Could not unmute layer")) }
+                .onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_unmute))) }
         }
     }
 
@@ -362,19 +363,19 @@ class PlayerViewModel @Inject constructor(
             val currentLayers = uiState.value.mixer.layers
 
             if (currentLayers.size >= MAX_LAYERS) {
-                _events.trySend(PlayerEvent.ShowInfo("Maximum $MAX_LAYERS sounds at once"))
+                _events.trySend(PlayerEvent.ShowInfo(UiText.Plural(R.plurals.player_info_max_layers, MAX_LAYERS)))
                 return@launch
             }
 
             if (currentLayers.any { it.sound.id == sound.id }) {
-                _events.trySend(PlayerEvent.ShowInfo("${sound.title} is already in this mix"))
+                _events.trySend(PlayerEvent.ShowInfo(UiText(R.string.player_info_already_in_mix, sound.titleText())))
                 return@launch
             }
 
             val position = (0 until MAX_LAYERS)
                 .firstOrNull { pos -> currentLayers.none { it.position == pos } }
                 ?: run {
-                    _events.trySend(PlayerEvent.ShowError("No available layer slot"))
+                    _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_no_slot)))
                     return@launch
                 }
 
@@ -390,7 +391,7 @@ class PlayerViewModel @Inject constructor(
                     _isMixDirty.value = true
                 }
                 .onFailure {
-                    _events.trySend(PlayerEvent.ShowError("Could not add ${sound.title}"))
+                    _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_add_sound, sound.titleText())))
                 }
         }
     }
@@ -402,7 +403,7 @@ class PlayerViewModel @Inject constructor(
             // Prevent removing the last layer — stop instead
             if (uiState.value.mixer.layers.size <= 1) {
                 _events.trySend(
-                    PlayerEvent.ShowInfo("Removing the last sound will stop playback")
+                    PlayerEvent.ShowInfo(UiText(R.string.player_info_last_sound))
                 )
                 stop()
                 return@launch
@@ -414,7 +415,7 @@ class PlayerViewModel @Inject constructor(
                     _isMixDirty.value = true
                 }
                 .onFailure {
-                    _events.trySend(PlayerEvent.ShowError("Could not remove layer"))
+                    _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_remove_layer)))
                 }
         }
     }
@@ -426,7 +427,7 @@ class PlayerViewModel @Inject constructor(
 
             // Prevent swapping to a sound already in the mix
             if (uiState.value.mixer.layers.any { it.sound.id == sound.id }) {
-                _events.trySend(PlayerEvent.ShowInfo("${sound.title} is already in this mix"))
+                _events.trySend(PlayerEvent.ShowInfo(UiText(R.string.player_info_already_in_mix, sound.titleText())))
                 return@launch
             }
 
@@ -442,7 +443,7 @@ class PlayerViewModel @Inject constructor(
                     _isMixDirty.value = true
                 }
                 .onFailure {
-                    _events.trySend(PlayerEvent.ShowError("Could not swap to ${sound.title}"))
+                    _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_swap_sound, sound.titleText())))
                 }
         }
     }
@@ -455,11 +456,11 @@ class PlayerViewModel @Inject constructor(
     fun startTimer(durationMs: Long) {
         viewModelScope.launch {
             if (durationMs <= 0L) {
-                _events.trySend(PlayerEvent.ShowError("Timer duration must be greater than zero"))
+                _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_timer_zero)))
                 return@launch
             }
             if (durationMs > ADD_TIME_MAX_MS) {
-                _events.trySend(PlayerEvent.ShowError("Maximum timer duration is 4 hours"))
+                _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_timer_max)))
                 return@launch
             }
             val prefs = runCatching { userPreferencesRepository.get() }.getOrNull()
@@ -470,7 +471,7 @@ class PlayerViewModel @Inject constructor(
                     runCatching { userPreferencesRepository.setLastTimerDuration(durationMs) }
                     _events.trySend(PlayerEvent.TimerStarted)
                 }
-                .onFailure { _events.trySend(PlayerEvent.ShowError("Could not start timer")) }
+                .onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_start_timer))) }
         }
     }
 
@@ -478,12 +479,12 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val timer = uiState.value.timer
             if (timer is PlayerTimerState.Idle) {
-                _events.trySend(PlayerEvent.ShowInfo("No timer is running"))
+                _events.trySend(PlayerEvent.ShowInfo(UiText(R.string.player_info_no_timer)))
                 return@launch
             }
             runCatching { timerService.cancel() }
                 .onSuccess { _events.trySend(PlayerEvent.TimerCancelled) }
-                .onFailure { _events.trySend(PlayerEvent.ShowError("Could not cancel timer")) }
+                .onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_cancel_timer))) }
         }
     }
 
@@ -491,16 +492,16 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val timer = uiState.value.timer
             if (timer !is PlayerTimerState.Active) {
-                _events.trySend(PlayerEvent.ShowInfo("Start a timer first"))
+                _events.trySend(PlayerEvent.ShowInfo(UiText(R.string.player_info_start_timer_first)))
                 return@launch
             }
             val newTotal = timer.totalDurationMs + FIVE_MINUTES_MS
             if (newTotal > ADD_TIME_MAX_MS) {
-                _events.trySend(PlayerEvent.ShowInfo("Timer is already at maximum"))
+                _events.trySend(PlayerEvent.ShowInfo(UiText(R.string.player_info_timer_at_max)))
                 return@launch
             }
             runCatching { timerService.addTime(FIVE_MINUTES_MS) }
-                .onFailure { _events.trySend(PlayerEvent.ShowError("Could not extend timer")) }
+                .onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_extend_timer))) }
         }
     }
 
@@ -508,17 +509,17 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val timer = uiState.value.timer
             if (timer !is PlayerTimerState.Active) {
-                _events.trySend(PlayerEvent.ShowInfo("Start a timer first"))
+                _events.trySend(PlayerEvent.ShowInfo(UiText(R.string.player_info_start_timer_first)))
                 return@launch
             }
             if (timer.remainingMs <= FIVE_MINUTES_MS) {
                 _events.trySend(
-                    PlayerEvent.ShowInfo("Less than 5 minutes remain — cancel timer instead")
+                    PlayerEvent.ShowInfo(UiText(R.string.player_info_timer_too_short))
                 )
                 return@launch
             }
             runCatching { timerService.reduceTime(FIVE_MINUTES_MS) }
-                .onFailure { _events.trySend(PlayerEvent.ShowError("Could not reduce timer")) }
+                .onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_reduce_timer))) }
         }
     }
 
@@ -528,7 +529,7 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val mix = audioServiceHolder.current?.audioState?.value?.activeMix
             if (mix == null || mix.isEmpty) {
-                _events.trySend(PlayerEvent.ShowError("Nothing is playing to save"))
+                _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_nothing_to_save)))
                 return@launch
             }
             _events.send(PlayerEvent.ShowSavePresetDialog)
@@ -539,12 +540,12 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch {
             val trimmedName = name.trim()
             if (trimmedName.isBlank()) {
-                _events.trySend(PlayerEvent.ShowError("Preset name cannot be empty"))
+                _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_name_empty)))
                 return@launch
             }
 
             val mix = audioServiceHolder.current?.audioState?.value?.activeMix ?: run {
-                _events.trySend(PlayerEvent.ShowError("No active mix to save"))
+                _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_no_mix_to_save)))
                 return@launch
             }
 
@@ -567,12 +568,9 @@ class PlayerViewModel @Inject constructor(
                     _events.trySend(PlayerEvent.PresetSaved(saved))
                 }
                 .onFailure { e ->
-                    _saveState.value = ActivePresetState.SaveError(
-                        e.message ?: "Could not save preset"
-                    )
-                    _events.trySend(PlayerEvent.ShowError(
-                        e.message ?: "Could not save preset"
-                    ))
+                    Log.w(TAG, "Could not save preset", e)
+                    _saveState.value = ActivePresetState.SaveError(UiText(R.string.player_error_save_preset))
+                    _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_save_preset)))
                 }
         }
     }
@@ -584,15 +582,15 @@ class PlayerViewModel @Inject constructor(
     fun updateActivePreset() {
         viewModelScope.launch {
             val preset = _activePreset.value ?: run {
-                _events.trySend(PlayerEvent.ShowError("No preset loaded to update"))
+                _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_no_preset_loaded)))
                 return@launch
             }
             if (!_isMixDirty.value) {
-                _events.trySend(PlayerEvent.ShowInfo("No changes to save"))
+                _events.trySend(PlayerEvent.ShowInfo(UiText(R.string.player_info_no_changes)))
                 return@launch
             }
             val mix = audioServiceHolder.current?.audioState?.value?.activeMix ?: run {
-                _events.trySend(PlayerEvent.ShowError("No active mix"))
+                _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_no_active_mix)))
                 return@launch
             }
 
@@ -607,12 +605,9 @@ class PlayerViewModel @Inject constructor(
                     _events.trySend(PlayerEvent.PresetUpdated(updated))
                 }
                 .onFailure { e ->
-                    _saveState.value = ActivePresetState.SaveError(
-                        e.message ?: "Could not update preset"
-                    )
-                    _events.trySend(PlayerEvent.ShowError(
-                        e.message ?: "Could not update preset"
-                    ))
+                    Log.w(TAG, "Could not update preset", e)
+                    _saveState.value = ActivePresetState.SaveError(UiText(R.string.player_error_update_preset))
+                    _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_update_preset)))
                 }
         }
     }
@@ -640,7 +635,7 @@ class PlayerViewModel @Inject constructor(
                     savedStateHandle[NIGHT_LOCK_USER_KEY] = true
                     _events.trySend(PlayerEvent.NightLockEnabled)
                 }
-                .onFailure { _events.trySend(PlayerEvent.ShowError("Could not enable night lock")) }
+                .onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_enable_night_lock))) }
         }
     }
 
@@ -654,7 +649,7 @@ class PlayerViewModel @Inject constructor(
                     savedStateHandle[NIGHT_LOCK_USER_KEY] = true
                     _events.trySend(PlayerEvent.NightLockDisabled)
                 }
-                .onFailure { _events.trySend(PlayerEvent.ShowError("Could not disable night lock")) }
+                .onFailure { _events.trySend(PlayerEvent.ShowError(UiText(R.string.player_error_disable_night_lock))) }
         }
     }
 
@@ -754,7 +749,7 @@ class PlayerViewModel @Inject constructor(
                             )
                         }
                         Domain.PlaybackStatus.PAUSED -> PlayerPlaybackState.Paused
-                        Domain.PlaybackStatus.ERROR  -> PlayerPlaybackState.Error("Audio engine error — try restarting")
+                        Domain.PlaybackStatus.ERROR  -> PlayerPlaybackState.Error(UiText(R.string.player_error_audio_engine))
                         Domain.PlaybackStatus.PLAYING -> when (state.audioFocusStatus) {
                             Domain.AudioFocusStatus.LOST -> PlayerPlaybackState.Interrupted(
                                 InterruptionReason.ANOTHER_APP
@@ -770,7 +765,7 @@ class PlayerViewModel @Inject constructor(
                         }
                     }
                 }
-                    .catch { emit(PlayerPlaybackState.Error("Unexpected playback error")) }
+                    .catch { emit(PlayerPlaybackState.Error(UiText(R.string.player_error_playback_unexpected))) }
                     .distinctUntilChanged()
             }
 

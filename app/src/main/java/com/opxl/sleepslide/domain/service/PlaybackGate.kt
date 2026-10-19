@@ -56,7 +56,7 @@ class PlaybackGate @Inject constructor(
         val playable = resolved.copy(layers = resolved.layers - locked.toSet())
         _notices.trySend(
             LockedLayersNotice(
-                lockedTitles = locked.map { it.sound.title },
+                lockedSounds = locked.map { it.sound },
                 playingRest  = !playable.isEmpty,
             )
         )
@@ -66,13 +66,13 @@ class PlaybackGate @Inject constructor(
     /** Single-sound variant for add/swap into a running mix. Posts a notice when locked. */
     fun isLocked(sound: Domain.Sound): Boolean {
         val locked = sound.isLockedFor(entitlementObserver.entitlement.value.tier)
-        if (locked) _notices.trySend(LockedLayersNotice(listOf(sound.title), playingRest = false))
+        if (locked) _notices.trySend(LockedLayersNotice(listOf(sound), playingRest = false))
         return locked
     }
 }
 
 /** A launch skipped premium layers. [playingRest] is false when nothing could be played. */
 data class LockedLayersNotice(
-    val lockedTitles: List<String>,
+    val lockedSounds: List<Domain.Sound>,
     val playingRest: Boolean,
 )

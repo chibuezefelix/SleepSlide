@@ -56,47 +56,50 @@ import com.opxl.sleepslide.ui.theme.White
 import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.sin
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
+import com.opxl.sleepslide.R
 
 /**
  * One card per feature. Titles are at most four words; [what] and [how] are one sentence each.
  * Sleep timer and fade in/out share a card — the timer *is* the fade-out, so splitting them
  * would explain the same ramp twice.
  */
-enum class TutorialCard(val title: String, val what: String, val how: String) {
+enum class TutorialCard(@StringRes val title: Int, @StringRes val what: Int, @StringRes val how: Int) {
     MIX_BUILDER(
-        title = "Mix builder",
-        what  = "Layer up to three sounds and balance each one to taste.",
-        how   = "Tap sounds in the Library to add them, then drag their sliders in the mix panel.",
+        title = R.string.tutorial_mix_builder_title,
+        what  = R.string.tutorial_mix_builder_what,
+        how   = R.string.tutorial_mix_builder_how,
     ),
     TIMER_AND_FADES(
-        title = "Timer & fades",
-        what  = "The sleep timer fades your mix out at the end, and fade-in eases it on at the start.",
-        how   = "Tap the timer button in the player to pick a duration; set default fade lengths in Settings.",
+        title = R.string.tutorial_timer_and_fades_title,
+        what  = R.string.tutorial_timer_and_fades_what,
+        how   = R.string.tutorial_timer_and_fades_how,
     ),
     NIGHT_LOCK(
-        title = "Night lock",
-        what  = "Blocks accidental taps so a stray hand can't stop your sound.",
-        how   = "Turn it on at the bottom of the player, then long-press the screen to unlock.",
+        title = R.string.tutorial_night_lock_title,
+        what  = R.string.tutorial_night_lock_what,
+        how   = R.string.tutorial_night_lock_how,
     ),
     PRESETS(
-        title = "Presets",
-        what  = "Saves a finished mix so you can start it again with one tap.",
-        how   = "Tap the save button in the player, then find, pin or reorder it on the Presets tab.",
+        title = R.string.tutorial_presets_title,
+        what  = R.string.tutorial_presets_what,
+        how   = R.string.tutorial_presets_how,
     ),
     WIND_DOWN(
-        title = "Wind-down reminder",
-        what  = "A nightly notification nudges you to start winding down.",
-        how   = "Enable it in Settings and choose the hour and minute you want the nudge.",
+        title = R.string.tutorial_wind_down_title,
+        what  = R.string.tutorial_wind_down_what,
+        how   = R.string.tutorial_wind_down_how,
     ),
     TINNITUS(
-        title = "Tinnitus sounds",
-        what  = "Noise tuned to a frequency helps mask ringing in the ears.",
-        how   = "Open the Tinnitus category in the Library and pick the pitch closest to your ring.",
+        title = R.string.tutorial_tinnitus_title,
+        what  = R.string.tutorial_tinnitus_what,
+        how   = R.string.tutorial_tinnitus_how,
     ),
     BLUETOOTH(
-        title = "Bluetooth behaviour",
-        what  = "Playback pauses by itself when your headphones disconnect.",
-        how   = "Reconnect and press play; a BT badge on Home shows when headphones are linked.",
+        title = R.string.tutorial_bluetooth_title,
+        what  = R.string.tutorial_bluetooth_what,
+        how   = R.string.tutorial_bluetooth_how,
     ),
 }
 
@@ -104,6 +107,8 @@ enum class TutorialCard(val title: String, val what: String, val how: String) {
 fun TutorialScreen(onClose: () -> Unit) {
     val cards = TutorialCard.entries
     val pagerState = rememberPagerState { cards.size }
+    val closeLabel = stringResource(R.string.cd_close)
+    val pageLabel  = stringResource(R.string.tutorial_cd_page_of, pagerState.currentPage + 1, cards.size)
 
     Column(
         modifier = Modifier
@@ -119,9 +124,9 @@ fun TutorialScreen(onClose: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column {
-                Text("Feature tour", style = MaterialTheme.typography.titleMedium, color = Charcoal)
+                Text(stringResource(R.string.tutorial_header), style = MaterialTheme.typography.titleMedium, color = Charcoal)
                 Text(
-                    "${pagerState.currentPage + 1} of ${cards.size}",
+                    stringResource(R.string.tutorial_page_of, pagerState.currentPage + 1, cards.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = MutedGray,
                 )
@@ -133,7 +138,7 @@ fun TutorialScreen(onClose: () -> Unit) {
                     .background(White)
                     .border(1.dp, Border, RoundedCornerShape(8.dp))
                     .clickable(onClick = onClose)
-                    .semantics { contentDescription = "Close" },
+                    .semantics { contentDescription = closeLabel },
                 contentAlignment = Alignment.Center,
             ) {
                 val ink = Charcoal
@@ -165,7 +170,7 @@ fun TutorialScreen(onClose: () -> Unit) {
                 .align(Alignment.CenterHorizontally)
                 .padding(vertical = 20.dp)
                 .size(width = dotStep * (cards.size - 1) + pillWidth, height = 8.dp)
-                .semantics { contentDescription = "Page ${pagerState.currentPage + 1} of ${cards.size}" },
+                .semantics { contentDescription = pageLabel },
         ) {
             val step = dotStep.toPx()
             val pill = pillWidth.toPx()
@@ -191,6 +196,7 @@ private fun FeatureCard(card: TutorialCard) {
         ink = Charcoal, line = Border, muted = MutedGray,
         accent = PaleBlueText, fill = SurfaceMuted, surface = White,
     )
+    val illustrationLabel = stringResource(R.string.tutorial_cd_illustration, stringResource(card.title))
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -204,7 +210,7 @@ private fun FeatureCard(card: TutorialCard) {
             Modifier
                 .fillMaxWidth()
                 .aspectRatio(1.5f)
-                .semantics { contentDescription = "${card.title} illustration" },
+                .semantics { contentDescription = illustrationLabel },
         ) {
             drawRoundRect(ink.fill, cornerRadius = CornerRadius(10.dp.toPx()))
             drawRoundRect(ink.line, cornerRadius = CornerRadius(10.dp.toPx()), style = Stroke(1.dp.toPx()))
@@ -212,13 +218,13 @@ private fun FeatureCard(card: TutorialCard) {
         }
 
         Spacer(Modifier.height(24.dp))
-        Text(card.title, style = MaterialTheme.typography.headlineSmall, color = Charcoal)
+        Text(stringResource(card.title), style = MaterialTheme.typography.headlineSmall, color = Charcoal)
         Spacer(Modifier.height(8.dp))
-        Text(card.what, style = MaterialTheme.typography.bodyMedium, color = Charcoal)
+        Text(stringResource(card.what), style = MaterialTheme.typography.bodyMedium, color = Charcoal)
         Spacer(Modifier.height(16.dp))
-        Text("HOW TO USE IT", style = MaterialTheme.typography.labelSmall, color = MutedGray)
+        Text(stringResource(R.string.tutorial_how_to_use), style = MaterialTheme.typography.labelSmall, color = MutedGray)
         Spacer(Modifier.height(4.dp))
-        Text(card.how, style = MaterialTheme.typography.bodyMedium, color = MutedGray)
+        Text(stringResource(card.how), style = MaterialTheme.typography.bodyMedium, color = MutedGray)
     }
 }
 

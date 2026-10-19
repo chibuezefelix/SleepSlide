@@ -31,7 +31,6 @@ import javax.inject.Singleton
 private const val TAG                   = "WindDownService"
 private const val CHANNEL_ID            = "wind_down_reminder_v2"
 private const val LEGACY_CHANNEL_ID     = "wind_down_reminder"
-private const val CHANNEL_NAME          = "Sleep & Wind-Down"
 private const val NOTIFICATION_ID       = 9_001
 private const val REQUEST_CODE_DAILY    = 9_002
 private const val REQUEST_CODE_IMMEDIATE = 9_003
@@ -180,10 +179,10 @@ class WindDownNotificationServiceImpl @Inject constructor(
     private fun ensureChannelCreated() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            CHANNEL_NAME,
+            context.getString(R.string.notif_wind_down_channel_name),
             NotificationManager.IMPORTANCE_DEFAULT,
         ).apply {
-            description           = "Daily wind-down reminder before sleep"
+            description           = context.getString(R.string.notif_wind_down_channel_description)
             enableVibration(false)
             setSound(
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
@@ -205,12 +204,12 @@ class WindDownNotificationServiceImpl @Inject constructor(
         val path = runCatching { readOnboardingPath() }.getOrDefault(Domain.OnboardingPath.GENERAL)
         return when (path) {
             Domain.OnboardingPath.TINNITUS -> Pair(
-                "Time to quiet the noise",
-                "Your tinnitus relief sounds are ready. Tap to start winding down.",
+                context.getString(R.string.notif_wind_down_tinnitus_title),
+                context.getString(R.string.notif_wind_down_tinnitus_body),
             )
             Domain.OnboardingPath.GENERAL, Domain.OnboardingPath.NONE -> Pair(
-                "Time to wind down",
-                "A few minutes of calm sound can make a real difference. Tap to start.",
+                context.getString(R.string.notif_wind_down_general_title),
+                context.getString(R.string.notif_wind_down_general_body),
             )
         }
     }

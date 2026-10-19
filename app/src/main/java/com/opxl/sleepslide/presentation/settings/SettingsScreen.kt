@@ -90,6 +90,7 @@ import com.revenuecat.purchases.ui.revenuecatui.Paywall
 import com.revenuecat.purchases.ui.revenuecatui.PaywallListener
 import com.revenuecat.purchases.ui.revenuecatui.PaywallOptions
 import kotlinx.coroutines.launch
+import com.opxl.sleepslide.R
 
 @Composable
 fun SettingsScreen(
@@ -273,9 +274,9 @@ fun SettingsScreen(
 }
 /** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
 private val SETTINGS_COACH_MARKS = listOf(
-    "tour"      to "Swipe through every feature, any time",
-    "fades"     to "Set default fade in, fade out and timer length",
-    "wind_down" to "Get a nightly nudge to start winding down",
+    "tour"      to R.string.coach_settings_tour,
+    "fades"     to R.string.coach_settings_fades,
+    "wind_down" to R.string.coach_settings_wind_down,
 )
 
 @Composable

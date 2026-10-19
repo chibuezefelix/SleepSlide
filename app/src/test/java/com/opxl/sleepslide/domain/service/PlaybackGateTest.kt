@@ -30,7 +30,7 @@ class PlaybackGateTest {
         decision as PlaybackGate.Decision.Play
         assertEquals(listOf("rain_light"), decision.mix.layers.map { it.sound.id })
         assertEquals(
-            LockedLayersNotice(lockedTitles = listOf("Delta Beats · 2 Hz"), playingRest = true),
+            LockedLayersNotice(lockedSounds = listOf(Fixtures.delta), playingRest = true),
             gate.notices.first(),
         )
     }

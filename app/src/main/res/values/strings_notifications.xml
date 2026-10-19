@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Wind-down reminder -->
+    <string name="notif_wind_down_channel_name">Sleep &amp; Wind-Down</string>
+    <string name="notif_wind_down_channel_description">Daily wind-down reminder before sleep</string>
+    <string name="notif_wind_down_tinnitus_title">Time to quiet the noise</string>
+    <string name="notif_wind_down_tinnitus_body">Your tinnitus relief sounds are ready. Tap to start winding down.</string>
+    <string name="notif_wind_down_general_title">Time to wind down</string>
+    <string name="notif_wind_down_general_body">A few minutes of calm sound can make a real difference. Tap to start.</string>
+
+    <!-- Background playback -->
+    <string name="notif_playback_channel_name">Playback</string>
+    <string name="notif_playback_channel_description">SleepSlide background playback</string>
+    <string name="notif_playback_playing">Playing</string>
+</resources>

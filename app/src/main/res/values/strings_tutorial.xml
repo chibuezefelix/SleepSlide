@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Coach marks -->
+    <string name="coach_mark_hint">Tap anywhere to continue</string>
+
+    <!-- Feature tour -->
+    <string name="tutorial_header">Feature tour</string>
+    <string name="tutorial_page_of">%1$d of %2$d</string>
+    <string name="tutorial_cd_page_of">Page %1$d of %2$d</string>
+    <string name="tutorial_cd_illustration">%1$s illustration</string>
+    <string name="tutorial_how_to_use">HOW TO USE IT</string>
+    <string name="tutorial_mix_builder_title">Mix builder</string>
+    <string name="tutorial_mix_builder_what">Layer up to three sounds and balance each one to taste.</string>
+    <string name="tutorial_mix_builder_how">Tap sounds in the Library to add them, then drag their sliders in the mix panel.</string>
+    <string name="tutorial_timer_and_fades_title">Timer &amp; fades</string>
+    <string name="tutorial_timer_and_fades_what">The sleep timer fades your mix out at the end, and fade-in eases it on at the start.</string>
+    <string name="tutorial_timer_and_fades_how">Tap the timer button in the player to pick a duration; set default fade lengths in Settings.</string>
+    <string name="tutorial_night_lock_title">Night lock</string>
+    <string name="tutorial_night_lock_what">Blocks accidental taps so a stray hand can\'t stop your sound.</string>
+    <string name="tutorial_night_lock_how">Turn it on at the bottom of the player, then long-press the screen to unlock.</string>
+    <string name="tutorial_presets_title">Presets</string>
+    <string name="tutorial_presets_what">Saves a finished mix so you can start it again with one tap.</string>
+    <string name="tutorial_presets_how">Tap the save button in the player, then find, pin or reorder it on the Presets tab.</string>
+    <string name="tutorial_wind_down_title">Wind-down reminder</string>
+    <string name="tutorial_wind_down_what">A nightly notification nudges you to start winding down.</string>
+    <string name="tutorial_wind_down_how">Enable it in Settings and choose the hour and minute you want the nudge.</string>
+    <string name="tutorial_tinnitus_title">Tinnitus sounds</string>
+    <string name="tutorial_tinnitus_what">Noise tuned to a frequency helps mask ringing in the ears.</string>
+    <string name="tutorial_tinnitus_how">Open the Tinnitus category in the Library and pick the pitch closest to your ring.</string>
+    <string name="tutorial_bluetooth_title">Bluetooth behaviour</string>
+    <string name="tutorial_bluetooth_what">Playback pauses by itself when your headphones disconnect.</string>
+    <string name="tutorial_bluetooth_how">Reconnect and press play; a BT badge on Home shows when headphones are linked.</string>
+
+    <!-- Coach marks per screen -->
+    <string name="coach_home_library">Open the library to build a new mix</string>
+    <string name="coach_home_now_playing">What\'s playing — tap to open the player</string>
+    <string name="coach_home_resume">Pick up where you left off</string>
+    <string name="coach_home_preset">Tap to play, long-press to edit</string>
+    <string name="coach_home_add_mix">Start a fresh mix from scratch</string>
+    <string name="coach_home_browse">Pick your first sounds here</string>
+    <string name="coach_library_search">Search sounds by name</string>
+    <string name="coach_library_tabs">Filter by category</string>
+    <string name="coach_library_sound">Tap to add to your mix, long-press to preview</string>
+    <string name="coach_library_mix_panel">Your mix — balance the sounds and press play</string>
+    <string name="coach_library_save">Save your mix as a preset</string>
+    <string name="coach_player_save">Save this mix as a preset</string>
+    <string name="coach_player_transport">Play or pause the whole mix</string>
+    <string name="coach_player_timer">Set a sleep timer that fades out</string>
+    <string name="coach_player_layer">Drag to balance each sound; mute or remove it</string>
+    <string name="coach_player_add_sound">Add up to three sounds</string>
+    <string name="coach_player_night_lock">Lock the screen against sleepy taps</string>
+    <string name="coach_presets_add">Build a new preset from the library</string>
+    <string name="coach_presets_search">Find a preset by name</string>
+    <string name="coach_presets_preset">Tap to play, long-press to select or reorder</string>
+    <string name="coach_presets_browse">Save your first mix to see it here</string>
+    <string name="coach_settings_tour">Swipe through every feature, any time</string>
+    <string name="coach_settings_fades">Set default fade in, fade out and timer length</string>
+    <string name="coach_settings_wind_down">Get a nightly nudge to start winding down</string>
+</resources>

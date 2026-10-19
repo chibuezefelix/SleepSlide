@@ -1,6 +1,8 @@
 package com.opxl.sleepslide.presentation.library
 
 import com.opxl.sleepslide.domain.model.Domain
+import androidx.annotation.StringRes
+import com.opxl.sleepslide.presentation.components.UiText
 
 
 object LibraryVMState{
@@ -26,12 +28,12 @@ sealed interface CatalogueState {
         val mostPlayed: List<SoundItemState>,
         val showShelves: Boolean,          // false when search is active
     ) : CatalogueState
-    data class Error(val message: String) : CatalogueState
+    data class Error(val message: UiText) : CatalogueState
 }
 
 data class CategoryTab(
     val category: Domain.SoundCategory?,          // null = "All"
-    val label: String,
+    @StringRes val label: Int,
     val count: Int,
 )
 
@@ -98,19 +100,19 @@ sealed interface SavePresetState {
     data object Idle : SavePresetState
     data object Saving : SavePresetState
     data class Success(val presetName: String) : SavePresetState
-    data class Error(val message: String) : SavePresetState
+    data class Error(val message: UiText) : SavePresetState
 }
 
 
 sealed interface LibraryEvent {
     data object NavigateToPlayer : LibraryEvent
     data object ShowSavePresetDialog : LibraryEvent
-    data class ShowUpgradePrompt(val soundTitle: String) : LibraryEvent
+    data class ShowUpgradePrompt(val soundTitle: UiText) : LibraryEvent
     data object ShowMaxLayersReached : LibraryEvent
     data object ShowHeadphonesHint : LibraryEvent
-    data class ShowError(val message: String) : LibraryEvent
-    data class ShowInfo(val message: String) : LibraryEvent
+    data class ShowError(val message: UiText) : LibraryEvent
+    data class ShowInfo(val message: UiText) : LibraryEvent
     data object ShowServiceUnavailable : LibraryEvent
     data class PresetSaved(val name: String) : LibraryEvent
-    data class SoundAlreadyInMix(val soundTitle: String) : LibraryEvent
+    data class SoundAlreadyInMix(val soundTitle: UiText) : LibraryEvent
 }}

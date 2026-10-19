@@ -39,7 +39,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+import android.util.Log
+import com.opxl.sleepslide.R
+import com.opxl.sleepslide.presentation.components.UiText
+import com.opxl.sleepslide.presentation.components.SoundTextResolver
 
+private const val TAG                     = "PresetsViewModel"
 private const val SHARING_STOP_TIMEOUT_MS = 5_000L
 private const val SEARCH_DEBOUNCE_MS      = 200L
 private const val REORDER_DEBOUNCE_MS     = 600L
@@ -54,6 +59,7 @@ class PresetsViewModel @Inject constructor(
     private val audioStateObserver: AudioStateObserver,
     private val entitlementObserver: EntitlementObserver,
     private val playbackGate: PlaybackGate,
+    private val soundText: SoundTextResolver,
 ) : ViewModel() {
 
     //  Events
@@ -83,11 +89,10 @@ class PresetsViewModel @Inject constructor(
 
     val uiState: StateFlow<PresetsUiState> = buildUiState()
         .catch { e ->
+            Log.e(TAG, "Presets UI state failed", e)
             emit(
                 PresetsUiState(
-                    screen = PresetsScreenState.Error(
-                        e.message ?: "Could not load presets"
-                    )
+                    screen = PresetsScreenState.Error(UiText(R.string.presets_error_load))
                 )
             )
         }
@@ -116,7 +121,7 @@ class PresetsViewModel @Inject constructor(
                     is PlaybackGate.Decision.Play          -> decision.mix
                     is PlaybackGate.Decision.AllLocked     -> return@launch
                     is PlaybackGate.Decision.NothingToPlay -> {
-                        _events.trySend(PresetsEvent.ShowError("No sounds in ${preset.name}"))
+                        _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_no_sounds, preset.name)))
                         return@launch
                     }
                 }
@@ -127,9 +132,8 @@ class PresetsViewModel @Inject constructor(
                 userPreferencesRepository.setLastPlayedPreset(preset.id)
                 _events.trySend(PresetsEvent.NavigateToPlayer(preset.id))
             }.onFailure { e ->
-                _events.trySend(PresetsEvent.ShowError(
-                    e.message ?: "Could not launch ${preset.name}"
-                ))
+                Log.w(TAG, "Could not launch preset ${preset.id}", e)
+                _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_launch, preset.name)))
             }
         }
     }
@@ -144,14 +148,13 @@ class PresetsViewModel @Inject constructor(
         viewModelScope.launch {
             val trimmed = newName.trim()
             if (trimmed.isBlank()) {
-                _events.trySend(PresetsEvent.ShowError("Name cannot be empty"))
+                _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_name_empty)))
                 return@launch
             }
             runCatching { presetRepository.rename(presetId, trimmed) }
                 .onFailure { e ->
-                    _events.trySend(
-                        PresetsEvent.ShowError(e.message ?: "Could not rename preset")
-                    )
+                    Log.w(TAG, "Could not rename preset", e)
+                    _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_rename)))
                 }
         }
     }
@@ -160,9 +163,8 @@ class PresetsViewModel @Inject constructor(
         viewModelScope.launch {
             runCatching { presetRepository.setEmoji(presetId, emoji) }
                 .onFailure { e ->
-                    _events.trySend(
-                        PresetsEvent.ShowError(e.message ?: "Could not update emoji")
-                    )
+                    Log.w(TAG, "Could not update emoji", e)
+                    _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_emoji)))
                 }
         }
     }
@@ -170,14 +172,14 @@ class PresetsViewModel @Inject constructor(
     fun pin(presetId: Long) {
         viewModelScope.launch {
             runCatching { presetRepository.pin(presetId) }
-                .onFailure { _events.trySend(PresetsEvent.ShowError("Could not pin preset")) }
+                .onFailure { _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_pin))) }
         }
     }
 
     fun unpin(presetId: Long) {
         viewModelScope.launch {
             runCatching { presetRepository.unpin(presetId) }
-                .onFailure { _events.trySend(PresetsEvent.ShowError("Could not unpin preset")) }
+                .onFailure { _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_unpin))) }
         }
     }
 
@@ -205,12 +207,11 @@ class PresetsViewModel @Inject constructor(
                         }
                     }
 
-                    _events.trySend(PresetsEvent.PresetDeleted(preset?.name ?: "Preset"))
+                    _events.trySend(PresetsEvent.PresetDeleted(preset?.name))
                 }
                 .onFailure { e ->
-                    _events.trySend(
-                        PresetsEvent.ShowError(e.message ?: "Could not delete preset")
-                    )
+                    Log.w(TAG, "Could not delete preset", e)
+                    _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_delete)))
                 }
         }
     }
@@ -220,7 +221,7 @@ class PresetsViewModel @Inject constructor(
             val preset = deleteMutex.withLock {
                 deletedPreset.also { deletedPreset = null }
             } ?: run {
-                _events.trySend(PresetsEvent.ShowError("Nothing to undo"))
+                _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_nothing_to_undo)))
                 return@launch
             }
             runCatching { presetRepository.save(preset.copy(id = 0L)) }
@@ -230,9 +231,8 @@ class PresetsViewModel @Inject constructor(
                 .onFailure { e ->
                     // Restore the staged preset so the user can retry undo
                     deleteMutex.withLock { deletedPreset = preset }
-                    _events.trySend(
-                        PresetsEvent.ShowError(e.message ?: "Could not restore preset")
-                    )
+                    Log.w(TAG, "Could not restore preset", e)
+                    _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_restore)))
                 }
         }
     }
@@ -275,7 +275,7 @@ class PresetsViewModel @Inject constructor(
 
             if (failCount > 0) {
                 _events.trySend(
-                    PresetsEvent.ShowError("$failCount preset${if (failCount > 1) "s" else ""} could not be deleted")
+                    PresetsEvent.ShowError(UiText.Plural(R.plurals.presets_error_bulk_delete, failCount))
                 )
             }
         }
@@ -295,7 +295,7 @@ class PresetsViewModel @Inject constructor(
             runCatching { presetRepository.reorder(orderedIds) }
                 .onSuccess { _pendingOrder.value = null }
                 .onFailure {
-                    _events.trySend(PresetsEvent.ShowError("Could not save new order"))
+                    _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_save_new_order)))
                     _pendingOrder.value = null
                 }
         }
@@ -442,7 +442,6 @@ class PresetsViewModel @Inject constructor(
                 isActive           = preset.id == data.activePresetId,
                 isSelected         = preset.id in selectedIds,
                 totalListenedMs    = ms,
-                totalListenedLabel = ms.toListenedLabel(),
                 playCount          = 0, // populated via loadPlayStats if needed separately
                 hasLockedLayers    = preset.mix.lockedLayers(data.tier).isNotEmpty(),
             )
@@ -456,7 +455,7 @@ class PresetsViewModel @Inject constructor(
             (pinnedItems + unpinnedItems).filter { item ->
                 item.preset.name.contains(interaction.searchQuery, ignoreCase = true) ||
                         item.preset.mix.layers.any { layer ->
-                            layer.sound.title.contains(interaction.searchQuery, ignoreCase = true)
+                            soundText.title(layer.sound).contains(interaction.searchQuery, ignoreCase = true)
                         }
             }
         } else emptyList()
@@ -499,7 +498,7 @@ class PresetsViewModel @Inject constructor(
                 pending ?: return@onEach
                 runCatching { presetRepository.reorder(pending) }
                     .onSuccess { _pendingOrder.value = null }
-                    .onFailure { _events.trySend(PresetsEvent.ShowError("Could not save order")) }
+                    .onFailure { _events.trySend(PresetsEvent.ShowError(UiText(R.string.presets_error_save_order))) }
             }
             .catch { }
             .launchIn(viewModelScope)
@@ -532,16 +531,6 @@ class PresetsViewModel @Inject constructor(
         return presets.sortedBy { rankOf[it.id] ?: Int.MAX_VALUE }
     }
 
-    private fun Long.toListenedLabel(): String {
-        if (this <= 0L) return ""
-        val h = this / 3_600_000L
-        val m = (this % 3_600_000L) / 60_000L
-        return when {
-            h > 0  -> "${h}h ${m}m"
-            m > 0  -> "${m}m"
-            else   -> "<1m"
-        }
-    }
 
 
     private data class DataLayer(

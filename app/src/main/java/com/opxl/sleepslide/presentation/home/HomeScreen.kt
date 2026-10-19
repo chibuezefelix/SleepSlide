@@ -226,12 +226,12 @@ item{
 
 /** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
 private val HOME_COACH_MARKS = listOf(
-    "library"     to "Open the library to build a new mix",
-    "now_playing" to "What's playing — tap to open the player",
-    "resume"      to "Pick up where you left off",
-    "preset"      to "Tap to play, long-press to edit",
-    "add_mix"     to "Start a fresh mix from scratch",
-    "browse"      to "Pick your first sounds here",
+    "library"     to R.string.coach_home_library,
+    "now_playing" to R.string.coach_home_now_playing,
+    "resume"      to R.string.coach_home_resume,
+    "preset"      to R.string.coach_home_preset,
+    "add_mix"     to R.string.coach_home_add_mix,
+    "browse"      to R.string.coach_home_browse,
 )
 
 

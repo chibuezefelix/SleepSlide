@@ -92,7 +92,6 @@ import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
 import com.opxl.sleepslide.presentation.components.LineSlider
 import com.opxl.sleepslide.presentation.components.ChevronLeft
 import com.opxl.sleepslide.presentation.components.ChevronRight
-import com.opxl.sleepslide.presentation.components.HEADPHONES_NOTE
 import com.opxl.sleepslide.presentation.components.HeadphonesIcon
 import com.opxl.sleepslide.presentation.components.LineSliderColors
 import com.opxl.sleepslide.presentation.components.PremiumPill
@@ -113,6 +112,12 @@ import com.opxl.sleepslide.ui.theme.SurfaceMuted
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import com.opxl.sleepslide.ui.theme.White
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
+import com.opxl.sleepslide.R
+import com.opxl.sleepslide.presentation.components.displayTitle
+import com.opxl.sleepslide.presentation.components.labelRes
 
 
 @Composable
@@ -126,6 +131,7 @@ fun LibraryScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var showSaveDialog by rememberSaveable { mutableStateOf(false) }
     val currentOnUpgrade by rememberUpdatedState(onUpgrade)
 
@@ -139,26 +145,26 @@ fun LibraryScreen(
                 is LibraryVMState.LibraryEvent.ShowUpgradePrompt ->
                     scope.launch {
                         val result = snackbarHostState.showSnackbar(
-                            message     = "\"${event.soundTitle}\" is a premium sound — upgrade to unlock",
-                            actionLabel = "Upgrade",
+                            message     = context.getString(R.string.library_snack_premium_sound, event.soundTitle.asString(context)),
+                            actionLabel = context.getString(R.string.action_upgrade),
                             duration    = SnackbarDuration.Long,
                         )
                         if (result == SnackbarResult.ActionPerformed) currentOnUpgrade()
                     }
                 is LibraryVMState.LibraryEvent.ShowMaxLayersReached ->
-                    scope.launch { snackbarHostState.showSnackbar("Maximum 3 sounds in a mix") }
+                    scope.launch { snackbarHostState.showSnackbar(context.resources.getQuantityString(R.plurals.library_snack_max_layers, 3, 3)) }
                 is LibraryVMState.LibraryEvent.ShowHeadphonesHint ->
-                    scope.launch { snackbarHostState.showSnackbar(HEADPHONES_NOTE) }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.headphones_note)) }
                 is LibraryVMState.LibraryEvent.ShowServiceUnavailable ->
-                    scope.launch { snackbarHostState.showSnackbar("Audio service is starting") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.library_snack_service_starting)) }
                 is LibraryVMState.LibraryEvent.ShowError ->
-                    scope.launch { snackbarHostState.showSnackbar(event.message) }
+                    scope.launch { snackbarHostState.showSnackbar(event.message.asString(context)) }
                 is LibraryVMState.LibraryEvent.ShowInfo ->
-                    scope.launch { snackbarHostState.showSnackbar(event.message) }
+                    scope.launch { snackbarHostState.showSnackbar(event.message.asString(context)) }
                 is LibraryVMState.LibraryEvent.PresetSaved ->
-                    scope.launch { snackbarHostState.showSnackbar("\"${event.name}\" saved") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.library_snack_preset_saved, event.name)) }
                 is LibraryVMState.LibraryEvent.SoundAlreadyInMix ->
-                    scope.launch { snackbarHostState.showSnackbar("${event.soundTitle} is already in the mix") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.library_snack_already_in_mix, event.soundTitle.asString(context))) }
             }
         }
     }
@@ -200,7 +206,7 @@ fun LibraryScreen(
             ) { catalogue ->
                 when (catalogue) {
                     is LibraryVMState.CatalogueState.Loading -> LibraryLoadingSkeleton()
-                    is LibraryVMState.CatalogueState.Error   -> LibraryErrorState(catalogue.message)
+                    is LibraryVMState.CatalogueState.Error   -> LibraryErrorState(catalogue.message.asString())
                     is LibraryVMState.CatalogueState.Ready   -> LibraryReadyBody(
                         catalogue = catalogue,
                         activeMix = uiState.activeMix,
@@ -238,11 +244,11 @@ fun LibraryScreen(
 
 /** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
 private val LIBRARY_COACH_MARKS = listOf(
-    "search"    to "Search sounds by name",
-    "tabs"      to "Filter by category",
-    "sound"     to "Tap to add to your mix, long-press to preview",
-    "mix_panel" to "Your mix — balance the sounds and press play",
-    "save"      to "Save your mix as a preset",
+    "search"    to R.string.coach_library_search,
+    "tabs"      to R.string.coach_library_tabs,
+    "sound"     to R.string.coach_library_sound,
+    "mix_panel" to R.string.coach_library_mix_panel,
+    "save"      to R.string.coach_library_save,
 )
 
 // Top bar
@@ -258,6 +264,7 @@ private fun LibraryTopBar(
 ) {
     val hasMix = activeMix is LibraryVMState.MixBuilderState.Active
     val isDirty = (activeMix as? LibraryVMState.MixBuilderState.Active)?.isDirty == true
+    val clearSearchLabel = stringResource(R.string.library_cd_clear_search)
 
     Column(
         modifier = Modifier
@@ -270,7 +277,7 @@ private fun LibraryTopBar(
             verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            SmallIconButton(onClick = onBack, description = "Back") { ChevronLeft(Charcoal) }
+            SmallIconButton(onClick = onBack, description = stringResource(R.string.cd_back)) { ChevronLeft(Charcoal) }
 
             // Inline search field
             Box(
@@ -302,7 +309,7 @@ private fun LibraryTopBar(
                             Box {
                                 if (filter.searchQuery.isEmpty()) {
                                     Text(
-                                        "Search sounds…",
+                                        stringResource(R.string.library_search_hint),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MutedGray,
                                     )
@@ -318,7 +325,7 @@ private fun LibraryTopBar(
                                 .clip(CircleShape)
                                 .background(MutedGray.copy(alpha = 0.2f))
                                 .clickable(onClick = onClear)
-                                .semantics { contentDescription = "Clear search" },
+                                .semantics { contentDescription = clearSearchLabel },
                             contentAlignment = Alignment.Center,
                         ) {
                             XIcon(MutedGray)
@@ -335,7 +342,7 @@ private fun LibraryTopBar(
             ) {
                 SmallIconButton(
                     onClick     = onSave,
-                    description = "Save as preset",
+                    description = stringResource(R.string.player_cd_save_as_preset),
                     background  = if (isDirty) Charcoal else SurfaceMuted,
                     borderColor = if (isDirty) Charcoal else Border,
                     modifier    = Modifier.coachMarkAnchor("save"),
@@ -400,7 +407,7 @@ private fun LibraryErrorState(message: String) {
                 .background(PaleRed)
                 .padding(horizontal = 10.dp, vertical = 4.dp),
         ) {
-            Text("Error", style = MaterialTheme.typography.labelSmall, color = PaleRedText)
+            Text(stringResource(R.string.label_error), style = MaterialTheme.typography.labelSmall, color = PaleRedText)
         }
         Spacer(Modifier.height(8.dp))
         Text(message, style = MaterialTheme.typography.bodyMedium, color = MutedGray)
@@ -449,7 +456,7 @@ private fun LibraryReadyBody(
             // Shelves — recent and most played (hidden during search/filter)
             if (catalogue.showShelves) {
                 if (catalogue.recentSounds.isNotEmpty()) {
-                    item(key = "recent_header") { SectionLabel("Recently played") }
+                    item(key = "recent_header") { SectionLabel(stringResource(R.string.library_recently_played)) }
                     item(key = "recent_row") {
                         SoundShelf(
                             items     = catalogue.recentSounds,
@@ -459,7 +466,7 @@ private fun LibraryReadyBody(
                     }
                 }
                 if (catalogue.mostPlayed.isNotEmpty() && catalogue.mostPlayed != catalogue.recentSounds) {
-                    item(key = "most_header") { SectionLabel("Most played") }
+                    item(key = "most_header") { SectionLabel(stringResource(R.string.library_most_played)) }
                     item(key = "most_row") {
                         SoundShelf(
                             items       = catalogue.mostPlayed,
@@ -468,7 +475,7 @@ private fun LibraryReadyBody(
                         )
                     }
                 }
-                item(key = "divider") { SectionLabel("All sounds") }
+                item(key = "divider") { SectionLabel(stringResource(R.string.library_all_sounds)) }
             }
 
             // No results state
@@ -480,7 +487,7 @@ private fun LibraryReadyBody(
                             .padding(vertical = 48.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("No sounds match", style = MaterialTheme.typography.bodyMedium, color = MutedGray)
+                        Text(stringResource(R.string.library_no_match), style = MaterialTheme.typography.bodyMedium, color = MutedGray)
                     }
                 }
             }
@@ -543,6 +550,8 @@ private fun CategoryTabs(
             val isSelected = tab == selected
             val bg by animateColorAsState(if (isSelected) Charcoal else SurfaceMuted, tween(200), "tab_${tab.label}")
             val fg by animateColorAsState(if (isSelected) White else MutedGray, tween(200), "tab_fg_${tab.label}")
+            val tabLabel = stringResource(tab.label)
+            val tabDescription = pluralStringResource(R.plurals.library_cd_tab, tab.count, tabLabel, tab.count)
 
             Box(
                 modifier = Modifier
@@ -551,10 +560,10 @@ private fun CategoryTabs(
                     .border(1.dp, if (isSelected) Charcoal else Border, RoundedCornerShape(6.dp))
                     .clickable { onSelect(tab) }
                     .padding(horizontal = 14.dp, vertical = 8.dp)
-                    .semantics { contentDescription = "${tab.label}, ${tab.count} sounds" },
+                    .semantics { contentDescription = tabDescription },
             ) {
                 Text(
-                    text  = tab.label,
+                    text  = tabLabel,
                     style = MaterialTheme.typography.labelLarge,
                     color = fg,
                 )
@@ -577,6 +586,12 @@ private fun SoundShelf(
         items(items, key = { it.sound.id }) { item ->
             val (pillBg, pillFg) = categoryColors(item.sound.category)
             val isIn = item.isInActiveMix
+            val title = item.sound.displayTitle()
+            val chipDescription = listOfNotNull(
+                title,
+                stringResource(R.string.library_cd_in_mix).takeIf { isIn },
+                stringResource(R.string.library_cd_premium).takeIf { item.isPremiumLocked },
+            ).joinToString(", ")
 
             Box(
                 modifier = Modifier
@@ -586,13 +601,7 @@ private fun SoundShelf(
                     .clickable { onTap(item) }
                     .padding(horizontal = 14.dp, vertical = 9.dp)
                     .alpha(if (item.isPremiumLocked) 0.5f else 1f)
-                    .semantics {
-                        contentDescription = buildString {
-                            append(item.sound.title)
-                            if (isIn) append(", in mix")
-                            if (item.isPremiumLocked) append(", premium")
-                        }
-                    },
+                    .semantics { contentDescription = chipDescription },
             ) {
                 Row(
                     verticalAlignment     = Alignment.CenterVertically,
@@ -604,7 +613,7 @@ private fun SoundShelf(
                         ActiveDot(OnPanel.copy(alpha = 0.8f))
                     }
                     Text(
-                        text  = item.sound.title,
+                        text  = title,
                         style = MaterialTheme.typography.labelMedium,
                         color = if (isIn) OnPanel else pillFg,
                     )
@@ -627,6 +636,14 @@ private fun SoundRow(
     val locked    = item.isPremiumLocked
     val previewing = item.isPreviewPlaying
     val showsHeadphonesTag = item.sound.needsHeadphones
+    val title = item.sound.displayTitle()
+    val rowDescription = listOfNotNull(
+        title,
+        stringResource(if (isIn) R.string.library_cd_in_mix_tap_remove else R.string.library_cd_tap_add),
+        stringResource(R.string.library_cd_premium).takeIf { locked },
+        stringResource(R.string.library_cd_previewing).takeIf { previewing },
+        stringResource(R.string.library_cd_headphones).takeIf { showsHeadphonesTag },
+    ).joinToString(", ")
 
     val bgColor by animateColorAsState(
         targetValue   = when { isIn -> Panel; previewing -> PaleBlue; else -> White },
@@ -650,16 +667,7 @@ private fun SoundRow(
             .clickable(onClick = onTap)
             .alpha(if (locked && !isIn) 0.6f else 1f)
             .padding(horizontal = 14.dp, vertical = 12.dp)
-            .semantics {
-                contentDescription = buildString {
-                    append(item.sound.title)
-                    if (isIn) append(", in mix — tap to remove")
-                    else append(", tap to add to mix")
-                    if (locked) append(", premium")
-                    if (previewing) append(", previewing")
-                    if (showsHeadphonesTag) append(", best with headphones")
-                }
-            },
+            .semantics { contentDescription = rowDescription },
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -676,14 +684,14 @@ private fun SoundRow(
         // Content
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text     = item.sound.title,
+                text     = title,
                 style    = MaterialTheme.typography.titleSmall,
                 color    = when { isIn -> OnPanel; previewing -> PaleBlueText; else -> Charcoal },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(2.dp))
-            val categoryLabel = item.sound.category.name.lowercase().replaceFirstChar { it.uppercase() }
+            val categoryLabel = stringResource(item.sound.category.labelRes)
             val subColor = when { isIn -> OnPanel.copy(alpha = 0.6f); previewing -> PaleBlueText.copy(alpha = 0.7f); else -> MutedGray }
             Row(
                 verticalAlignment     = Alignment.CenterVertically,
@@ -691,7 +699,7 @@ private fun SoundRow(
             ) {
                 if (showsHeadphonesTag) HeadphonesIcon(subColor)
                 Text(
-                    text  = if (showsHeadphonesTag) "$categoryLabel · headphones" else categoryLabel,
+                    text  = if (showsHeadphonesTag) stringResource(R.string.library_category_headphones, categoryLabel) else categoryLabel,
                     style = MaterialTheme.typography.bodySmall,
                     color = subColor,
                 )
@@ -743,6 +751,10 @@ private fun MixBuilderPanel(
     val isPlaying = playback is LibraryVMState.LibraryPlaybackState.Playing
     val isPaused  = playback is LibraryVMState.LibraryPlaybackState.Paused
     var isExpanded by rememberSaveable { mutableStateOf(true) }
+    val expandLabel = stringResource(if (isExpanded) R.string.library_cd_collapse_mix else R.string.library_cd_expand_mix)
+    val transportLabel = stringResource(
+        when { isPlaying -> R.string.library_cd_pause_mix; isPaused -> R.string.library_cd_resume_mix; else -> R.string.library_cd_play_mix }
+    )
     val chevronRotation by animateFloatAsState(if (isExpanded) 90f else -90f, label = "mix_chevron")
 
     Column(
@@ -759,7 +771,7 @@ private fun MixBuilderPanel(
             verticalAlignment     = Alignment.CenterVertically,
         ) {
             Text(
-                if (isExpanded) "MIX" else "MIX · ${mix.layers.size} ${if (mix.layers.size == 1) "sound" else "sounds"}",
+                if (isExpanded) stringResource(R.string.library_mix_header) else pluralStringResource(R.plurals.library_mix_header_count, mix.layers.size, mix.layers.size),
                 style = MaterialTheme.typography.labelSmall,
                 color = OnPanel.copy(alpha = 0.5f),
             )
@@ -772,7 +784,7 @@ private fun MixBuilderPanel(
                         .background(OnPanel.copy(alpha = 0.1f))
                         .border(1.dp, OnPanel.copy(alpha = 0.2f), CircleShape)
                         .clickable { isExpanded = !isExpanded }
-                        .semantics { contentDescription = if (isExpanded) "Collapse mix" else "Expand mix" },
+                        .semantics { contentDescription = expandLabel },
                     contentAlignment = Alignment.Center,
                 ) {
                     ChevronRight(OnPanel, Modifier.rotate(chevronRotation))
@@ -792,11 +804,7 @@ private fun MixBuilderPanel(
                                 else      -> onPlay
                             }
                         )
-                        .semantics {
-                            contentDescription = when {
-                                isPlaying -> "Pause mix"; isPaused -> "Resume mix"; else -> "Play mix"
-                            }
-                        },
+                        .semantics { contentDescription = transportLabel },
                     contentAlignment = Alignment.Center,
                 ) {
                     when {
@@ -836,7 +844,7 @@ private fun MixBuilderPanel(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
-                            "Master",
+                            stringResource(R.string.player_master),
                             style    = MaterialTheme.typography.labelSmall,
                             color    = OnPanel.copy(alpha = 0.5f),
                             modifier = Modifier.width(48.dp),
@@ -865,6 +873,8 @@ private fun LayerSliderRow(
     onMute: () -> Unit,
     onUnmute: () -> Unit,
 ) {
+    val title = layer.sound.displayTitle()
+    val muteLabel = stringResource(if (layer.isMuted) R.string.library_cd_unmute_sound else R.string.library_cd_mute_sound, title)
     Row(
         modifier          = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -881,7 +891,7 @@ private fun LayerSliderRow(
                 )
                 .border(1.dp, OnPanel.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
                 .clickable(onClick = if (layer.isMuted) onUnmute else onMute)
-                .semantics { contentDescription = if (layer.isMuted) "Unmute ${layer.sound.title}" else "Mute ${layer.sound.title}" },
+                .semantics { contentDescription = muteLabel },
             contentAlignment = Alignment.Center,
         ) {
             if (layer.isMuted) {
@@ -893,7 +903,7 @@ private fun LayerSliderRow(
 
         // Sound name
         Text(
-            text     = layer.sound.title,
+            text     = title,
             style    = MaterialTheme.typography.labelMedium,
             color    = if (layer.isMuted) OnPanel.copy(alpha = 0.3f) else OnPanel.copy(alpha = 0.8f),
             maxLines = 1,
@@ -937,7 +947,7 @@ private fun SavePresetDialog(
         onDismissRequest = onDismiss,
         containerColor   = WarmWhite,
         title = {
-            Text("Save preset", style = MaterialTheme.typography.headlineSmall, color = Charcoal)
+            Text(stringResource(R.string.player_save_preset_title), style = MaterialTheme.typography.headlineSmall, color = Charcoal)
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -959,7 +969,7 @@ private fun SavePresetDialog(
                         decorationBox = { inner ->
                             Box {
                                 if (name.isEmpty()) {
-                                    Text("Name", style = MaterialTheme.typography.bodyMedium, color = MutedGray)
+                                    Text(stringResource(R.string.preset_field_name), style = MaterialTheme.typography.bodyMedium, color = MutedGray)
                                 }
                                 inner()
                             }
@@ -984,7 +994,7 @@ private fun SavePresetDialog(
                         decorationBox = { inner ->
                             Box {
                                 if (emoji.isEmpty()) {
-                                    Text("Emoji (optional)", style = MaterialTheme.typography.bodyMedium, color = MutedGray)
+                                    Text(stringResource(R.string.preset_field_emoji), style = MaterialTheme.typography.bodyMedium, color = MutedGray)
                                 }
                                 inner()
                             }
@@ -998,13 +1008,13 @@ private fun SavePresetDialog(
                 onClick = { if (name.isNotBlank()) onSave(name, emoji.ifBlank { null }) },
                 enabled = name.isNotBlank(),
             ) {
-                Text("Save", style = MaterialTheme.typography.labelLarge,
+                Text(stringResource(R.string.action_save), style = MaterialTheme.typography.labelLarge,
                     color = if (name.isNotBlank()) Charcoal else MutedGray)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", style = MaterialTheme.typography.labelLarge, color = MutedGray)
+                Text(stringResource(R.string.action_cancel), style = MaterialTheme.typography.labelLarge, color = MutedGray)
             }
         },
     )
@@ -1078,7 +1088,7 @@ private fun CategoryDot(bg: Color, fg: Color, category: Domain.SoundCategory) {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text  = category.name.first().uppercase(),
+            text  = stringResource(category.labelRes).first().uppercase(),
             style = MaterialTheme.typography.labelSmall,
             color = fg,
         )

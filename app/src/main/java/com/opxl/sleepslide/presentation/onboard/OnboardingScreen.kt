@@ -72,6 +72,9 @@ import com.opxl.sleepslide.ui.theme.SurfaceMuted
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import com.opxl.sleepslide.ui.theme.White
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
+import com.opxl.sleepslide.R
 
 // Screen
 
@@ -84,6 +87,7 @@ fun OnboardingScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     // Notification permission launcher — Android 13+
     val notifLauncher = rememberLauncherForActivityResult(
@@ -109,7 +113,7 @@ fun OnboardingScreen(
                     viewModel.onReturnFromBatterySettings()
                 }
                 is OnboardingVMState.OnboardingEvent.ShowError ->
-                    scope.launch { snackbarHostState.showSnackbar(event.message) }
+                    scope.launch { snackbarHostState.showSnackbar(event.message.asString(context)) }
             }
         }
     }
@@ -229,7 +233,7 @@ private fun WelcomeStep(onContinue: () -> Unit) {
         Spacer(Modifier.height(40.dp))
 
         Text(
-            text      = "SleepSlide",
+            text      = stringResource(R.string.app_name),
             style     = MaterialTheme.typography.displaySmall,
             color     = Charcoal,
             textAlign = TextAlign.Center,
@@ -238,7 +242,7 @@ private fun WelcomeStep(onContinue: () -> Unit) {
         Spacer(Modifier.height(12.dp))
 
         Text(
-            text      = "Sound that works while you sleep.",
+            text      = stringResource(R.string.onboarding_welcome_headline),
             style     = MaterialTheme.typography.bodyLarge,
             color     = MutedGray,
             textAlign = TextAlign.Center,
@@ -247,7 +251,7 @@ private fun WelcomeStep(onContinue: () -> Unit) {
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text      = "No account. No subscription. No ads during playback.",
+            text      = stringResource(R.string.onboarding_welcome_subtext),
             style     = MaterialTheme.typography.bodyMedium,
             color     = MutedGray.copy(alpha = 0.7f),
             textAlign = TextAlign.Center,
@@ -256,7 +260,7 @@ private fun WelcomeStep(onContinue: () -> Unit) {
         Spacer(Modifier.height(64.dp))
 
         PrimaryButton(
-            label   = "Get started",
+            label   = stringResource(R.string.onboarding_get_started),
             onClick = onContinue,
         )
 
@@ -267,9 +271,9 @@ private fun WelcomeStep(onContinue: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment     = Alignment.CenterVertically,
         ) {
-            FeaturePill("Offline sounds")
-            FeaturePill("No subscription")
-            FeaturePill("Gapless loop")
+            FeaturePill(stringResource(R.string.onboarding_feature_offline))
+            FeaturePill(stringResource(R.string.onboarding_feature_no_subscription))
+            FeaturePill(stringResource(R.string.onboarding_feature_gapless))
         }
 
         Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
@@ -287,6 +291,7 @@ private fun PathSelectionStep(
     onSkip: () -> Unit,
     onBack: () -> Unit,
 ) {
+    val skipLabel = stringResource(R.string.onboarding_cd_skip)
     Column(
         modifier            = Modifier
             .fillMaxSize()
@@ -296,7 +301,7 @@ private fun PathSelectionStep(
         Spacer(Modifier.height(72.dp))
 
         Text(
-            text      = "What brings you here?",
+            text      = stringResource(R.string.onboarding_path_headline),
             style     = MaterialTheme.typography.headlineMedium,
             color     = Charcoal,
             textAlign = TextAlign.Center,
@@ -305,7 +310,7 @@ private fun PathSelectionStep(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text      = "We'll show you the most useful sounds first. You can change this later.",
+            text      = stringResource(R.string.onboarding_path_subtext),
             style     = MaterialTheme.typography.bodyMedium,
             color     = MutedGray,
             textAlign = TextAlign.Center,
@@ -325,7 +330,7 @@ private fun PathSelectionStep(
         Spacer(Modifier.weight(1f))
 
         PrimaryButton(
-            label   = if (isSaving) "Setting up…" else "Continue",
+            label   = stringResource(if (isSaving) R.string.onboarding_setting_up else R.string.action_continue),
             enabled = selectedPath != null && !isSaving,
             onClick = onContinue,
         )
@@ -333,13 +338,13 @@ private fun PathSelectionStep(
         Spacer(Modifier.height(12.dp))
 
         Text(
-            text  = "Skip — I'll explore on my own",
+            text  = stringResource(R.string.onboarding_skip),
             style = MaterialTheme.typography.labelLarge,
             color = MutedGray,
             modifier = Modifier
                 .clickable(onClick = onSkip)
                 .padding(vertical = 8.dp)
-                .semantics { contentDescription = "Skip onboarding" },
+                .semantics { contentDescription = skipLabel },
         )
 
         Spacer(Modifier.height(16.dp))
@@ -367,6 +372,11 @@ private fun PathCard(
     val subColor     = if (isSelected) White.copy(alpha = 0.7f) else MutedGray
     val pillBg       = if (isSelected) White.copy(alpha = 0.15f) else SurfaceMuted
     val pillFg       = if (isSelected) White.copy(alpha = 0.8f) else MutedGray
+    val title        = stringResource(option.title)
+    val cardLabel    = stringResource(
+        if (isSelected) R.string.onboarding_cd_path_selected else R.string.onboarding_cd_path_not_selected,
+        title,
+    )
 
     Box(
         modifier = Modifier
@@ -377,7 +387,7 @@ private fun PathCard(
             .clickable(onClick = onSelect)
             .padding(20.dp)
             .semantics {
-                contentDescription = "${option.title}, ${if (isSelected) "selected" else "not selected"}"
+                contentDescription = cardLabel
             },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -387,7 +397,7 @@ private fun PathCard(
                 verticalAlignment     = Alignment.CenterVertically,
             ) {
                 Text(
-                    text  = option.title,
+                    text  = title,
                     style = MaterialTheme.typography.titleMedium,
                     color = textColor,
                 )
@@ -405,13 +415,13 @@ private fun PathCard(
             }
 
             Text(
-                text  = option.description,
+                text  = stringResource(option.description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = subColor,
             )
 
             Text(
-                text  = option.whoIsThisFor,
+                text  = stringResource(option.whoIsThisFor),
                 style = MaterialTheme.typography.bodySmall,
                 color = subColor.copy(alpha = 0.6f),
             )
@@ -426,7 +436,7 @@ private fun PathCard(
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
                         Text(
-                            text  = sound,
+                            text  = stringResource(sound),
                             style = MaterialTheme.typography.labelSmall,
                             color = pillFg,
                         )
@@ -456,7 +466,7 @@ private fun PermissionsStep(
         Spacer(Modifier.height(72.dp))
 
         Text(
-            text      = "One more thing",
+            text      = stringResource(R.string.onboarding_permissions_headline),
             style     = MaterialTheme.typography.headlineMedium,
             color     = Charcoal,
             textAlign = TextAlign.Center,
@@ -465,7 +475,7 @@ private fun PermissionsStep(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text      = "These help your sound play all night without stopping.",
+            text      = stringResource(R.string.onboarding_permissions_subtext),
             style     = MaterialTheme.typography.bodyMedium,
             color     = MutedGray,
             textAlign = TextAlign.Center,
@@ -475,8 +485,8 @@ private fun PermissionsStep(
 
         // Notification permission
         PermissionCard(
-            title       = "Notifications",
-            description = "Shows a persistent control so you can pause or stop from the lock screen.",
+            title       = stringResource(R.string.onboarding_permission_notifications_title),
+            description = stringResource(R.string.onboarding_permission_notifications_description),
             isGranted   = state.notificationGranted,
             onRequest   = onNotification,
         )
@@ -485,8 +495,8 @@ private fun PermissionsStep(
 
         // Battery optimisation
         PermissionCard(
-            title       = "Background audio",
-            description = "Prevents Android from stopping the sound at night when your phone is idle.",
+            title       = stringResource(R.string.onboarding_permission_battery_title),
+            description = stringResource(R.string.onboarding_permission_battery_description),
             isGranted   = state.batteryOptGranted,
             onRequest   = onBattery,
         )
@@ -496,7 +506,7 @@ private fun PermissionsStep(
         val allGranted = state.notificationGranted && state.batteryOptGranted
 
         PrimaryButton(
-            label   = if (allGranted) "All set — let's go" else "Continue anyway",
+            label   = stringResource(if (allGranted) R.string.onboarding_all_set else R.string.onboarding_continue_anyway),
             onClick  = onContinue,
             bg      = if (allGranted) Charcoal else SurfaceMuted,
             textColor = if (allGranted) White else MutedGray,
@@ -505,7 +515,7 @@ private fun PermissionsStep(
         Spacer(Modifier.height(12.dp))
 
         Text(
-            text  = "You can always enable these in Settings",
+            text  = stringResource(R.string.onboarding_permissions_footer),
             style = MaterialTheme.typography.bodySmall,
             color = MutedGray.copy(alpha = 0.6f),
         )
@@ -522,6 +532,7 @@ private fun PermissionCard(
     isGranted: Boolean,
     onRequest: () -> Unit,
 ) {
+    val enableLabel = stringResource(R.string.onboarding_cd_enable, title)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -570,10 +581,10 @@ private fun PermissionCard(
                         .background(Charcoal)
                         .clickable(onClick = onRequest)
                         .padding(horizontal = 14.dp, vertical = 8.dp)
-                        .semantics { contentDescription = "Enable $title" },
+                        .semantics { contentDescription = enableLabel },
                 ) {
                     Text(
-                        "Enable",
+                        stringResource(R.string.onboarding_enable),
                         style = MaterialTheme.typography.labelLarge,
                         color = White,
                     )
