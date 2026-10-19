@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sound titles, keyed by Domain.Sound.id (see SoundText.kt) -->
+    <string name="sound_title_white_noise">White Noise</string>
+    <string name="sound_title_pink_noise">Pink Noise</string>
+    <string name="sound_title_brown_noise">Brown Noise</string>
+    <string name="sound_title_grey_noise">Grey Noise</string>
+    <string name="sound_title_green_noise">Green Noise</string>
+    <string name="sound_title_notched_3000">Notched Noise · 3 kHz</string>
+    <string name="sound_title_notched_4000">Notched Noise · 4 kHz</string>
+    <string name="sound_title_notched_6000">Notched Noise · 6 kHz</string>
+    <string name="sound_title_notched_8000">Notched Noise · 8 kHz</string>
+    <string name="sound_title_rain_light">Light Rain</string>
+    <string name="sound_title_rain_window">Rain on the Window</string>
+    <string name="sound_title_rain_heavy">Heavy Rain</string>
+    <string name="sound_title_rain_street">Rain on a Street</string>
+    <string name="sound_title_thunderstorm">Thunderstorm</string>
+    <string name="sound_title_summer_storm">Summer Storm</string>
+    <string name="sound_title_rain_walk">Rainy Walk</string>
+    <string name="sound_title_stream">Forest Stream</string>
+    <string name="sound_title_creek">Mountain Creek</string>
+    <string name="sound_title_pond">Pond at Dawn</string>
+    <string name="sound_title_night_crickets">Night Crickets</string>
+    <string name="sound_title_fireplace">Fireplace</string>
+    <string name="sound_title_deep_rumble">Deep Ocean Vent</string>
+    <string name="sound_title_womb_heart">Womb &amp; Heartbeat</string>
+    <string name="sound_title_binaural_alpha">Alpha Beats · 10 Hz</string>
+    <string name="sound_title_binaural_theta">Theta Beats · 6 Hz</string>
+    <string name="sound_title_binaural_delta">Delta Beats · 2 Hz</string>
+
+    <!-- Sound categories -->
+    <string name="sound_category_tinnitus">Tinnitus</string>
+    <string name="sound_category_nature">Nature</string>
+    <string name="sound_category_ambient">Ambient</string>
+    <string name="sound_category_binaural">Binaural</string>
+    <string name="sound_category_guided">Guided</string>
+    <string name="sound_category_all">All</string>
+</resources>
