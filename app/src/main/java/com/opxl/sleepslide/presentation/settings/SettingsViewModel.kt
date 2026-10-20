@@ -5,7 +5,8 @@ import android.os.PowerManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.opxl.sleepslide.domain.observer.EntitlementObserver
-import com.opxl.sleepslide.domain.repository.PurchaseRepository
+import com.opxl.sleepslide.R
+import com.opxl.sleepslide.domain.repository.PurchaseError
 import com.opxl.sleepslide.domain.repository.PurchaseResult
 import com.opxl.sleepslide.domain.repository.RestoreResult
 import com.opxl.sleepslide.domain.repository.TutorialRepository
@@ -33,14 +34,12 @@ import android.content.Context
 
 private const val SHARING_STOP_TIMEOUT_MS   = 5_000L
 private const val PURCHASE_RESET_DELAY_MS   = 3_000L
-private const val PRODUCT_ID                = "sleepdrift_unlock_all"
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val purchaseService: PurchaseService,
-    private val purchaseRepository: PurchaseRepository,
     private val entitlementObserver: EntitlementObserver,
     private val windDownNotificationService: com.opxl.sleepslide.domain.service.WindDownNotificationService,
     private val tutorialRepository: TutorialRepository,
@@ -56,6 +55,8 @@ class SettingsViewModel @Inject constructor(
     private val _purchaseState  = MutableStateFlow<SettingsVMState.PurchaseOperationState>(SettingsVMState.PurchaseOperationState.Idle)
     private val _dataResetState = MutableStateFlow<SettingsVMState.DataResetState>(SettingsVMState.DataResetState.Idle)
     private val _batteryStatus  = MutableStateFlow<SettingsVMState.BatteryOptStatus>(SettingsVMState.BatteryOptStatus.Unknown)
+    /** Localised Play price of the unlock; null until loaded, or when offline. */
+    private val _price          = MutableStateFlow<String?>(null)
 
 
     val uiState: StateFlow<SettingsVMState.SettingsUiState> = buildUiState()
@@ -77,6 +78,7 @@ class SettingsViewModel @Inject constructor(
     init {
         refreshBatteryOptStatus()
         syncEntitlementOnEntry()
+        loadPrice()
         observeUpgradeRequests()
     }
 
@@ -88,7 +90,7 @@ class SettingsViewModel @Inject constructor(
 
             _purchaseState.value = SettingsVMState.PurchaseOperationState.Purchasing
 
-            runCatching { purchaseService.purchase(PRODUCT_ID) }
+            runCatching { purchaseService.purchase() }
                 .fold(
                     onSuccess = { result ->
                         when (result) {
@@ -102,40 +104,16 @@ class SettingsViewModel @Inject constructor(
                             is PurchaseResult.Cancelled -> {
                                 _purchaseState.value = SettingsVMState.PurchaseOperationState.Idle
                             }
-                            is PurchaseResult.Failure -> {
-                                _purchaseState.value = SettingsVMState.PurchaseOperationState.Error(result.reason)
-                                _events.trySend(SettingsVMState.SettingsEvent.ShowError(result.reason))
-                                resetPurchaseStateAfterDelay()
+                            // The listener flips the tier when Play confirms — nothing to retry
+                            is PurchaseResult.Pending -> {
+                                _purchaseState.value = SettingsVMState.PurchaseOperationState.Idle
+                                _events.trySend(SettingsVMState.SettingsEvent.ShowInfo(context.getString(R.string.purchase_pending)))
                             }
+                            is PurchaseResult.Failure -> showPurchaseError(result.error)
                         }
                     },
-                    onFailure = { e ->
-                        val msg = e.message ?: "Purchase failed — please try again"
-                        _purchaseState.value = SettingsVMState.PurchaseOperationState.Error(msg)
-                        _events.trySend(SettingsVMState.SettingsEvent.ShowError(msg))
-                        resetPurchaseStateAfterDelay()
-                    }
+                    onFailure = { showPurchaseError(PurchaseError.UNKNOWN) }
                 )
-        }
-    }
-
-    /**
-     * Called by the RevenueCat [Paywall] listener after the paywall itself completed a
-     * purchase or restore. The SDK already owns the transaction; we just re-sync the
-     * entitlement so the account tier updates, and surface the same success feedback
-     * as the direct-purchase path.
-     */
-    fun onPaywallPurchaseCompleted() {
-        viewModelScope.launch {
-            runCatching { purchaseService.refresh() }
-            _events.trySend(SettingsVMState.SettingsEvent.PurchaseSuccess)
-        }
-    }
-
-    fun onPaywallRestoreCompleted() {
-        viewModelScope.launch {
-            runCatching { purchaseService.refresh() }
-            _events.trySend(SettingsVMState.SettingsEvent.RestoreSuccess)
         }
     }
 
@@ -161,21 +139,29 @@ class SettingsViewModel @Inject constructor(
                                 _events.trySend(SettingsVMState.SettingsEvent.NothingToRestore)
                                 resetPurchaseStateAfterDelay()
                             }
-                            is RestoreResult.Failure -> {
-                                _purchaseState.value = SettingsVMState.PurchaseOperationState.Error(result.reason)
-                                _events.trySend(SettingsVMState.SettingsEvent.ShowError(result.reason))
-                                resetPurchaseStateAfterDelay()
-                            }
+                            is RestoreResult.Failure -> showPurchaseError(result.error)
                         }
                     },
-                    onFailure = { e ->
-                        val msg = e.message ?: "Restore failed — please try again"
-                        _purchaseState.value = SettingsVMState.PurchaseOperationState.Error(msg)
-                        _events.trySend(SettingsVMState.SettingsEvent.ShowError(msg))
-                        resetPurchaseStateAfterDelay()
-                    }
+                    onFailure = { showPurchaseError(PurchaseError.UNKNOWN) }
                 )
         }
+    }
+
+    private fun showPurchaseError(error: PurchaseError) {
+        val msg = context.getString(
+            when (error) {
+                PurchaseError.NETWORK             -> R.string.purchase_error_network
+                PurchaseError.STORE_PROBLEM       -> R.string.purchase_error_store
+                PurchaseError.NOT_ALLOWED         -> R.string.purchase_error_not_allowed
+                PurchaseError.PRODUCT_UNAVAILABLE -> R.string.purchase_error_unavailable
+                PurchaseError.ALREADY_IN_PROGRESS -> R.string.purchase_error_in_progress
+                PurchaseError.NOT_UNLOCKED        -> R.string.purchase_error_not_unlocked
+                PurchaseError.UNKNOWN             -> R.string.purchase_error_unknown
+            }
+        )
+        _purchaseState.value = SettingsVMState.PurchaseOperationState.Error(msg)
+        _events.trySend(SettingsVMState.SettingsEvent.ShowError(msg))
+        resetPurchaseStateAfterDelay()
     }
 
     private fun resetPurchaseStateAfterDelay() {
@@ -349,20 +335,25 @@ class SettingsViewModel @Inject constructor(
             .catch { emit(Domain.Entitlement(Domain.EntitlementTier.FREE, revenueCatUserId = "")) }
             .distinctUntilChanged()
 
+        val purchaseFlow = combine(_purchaseState, _price) { op, price -> op to price }
+
         return combine(
             prefsFlow,
             entitlementFlow,
-            _purchaseState,
+            purchaseFlow,
             _batteryStatus,
             _dataResetState,
-        ) { prefs, entitlement, purchaseOp, batteryStatus, dataReset ->
+        ) { prefs, entitlement, (purchaseOp, price), batteryStatus, dataReset ->
 
-            val accountState = when (entitlement.tier) {
-                Domain.EntitlementTier.FREE    -> SettingsVMState.AccountState.Free(
+            val accountState = when {
+                // Cold start before the cache or RevenueCat answered — skeleton, not a wrong tier
+                !entitlement.isResolved -> SettingsVMState.AccountState.Loading
+                entitlement.tier == Domain.EntitlementTier.FREE -> SettingsVMState.AccountState.Free(
                     canPurchase = purchaseOp !is SettingsVMState.PurchaseOperationState.Purchasing &&
                             purchaseOp !is SettingsVMState.PurchaseOperationState.Restoring,
+                    price       = price,
                 )
-                Domain.EntitlementTier.PREMIUM -> SettingsVMState.AccountState.Premium(
+                else -> SettingsVMState.AccountState.Premium(
                     purchasedAt = entitlement.purchasedAt,
                     isRestored  = entitlement.isRestored,
                 )
@@ -557,11 +548,21 @@ class SettingsViewModel @Inject constructor(
 
     // HELPERS
 
-    /** An "Upgrade" snackbar action elsewhere brought the user here — start the purchase. */
+    /**
+     * An "Upgrade" snackbar action elsewhere brought the user here — confirm with the price
+     * first, rather than dropping them straight into the Play sheet.
+     */
     private fun observeUpgradeRequests() {
         upgradeRequests.requests
-            .onEach { if (!purchaseService.isPremium()) purchase() }
+            .onEach { if (!purchaseService.isPremium()) _events.trySend(SettingsVMState.SettingsEvent.ShowUpgradePrompt) }
             .launchIn(viewModelScope)
+    }
+
+    /** Price comes from Play per country; retried on every Settings visit while it's missing. */
+    private fun loadPrice() {
+        viewModelScope.launch {
+            _price.value = runCatching { purchaseService.premiumOffer() }.getOrNull()?.formattedPrice
+        }
     }
 
     private fun syncEntitlementOnEntry() {

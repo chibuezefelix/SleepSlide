@@ -28,6 +28,8 @@ sealed interface AccountState {
     data object Loading : AccountState
     data class Free(
         val canPurchase: Boolean,
+        /** Localised Play price, e.g. "€4,99". Null until loaded or when offline. */
+        val price: String? = null,
     ) : AccountState
     data class Premium(
         val purchasedAt: Long?,
@@ -129,6 +131,8 @@ sealed interface SettingsEvent {
     data object PurchaseSuccess : SettingsEvent
     data object RestoreSuccess : SettingsEvent
     data object NothingToRestore : SettingsEvent
+    /** Confirm-with-price prompt, opened by an "Upgrade" action elsewhere in the app. */
+    data object ShowUpgradePrompt : SettingsEvent
     data object DataResetComplete : SettingsEvent
     data object ShowDataResetConfirmation : SettingsEvent
     data object ShowRetakeOnboardingConfirmation : SettingsEvent

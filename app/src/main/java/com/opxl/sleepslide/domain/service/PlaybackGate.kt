@@ -45,12 +45,15 @@ class PlaybackGate @Inject constructor(
      * playing, that session runs to the end and the rule applies at the next launch — nothing
      * observes the tier to cut audio, because the listener is probably asleep. Pause/resume of
      * the running session is not a launch and is not gated.
+     *
+     * Waits out the cold-start window where the tier isn't known yet, so a paying user who
+     * taps a preset in the first second isn't handed the free layers.
      */
     suspend fun prepare(mix: Domain.SoundMix): Decision {
         val resolved = soundRepository.resolve(mix)
         if (resolved.isEmpty) return Decision.NothingToPlay
 
-        val locked = resolved.lockedLayers(entitlementObserver.entitlement.value.tier)
+        val locked = resolved.lockedLayers(entitlementObserver.awaitResolved().tier)
         if (locked.isEmpty()) return Decision.Play(resolved)
 
         val playable = resolved.copy(layers = resolved.layers - locked.toSet())
@@ -64,8 +67,8 @@ class PlaybackGate @Inject constructor(
     }
 
     /** Single-sound variant for add/swap into a running mix. Posts a notice when locked. */
-    fun isLocked(sound: Domain.Sound): Boolean {
-        val locked = sound.isLockedFor(entitlementObserver.entitlement.value.tier)
+    suspend fun isLocked(sound: Domain.Sound): Boolean {
+        val locked = sound.isLockedFor(entitlementObserver.awaitResolved().tier)
         if (locked) _notices.trySend(LockedLayersNotice(listOf(sound), playingRest = false))
         return locked
     }

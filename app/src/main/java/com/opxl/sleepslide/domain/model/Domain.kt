@@ -130,11 +130,21 @@ object Domain {
         ANOTHER_APP,        // LOST — user must manually resume
     }
 
+    /**
+     * [isResolved] is false only at cold start, before either the on-disk snapshot or
+     * RevenueCat has answered. Nothing should gate or render locks on an unresolved tier.
+     */
     data class Entitlement(
         val tier: EntitlementTier,
         val purchasedAt: Long? = null,
         val revenueCatUserId: String,
         val isRestored: Boolean = false,
+        val isResolved: Boolean = true,
+    )
+
+    /** The lifetime unlock as Play sells it in the user's country. */
+    data class PremiumOffer(
+        val formattedPrice: String,
     )
 
     enum class EntitlementTier {

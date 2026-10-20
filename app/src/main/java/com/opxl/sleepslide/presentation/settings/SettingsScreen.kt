@@ -53,6 +53,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -84,11 +86,6 @@ import com.opxl.sleepslide.ui.theme.PaleYellowText
 import com.opxl.sleepslide.ui.theme.SurfaceMuted
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import com.opxl.sleepslide.ui.theme.White
-import com.revenuecat.purchases.CustomerInfo
-import com.revenuecat.purchases.models.StoreTransaction
-import com.revenuecat.purchases.ui.revenuecatui.Paywall
-import com.revenuecat.purchases.ui.revenuecatui.PaywallListener
-import com.revenuecat.purchases.ui.revenuecatui.PaywallOptions
 import kotlinx.coroutines.launch
 import com.opxl.sleepslide.R
 
@@ -104,7 +101,8 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    var showPaywall by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    var showUpgradePrompt by rememberSaveable { mutableStateOf(false) }
     var showResetDialog       by rememberSaveable { mutableStateOf(false) }
     var showOnboardingDialog  by rememberSaveable { mutableStateOf(false) }
 
@@ -121,11 +119,12 @@ fun SettingsScreen(
                 is SettingsVMState.SettingsEvent.ShowDataResetConfirmation        -> showResetDialog = true
                 is SettingsVMState.SettingsEvent.ShowRetakeOnboardingConfirmation -> showOnboardingDialog = true
                 is SettingsVMState.SettingsEvent.PurchaseSuccess  ->
-                    scope.launch { snackbarHostState.showSnackbar("Welcome to premium — all sounds unlocked") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.purchase_success)) }
                 is SettingsVMState.SettingsEvent.RestoreSuccess   ->
-                    scope.launch { snackbarHostState.showSnackbar("Purchase restored") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.purchase_restore_success)) }
                 is SettingsVMState.SettingsEvent.NothingToRestore ->
-                    scope.launch { snackbarHostState.showSnackbar("No previous purchase found on this account") }
+                    scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.purchase_nothing_to_restore)) }
+                is SettingsVMState.SettingsEvent.ShowUpgradePrompt -> showUpgradePrompt = true
                 is SettingsVMState.SettingsEvent.DataResetComplete ->
                     scope.launch { snackbarHostState.showSnackbar("Preferences reset") }
                 is SettingsVMState.SettingsEvent.ShowError        ->
@@ -248,28 +247,18 @@ fun SettingsScreen(
         )
     }
 
-    // RevenueCat Paywall — shown when user taps "Unlock All"
-    // In testing mode this is bypassed — purchase() simulates success immediately
-    if (showPaywall) {
-        Paywall(
-            options = PaywallOptions.Builder(dismissRequest = { showPaywall = false })
-                .setShouldDisplayDismissButton(true)
-                .setListener(
-                    object : PaywallListener {
-                        override fun onPurchaseCompleted(customerInfo: CustomerInfo, storeTransaction: StoreTransaction) {
-                            showPaywall = false
-                            viewModel.onPaywallPurchaseCompleted()
-                        }
-
-                        override fun onRestoreCompleted(customerInfo: CustomerInfo) {
-                            showPaywall = false
-                            viewModel.onPaywallRestoreCompleted()
-                        }
-                    }
-                )
-                .build()
+    // Only offered while FREE — the request may race a purchase that just completed.
+    // A prompt requested during the Loading skeleton waits for the tier, and is dropped if it's PREMIUM.
+    val freeAccount = uiState.account as? SettingsVMState.AccountState.Free
+    LaunchedEffect(uiState.account is SettingsVMState.AccountState.Premium) {
+        if (uiState.account is SettingsVMState.AccountState.Premium) showUpgradePrompt = false
+    }
+    if (showUpgradePrompt && freeAccount != null) {
+        UpgradePromptDialog(
+            price     = freeAccount.price,
+            onConfirm = { showUpgradePrompt = false; viewModel.purchase() },
+            onDismiss = { showUpgradePrompt = false },
         )
-
     }
 }
 /** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
@@ -478,13 +467,13 @@ private fun AccountSection(
                     ) {
                         Column {
                             Text(
-                                "Premium",
+                                stringResource(R.string.purchase_premium_title),
                                 style = MaterialTheme.typography.titleSmall,
                                 color = PaleGreenText,
                             )
                             Text(
-                                if (account.isRestored) "Restored purchase"
-                                else "One-time unlock — no subscription",
+                                if (account.isRestored) stringResource(R.string.purchase_premium_restored)
+                                else stringResource(R.string.purchase_premium_lifetime),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = PaleGreenText.copy(alpha = 0.7f),
                             )
@@ -505,12 +494,14 @@ private fun AccountSection(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    "Unlock All Sounds",
+                                    stringResource(R.string.purchase_unlock_title),
                                     style = MaterialTheme.typography.titleSmall,
                                     color = OnPanel,
                                 )
                                 Text(
-                                    "One-time purchase · No subscription",
+                                    account.price
+                                        ?.let { stringResource(R.string.purchase_unlock_subtitle_priced, it) }
+                                        ?: stringResource(R.string.purchase_unlock_subtitle),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = OnPanel.copy(alpha = 0.6f),
                                 )
@@ -527,8 +518,8 @@ private fun AccountSection(
 
                 // Restore row
                 SettingsRow(
-                    label       = "Restore purchases",
-                    sublabel    = "Already bought on another device?",
+                    label       = stringResource(R.string.purchase_restore_label),
+                    sublabel    = stringResource(R.string.purchase_restore_sublabel),
                     trailing    = {
                         when (purchase) {
                             is SettingsVMState.PurchaseOperationState.Restoring ->
@@ -903,6 +894,39 @@ private fun DataResetDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancel", style = MaterialTheme.typography.labelLarge, color = MutedGray)
+            }
+        },
+    )
+}
+
+@Composable
+private fun UpgradePromptDialog(price: String?, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor   = WarmWhite,
+        title = {
+            Text(stringResource(R.string.purchase_prompt_title), style = MaterialTheme.typography.headlineSmall, color = Charcoal)
+        },
+        text = {
+            Text(
+                stringResource(R.string.purchase_prompt_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MutedGray,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(
+                    price?.let { stringResource(R.string.purchase_prompt_confirm_priced, it) }
+                        ?: stringResource(R.string.purchase_prompt_confirm),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Charcoal,
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.purchase_prompt_dismiss), style = MaterialTheme.typography.labelLarge, color = MutedGray)
             }
         },
     )

@@ -158,7 +158,7 @@ class LibraryViewModel @Inject constructor(
      */
     fun onSoundTapped(sound: Domain.Sound) {
         viewModelScope.launch {
-            val tier = entitlementObserver.entitlement.value.tier
+            val tier = entitlementObserver.awaitResolved().tier
             if (sound.isLockedFor(tier)) {
                 _events.trySend(LibraryVMState.LibraryEvent.ShowUpgradePrompt(sound.titleText()))
                 return@launch
@@ -185,7 +185,7 @@ class LibraryViewModel @Inject constructor(
 
     fun onSoundLongPressed(sound: Domain.Sound) {
         viewModelScope.launch {
-            val tier = entitlementObserver.entitlement.value.tier
+            val tier = entitlementObserver.awaitResolved().tier
             if (sound.isLockedFor(tier)) {
                 _events.trySend(LibraryVMState.LibraryEvent.ShowUpgradePrompt(sound.titleText()))
                 return@launch

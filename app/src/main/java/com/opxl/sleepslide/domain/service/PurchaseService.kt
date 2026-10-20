@@ -9,11 +9,14 @@ interface PurchaseService {
 
     val entitlement: StateFlow<Domain.Entitlement> // free or premium
 
-    suspend fun purchase(productId: String): PurchaseResult
+    /** Buys the lifetime package of the current offering. */
+    suspend fun purchase(): PurchaseResult
 
     suspend fun restore(): RestoreResult
 
-    suspend fun refresh(): Result<Unit>
+    suspend fun refresh()
+
+    suspend fun premiumOffer(): Domain.PremiumOffer?
 
     fun isPremium(): Boolean
 }
