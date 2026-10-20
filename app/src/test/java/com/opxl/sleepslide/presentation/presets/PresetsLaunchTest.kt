@@ -77,7 +77,7 @@ class PresetsLaunchTest {
                 LockedLayersNotice(listOf(Fixtures.delta), playingRest = true),
                 gate.notices.first(),
             )
-            // The saved preset is untouched — Delta comes back if they resubscribe
+            // The saved preset is untouched — Delta comes back once they unlock premium
             coVerify(exactly = 0) { presetRepository.updateMix(any(), any()) }
             coVerify(exactly = 0) { presetRepository.update(any()) }
             assertEquals(2, preset.mix.layers.size)

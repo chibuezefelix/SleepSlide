@@ -114,7 +114,7 @@ class HomeViewModel @Inject constructor(
                     is HomeViewState.ResumeCardState.FromEphemeralMix -> {
                         val mix = gatedMix(resume.mix) ?: return@launch
                         service.play(mix)
-                        // The full mix, locked layers included — they come back on resubscribe
+                        // The full mix, locked layers included — they come back once premium is unlocked
                         userPreferencesRepository.setLastPlayedEphemeralMix(
                             mixSerializer.serialize(resume.mix)
                         )

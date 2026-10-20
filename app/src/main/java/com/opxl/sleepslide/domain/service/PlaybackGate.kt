@@ -16,7 +16,7 @@ import javax.inject.Singleton
  * Every path that starts a stored or constructed mix calls [prepare] first.
  *
  * FREE users launching a mix with premium layers get the free layers and a [LockedLayersNotice];
- * the stored mix itself is never modified, so the layers return if they (re)subscribe.
+ * the stored mix itself is never modified, so the layers return once they unlock premium.
  *
  * Notices are app-wide: launches usually navigate to the Player, so the screen that started
  * playback is gone before a snackbar could show. The NavGraph collects [notices].
@@ -41,7 +41,7 @@ class PlaybackGate @Inject constructor(
     /**
      * Resolves [mix] against the catalogue and strips layers the current tier may not play.
      *
-     * Enforced at launch only. If the subscription lapses while a premium layer is already
+     * Enforced at launch only. If the unlock is refunded while a premium layer is already
      * playing, that session runs to the end and the rule applies at the next launch — nothing
      * observes the tier to cut audio, because the listener is probably asleep. Pause/resume of
      * the running session is not a launch and is not gated.

@@ -352,7 +352,7 @@ class LibraryViewModel @Inject constructor(
             }
             val mix = buildMix(layers, _masterVolume.value)
             // The builder can still hold a premium layer seeded from a session that started
-            // before the subscription lapsed — relaunching it is a new launch, so it's gated.
+            // before the unlock was refunded — relaunching it is a new launch, so it's gated.
             val playable = when (val decision = playbackGate.prepare(mix)) {
                 is PlaybackGate.Decision.Play          -> decision.mix
                 is PlaybackGate.Decision.AllLocked     -> return@launch
