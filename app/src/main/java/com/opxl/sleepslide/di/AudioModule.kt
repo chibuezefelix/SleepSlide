@@ -30,6 +30,9 @@ object  AudioModule{
         return ExoPlayer.Builder(context)
             .setAudioAttributes(audioAttributes, false)
             .setHandleAudioBecomingNoisy(true)
+            // Keep the CPU awake while playing with the screen off, so fades and the
+            // sleep timer run on time. Released whenever playback stops.
+            .setWakeMode(C.WAKE_MODE_LOCAL)
             .build()
 
 
