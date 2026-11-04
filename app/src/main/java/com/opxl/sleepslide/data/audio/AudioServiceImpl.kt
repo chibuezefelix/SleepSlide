@@ -47,7 +47,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -304,15 +303,12 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
     override suspend fun fadeOut(durationMs: Long) {
         fadeJob?.cancel()
         val master = _audioState.value.activeMix?.masterVolume ?: 1f
-        val steps  = (durationMs / FADE_STEP).toInt().coerceAtLeast(1)
 
         _audioState.update { it.copy(playbackStatus = Domain.PlaybackStatus.FADING_OUT) }
 
         fadeJob = serviceScope.launch {
-            for (step in steps downTo 0) {
-                val fraction = step.toFloat() / steps
-                playerLayerManager.setMasterVolume(master * fraction, layerVolumes)
-                delay(FADE_STEP)
+            rampVolume(durationMs, FADE_STEP) { progress ->
+                playerLayerManager.setMasterVolume(master * (1f - progress), layerVolumes)
             }
             playerLayerManager.pauseAll()
             // Restore true master so next play() starts at correct volume
@@ -325,17 +321,14 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
     override suspend fun fadeIn(durationMs: Long) {
         fadeJob?.cancel()
         val master = _audioState.value.activeMix?.masterVolume ?: 1f
-        val steps  = (durationMs / FADE_STEP).toInt().coerceAtLeast(1)
 
         playerLayerManager.setMasterVolume(0f, layerVolumes)
         _audioState.update { it.copy(playbackStatus = Domain.PlaybackStatus.FADING_IN, fadeInProgress = 0f) }
 
         fadeJob = serviceScope.launch {
-            for (step in 0..steps) {
-                val fraction = step.toFloat() / steps
-                playerLayerManager.setMasterVolume(master * fraction, layerVolumes)
-                _audioState.update { it.copy(fadeInProgress = fraction) }
-                delay(FADE_STEP)
+            rampVolume(durationMs, FADE_STEP) { progress ->
+                playerLayerManager.setMasterVolume(master * progress, layerVolumes)
+                _audioState.update { it.copy(fadeInProgress = progress) }
             }
             playerLayerManager.setMasterVolume(master, layerVolumes)
             _audioState.update {
