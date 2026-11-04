@@ -59,6 +59,8 @@
         </provider>
         <receiver android:name=".data.notification.WindDownAlarmReceiver"
             android:exported="false"/>
+        <receiver android:name=".data.timer.TimerBackstopReceiver"
+            android:exported="false"/>
 
         <receiver android:name=".data.notification.BootReceiver"
             android:exported="true">

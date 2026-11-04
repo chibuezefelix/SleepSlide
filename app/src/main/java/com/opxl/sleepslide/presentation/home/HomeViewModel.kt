@@ -554,16 +554,14 @@ class HomeViewModel @Inject constructor(
     }
 
     /**
-     * When the timer finishes, the audio stops automatically via FadeWorker.
-     * Emit a one-shot event so the UI can show a gentle "Session ended" message.
+     * When the timer finishes, the audio service stops the sound itself
+     * (SleepTimerController). Emit a one-shot event so the UI can show a gentle
+     * "Session ended" message — once per timer, not on every new collector.
      */
     private fun observeTimerFinished() {
-        timerStateObserver.timerStatus
-            .distinctUntilChanged()
-            .onEach { status ->
-                if (status == Domain.TimerStatus.FINISHED) {
-                    _events.send(HomeViewState.HomeEvent.ShowError("Your sleep timer has ended"))
-                }
+        timerStateObserver.finished
+            .onEach {
+                _events.send(HomeViewState.HomeEvent.ShowError("Your sleep timer has ended"))
             }
             .catch { }
             .launchIn(viewModelScope)

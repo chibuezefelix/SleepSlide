@@ -256,7 +256,8 @@ class MainActivity : ComponentActivity() {
     private fun unbindAudioServiceSafely() {
         if (!isAudioServiceBound) return
         isAudioServiceBound = false
-        audioServiceHolder.detach()
+        // No holder.detach() here: the service stays published until its own onDestroy,
+        // so the sleep timer can still reach it after the screen goes off.
         runCatching { unbindService(audioServiceConnection) }
     }
 

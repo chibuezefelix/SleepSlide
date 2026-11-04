@@ -925,12 +925,12 @@ class PlayerViewModel @Inject constructor(
 
     /**
      * When the timer finishes, close the history session with [StopReason.TIMER]
-     * and emit a one-shot event.  Audio has already stopped via FadeWorker.
+     * and emit a one-shot event. The audio service stops the sound itself
+     * (SleepTimerController). Uses the one-shot [TimerStateObserver.finished], not the
+     * FINISHED status, so a ViewModel created later does not clear a newer session.
      */
     private fun observeTimerCompletion() {
-        timerStateObserver.timerStatus
-            .filter { it == Domain.TimerStatus.FINISHED }
-            .distinctUntilChanged()
+        timerStateObserver.finished
             .onEach {
                 safeCloseSession(Domain.StopReason.TIMER)
                 clearMixState()

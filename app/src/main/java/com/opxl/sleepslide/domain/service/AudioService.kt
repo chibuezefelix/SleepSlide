@@ -33,6 +33,9 @@ interface AudioService {
 
     suspend fun fadeOut(durationMs: Long)
 
+    /** Abort a running fade-out and return to full volume. No-op if not fading out. */
+    suspend fun cancelFadeOut()
+
     suspend fun fadeIn(durationMs: Long)
 
     suspend fun enableNightLock()

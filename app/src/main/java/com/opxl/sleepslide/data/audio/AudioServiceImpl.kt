@@ -38,6 +38,9 @@ import androidx.core.app.NotificationCompat
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.opxl.sleepslide.R
+import com.opxl.sleepslide.data.AudioServiceHolder
+import com.opxl.sleepslide.data.timer.SleepTimerController
+import com.opxl.sleepslide.data.timer.TimerServiceImpl
 //import com.opxl.sleepslide.domain.model.AudioFocusStatus
 //import com.opxl.sleepslide.domain.model.PlaybackStatus
 import com.opxl.sleepslide.domain.service.AudioService
@@ -82,6 +85,8 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
     @Inject lateinit var audioFocusHandler: AudioFocusHandler
     @Inject lateinit var bluetoothReceiver: BluetoothReceiver
     @Inject lateinit var playerLayerManager: PlayerLayerManager
+    @Inject lateinit var timerService: TimerServiceImpl
+    @Inject lateinit var audioServiceHolder: AudioServiceHolder
 
     // Service-scoped coroutine scope — cancelled in onDestroy, not tied to ApplicationScope
     // Using SupervisorJob so a child failure does not cancel sibling coroutines
@@ -116,6 +121,12 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
         registerBluetoothReceiver()
         registerFocusCallbacks()
         observePlayerErrors()
+        // The service owns the sleep timer's stop: it is alive whenever there is sound,
+        // while the Activity (and every ViewModel) may be long gone.
+        SleepTimerController(timerService, this, serviceScope).start()
+        // Published for the service's whole life, not just while the UI is bound, so
+        // the timer backstop can reach it with the screen off.
+        audioServiceHolder.attach(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -135,6 +146,7 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
     }
 
     override fun onDestroy() {
+        audioServiceHolder.detach()
         cancelFades()
         // Stop, don't release: the players are singletons reused by the next service instance
         playerLayerManager.stopAll()
@@ -162,6 +174,7 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
         // calls startForegroundSafely(). Without this the service is destroyed the
         // moment MainActivity.onStop() unbinds — silence as soon as the phone locks.
         ContextCompat.startForegroundService(this, Intent(this, AudioServiceImpl::class.java))
+        timerService.onPlaybackStarted()
 
         cancelFades()
         playerLayerManager.stopAll()
@@ -316,6 +329,14 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
             _audioState.update { it.copy(playbackStatus = Domain.PlaybackStatus.PAUSED, fadeInProgress = null) }
         }
         fadeJob?.join()
+    }
+
+    override suspend fun cancelFadeOut() {
+        if (_audioState.value.playbackStatus != Domain.PlaybackStatus.FADING_OUT) return
+        cancelFades()
+        val master = _audioState.value.activeMix?.masterVolume ?: 1f
+        playerLayerManager.setMasterVolume(master, layerVolumes)
+        _audioState.update { it.copy(playbackStatus = Domain.PlaybackStatus.PLAYING) }
     }
 
     override suspend fun fadeIn(durationMs: Long) {

@@ -31,4 +31,6 @@ class TimerStateObserverImpl @Inject constructor(
 
     override val isFading: Flow<Boolean> =
         timerService.timerState.map { it.status == Domain.TimerStatus.FADING }.distinctUntilChanged()
+
+    override val finished: Flow<Unit> = timerService.finished
 }
