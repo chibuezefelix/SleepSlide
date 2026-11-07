@@ -41,6 +41,7 @@ private val SOUND_TITLES: Map<String, Int> = mapOf(
     "binaural_alpha" to R.string.sound_title_binaural_alpha,
     "binaural_theta" to R.string.sound_title_binaural_theta,
     "binaural_delta" to R.string.sound_title_binaural_delta,
+    "asmr_tap" to R.string.sound_title_asmr_tap,
 )
 
 @Composable
@@ -60,6 +61,7 @@ val Domain.SoundCategory.labelRes: Int
         Domain.SoundCategory.NATURE   -> R.string.sound_category_nature
         Domain.SoundCategory.AMBIENT  -> R.string.sound_category_ambient
         Domain.SoundCategory.BINAURAL -> R.string.sound_category_binaural
+        Domain.SoundCategory.ASMR     -> R.string.sound_category_asmr
         Domain.SoundCategory.GUIDED   -> R.string.sound_category_guided
     }
 

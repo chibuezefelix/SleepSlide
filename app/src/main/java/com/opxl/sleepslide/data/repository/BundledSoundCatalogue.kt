@@ -3,6 +3,7 @@ package com.opxl.sleepslide.data.repository
 
 import com.opxl.sleepslide.domain.model.Domain
 import com.opxl.sleepslide.domain.model.Domain.SoundCategory.AMBIENT
+import com.opxl.sleepslide.domain.model.Domain.SoundCategory.ASMR
 import com.opxl.sleepslide.domain.model.Domain.SoundCategory.BINAURAL
 import com.opxl.sleepslide.domain.model.Domain.SoundCategory.NATURE
 import com.opxl.sleepslide.domain.model.Domain.SoundCategory.TINNITUS
@@ -19,7 +20,8 @@ import com.opxl.sleepslide.BuildConfig
  *   time:   night · day · evening
  *   scene:  water · rain · storm · forest · garden · fire · indoor · city
  *   who:    baby (steady, event-free — safe at low level) · hearing (low-frequency masker)
- *           · tinnitus (notched therapy) · headphones (binaural — useless on a speaker)
+ *           · tinnitus (notched therapy) · headphones (binaural / ASMR — stereo placement is lost on a speaker)
+ *   asmr:   asmr (every ASMR sound) · tapping
  *
  * Noise colours are synthesised by tools/gen_noise.py and binaural beats by
  * tools/gen_binaural.py — loop-perfect, no licence. For notched noise, frequencyHz is
@@ -63,5 +65,10 @@ internal object BundledSoundCatalogue {
         Domain.Sound(id = "binaural_alpha", title = "Alpha Beats · 10 Hz", category = BINAURAL, assetPath = "sounds/binaural/alpha.wav", tags = listOf("binaural", "headphones", "calm", "evening"), isPremium = true),
         Domain.Sound(id = "binaural_theta", title = "Theta Beats · 6 Hz",  category = BINAURAL, assetPath = "sounds/binaural/theta.wav", tags = listOf("binaural", "headphones", "calm", "night"), isPremium = true),
         Domain.Sound(id = "binaural_delta", title = "Delta Beats · 2 Hz",  category = BINAURAL, assetPath = "sounds/binaural/delta.wav", tags = listOf("binaural", "headphones", "deep", "night"), isPremium = true),
+
+        // ── ASMR (synthesised by tools/gen_asmr.py, stereo, 67 s seamless loop — headphones) ──
+        // Transient sounds: not tagged baby/hearing, which mean "steady, event-free".
+        // isPremium is left false while these are being auditioned; decide the free/paid split later.
+        Domain.Sound(id = "asmr_tap",     title = "Wooden Taps",  category = ASMR, assetPath = "sounds/asmr/tap.wav",     tags = listOf("asmr", "tapping", "headphones", "calm", "cozy", "indoor", "night")),
     )
 }

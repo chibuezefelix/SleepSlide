@@ -742,6 +742,7 @@ private fun SoundPill(
     val (bg, fg) = when (sound.category.name) {
         "TINNITUS" -> PaleBlue to PaleBlueText
         "NATURE"   -> PaleGreen to PaleGreenText
+        "ASMR"     -> PaleYellow to PaleYellowText
         else       -> extended.mutedSurface to MutedGray
     }
 

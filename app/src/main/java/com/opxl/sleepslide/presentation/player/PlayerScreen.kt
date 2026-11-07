@@ -733,6 +733,7 @@ private fun LayerRow(
     val (pillBg, pillFg) = when (layer.sound.category) {
         Domain.SoundCategory.TINNITUS -> PaleBlue  to PaleBlueText
         Domain.SoundCategory.NATURE   -> PaleGreen to PaleGreenText
+        Domain.SoundCategory.ASMR     -> PaleYellow to PaleYellowText
         else                          -> extended.mutedSurface to MutedGray
     }
 

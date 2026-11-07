@@ -1219,6 +1219,7 @@ private fun SpeakerDots(tint: Color) {
 private fun categoryColors(category: Domain.SoundCategory) = when (category) {
     Domain.SoundCategory.TINNITUS -> PaleBlue to PaleBlueText
     Domain.SoundCategory.NATURE   -> PaleGreen to PaleGreenText
+    Domain.SoundCategory.ASMR     -> PaleYellow to PaleYellowText
     else                   -> SurfaceMuted to MutedGray
 }
 

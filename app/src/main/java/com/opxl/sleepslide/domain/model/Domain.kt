@@ -31,6 +31,7 @@ object Domain {
         NATURE,
         AMBIENT,
         BINAURAL,
+        ASMR,
         GUIDED,
     }
 // One active layer inside a [SoundMix].
