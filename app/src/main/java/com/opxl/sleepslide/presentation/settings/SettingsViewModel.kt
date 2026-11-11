@@ -392,6 +392,13 @@ class SettingsViewModel @Inject constructor(
                     appVersion = resolveAppVersion(),
                     onboardingPath = prefs.onboardingPath,
                 ),
+                windDown = SettingsVMState.WindDownState(
+                    isEnabled     = prefs.isWindDownEnabled,
+                    hour          = prefs.windDownHour,
+                    minute        = prefs.windDownMinute,
+                    formattedTime = formatTime(prefs.windDownHour, prefs.windDownMinute),
+                    exactAlarmPermissionGranted = checkExactAlarmPermission(),
+                ),
                 purchase = purchaseOp,
                 dataReset = dataReset,
             )
