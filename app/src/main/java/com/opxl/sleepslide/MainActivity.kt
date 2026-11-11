@@ -136,7 +136,12 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition { !preferencesReady }
         // Fade the system splash out (mark lifting slightly) into the in-app BrandSplash.
         splashScreen.setOnExitAnimationListener { provider ->
-            provider.iconView.animate().scaleX(1.15f).scaleY(1.15f).setDuration(300L).start()
+            // iconView throws an NPE (core-splashscreen 1.0.1) when the system draws an
+            // icon-less splash, e.g. a cold start from a notification tap. Skip the mark
+            // lift then; the fade and remove() below must still run.
+            runCatching {
+                provider.iconView.animate().scaleX(1.15f).scaleY(1.15f).setDuration(300L).start()
+            }
             provider.view.animate()
                 .alpha(0f)
                 .setDuration(300L)
