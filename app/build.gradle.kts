@@ -69,7 +69,7 @@ android {
             // Opt in with TESTING_MODE=true in local.properties. Release never reads it.
             val testingMode = (localProperties["'  '"] as String?)?.trim().toBoolean()
             buildConfigField("boolean", "TESTING_MODE", testingMode.toString())
-        
+
         }
 
         debug {
