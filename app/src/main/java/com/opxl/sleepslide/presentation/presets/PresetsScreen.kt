@@ -1,6 +1,5 @@
 package com.opxl.sleepslide.presentation.presets
 
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -8,9 +7,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,15 +29,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
@@ -49,7 +48,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,32 +58,46 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opxl.sleepslide.R
 import com.opxl.sleepslide.domain.model.Domain
-import com.opxl.sleepslide.presentation.components.ChevronLeft
-import com.opxl.sleepslide.presentation.components.CheckIcon
 import com.opxl.sleepslide.domain.repository.CoachMarkScreens
+import com.opxl.sleepslide.presentation.components.CircleIconButton
+import com.opxl.sleepslide.presentation.components.GhostIconButton
+import com.opxl.sleepslide.presentation.components.Glyph
+import com.opxl.sleepslide.presentation.components.GlyphIcon
+import com.opxl.sleepslide.presentation.components.GroupPosition
+import com.opxl.sleepslide.presentation.components.IconCircle
+import com.opxl.sleepslide.presentation.components.PremiumPill
+import com.opxl.sleepslide.presentation.components.PrimaryPill
+import com.opxl.sleepslide.presentation.components.ScreenTitle
+import com.opxl.sleepslide.presentation.components.SearchField
+import com.opxl.sleepslide.presentation.components.SectionLabel
+import com.opxl.sleepslide.presentation.components.SleepTextInput
+import com.opxl.sleepslide.presentation.components.SurfaceCard
+import com.opxl.sleepslide.presentation.components.Tag
+import com.opxl.sleepslide.presentation.components.displayTitle
+import com.opxl.sleepslide.presentation.components.groupPosition
+import com.opxl.sleepslide.presentation.components.groupedRow
+import com.opxl.sleepslide.presentation.components.listenedDuration
 import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
 import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
 import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
 import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
-import com.opxl.sleepslide.presentation.components.PremiumPill
-import com.opxl.sleepslide.ui.theme.OnPanel
-import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
+import com.opxl.sleepslide.ui.theme.Dimens
 import com.opxl.sleepslide.ui.theme.MutedGray
 import com.opxl.sleepslide.ui.theme.PaleBlue
 import com.opxl.sleepslide.ui.theme.PaleBlueText
@@ -97,12 +109,6 @@ import com.opxl.sleepslide.ui.theme.SurfaceMuted
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import com.opxl.sleepslide.ui.theme.White
 import kotlinx.coroutines.launch
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.platform.LocalContext
-import com.opxl.sleepslide.R
-import com.opxl.sleepslide.presentation.components.displayTitle
-import com.opxl.sleepslide.presentation.components.listenedDuration
 
 // Screen entry point
 
@@ -182,79 +188,83 @@ fun PresetsScreen(
     }
 
     CoachMarkHost(viewModel = tutorial, labels = PRESETS_COACH_MARKS) {
-    Scaffold(
-        snackbarHost   = {
-            SnackbarHost(snackbarHostState) { data ->
-                Snackbar(
-                    snackbarData    = data,
-                    containerColor  = Charcoal,
-                    contentColor    = White,
-                    actionColor     = PaleBlueText,
-                    shape           = RoundedCornerShape(8.dp),
-                )
-            }
-        },
-        containerColor = WarmWhite,
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .windowInsetsPadding(WindowInsets.statusBars),
-        ) {
-            PresetsTopBar(
-                uiState      = uiState,
-                onBack       = onNavigateBack,
-                onAddPreset  = { viewModel.navigateToLibrary() },
-                onSelectAll  = { viewModel.selectAll() },
-                onExitSelect = { viewModel.exitSelectionMode() },
-                onBulkDelete = { viewModel.requestBulkDelete() },
-                onDoneReorder = { viewModel.disableReorderMode() },
-            )
-
-            AnimatedVisibility(
-                visible = uiState.screen is PresetsScreenState.Ready,
-                enter   = fadeIn(tween(200)),
-                exit    = fadeOut(tween(150)),
+        Scaffold(
+            snackbarHost   = {
+                SnackbarHost(snackbarHostState) { data ->
+                    Snackbar(
+                        snackbarData   = data,
+                        containerColor = Charcoal,
+                        contentColor   = White,
+                        actionColor    = PaleBlueText,
+                        shape          = RoundedCornerShape(Dimens.controlRadius),
+                    )
+                }
+            },
+            containerColor = WarmWhite,
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .windowInsetsPadding(WindowInsets.statusBars),
             ) {
-                SearchBar(
-                    query     = uiState.searchQuery,
-                    onChange  = viewModel::onSearchQueryChanged,
-                    onClear   = { viewModel.clearSearch() },
-                    enabled   = uiState.selectionMode is SelectionMode.None && !uiState.reorderMode,
+                PresetsTopBar(
+                    uiState       = uiState,
+                    onBack        = onNavigateBack,
+                    onAddPreset   = { viewModel.navigateToLibrary() },
+                    onSelectAll   = { viewModel.selectAll() },
+                    onExitSelect  = { viewModel.exitSelectionMode() },
+                    onBulkDelete  = { viewModel.requestBulkDelete() },
+                    onDoneReorder = { viewModel.disableReorderMode() },
                 )
-            }
 
-            AnimatedContent(
-                targetState   = uiState.screen,
-                transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
-                label         = "presets_body",
-            ) { screen ->
-                when (screen) {
-                    is PresetsScreenState.Loading -> PresetsLoadingSkeleton()
-                    is PresetsScreenState.Empty   -> PresetsEmptyState(
-                        onBrowse = { viewModel.navigateToLibrary() }
+                AnimatedVisibility(
+                    visible = uiState.screen is PresetsScreenState.Ready,
+                    enter   = fadeIn(tween(200)),
+                    exit    = fadeOut(tween(150)),
+                ) {
+                    SearchField(
+                        value            = uiState.searchQuery,
+                        onValueChange    = viewModel::onSearchQueryChanged,
+                        hint             = stringResource(R.string.presets_search_hint),
+                        onClear          = { viewModel.clearSearch() },
+                        clearDescription = stringResource(R.string.library_cd_clear_search),
+                        enabled          = uiState.selectionMode is SelectionMode.None && !uiState.reorderMode,
+                        modifier         = Modifier
+                            .padding(horizontal = Dimens.gutter)
+                            .padding(top = 14.dp, bottom = 4.dp)
+                            .coachMarkAnchor("search"),
                     )
-                    is PresetsScreenState.Error   -> PresetsErrorState(screen.message.asString())
-                    is PresetsScreenState.Ready   -> PresetsReadyBody(
-                        screen       = screen,
-                        uiState      = uiState,
-                        onLaunch     = { viewModel.launchPreset(it) },
-                        onLongPress  = { viewModel.enterSelectionMode(it.id) },
-                        onToggle     = { viewModel.toggleSelection(it.id) },
-                        onReorder    = viewModel::onReorder,
-                        onReorderEnd = viewModel::onReorderCommitted,
-                        onPin        = { viewModel.pin(it.id) },
-                        onUnpin      = { viewModel.unpin(it.id) },
-                        onRename     = { viewModel.requestRename(it) },
-                        onDelete     = { viewModel.requestDelete(it) },
-                        loadStats    = { ids -> viewModel.loadPlayStats(ids) },
-                    )
+                }
+
+                AnimatedContent(
+                    targetState    = uiState.screen,
+                    transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
+                    label          = "presets_body",
+                ) { screen ->
+                    when (screen) {
+                        is PresetsScreenState.Loading -> PresetsLoadingSkeleton()
+                        is PresetsScreenState.Empty   -> PresetsEmptyState(
+                            onBrowse = { viewModel.navigateToLibrary() }
+                        )
+                        is PresetsScreenState.Error   -> PresetsErrorState(screen.message.asString())
+                        is PresetsScreenState.Ready   -> PresetsReadyBody(
+                            screen       = screen,
+                            uiState      = uiState,
+                            onLaunch     = { viewModel.launchPreset(it) },
+                            onLongPress  = { viewModel.enterSelectionMode(it.id) },
+                            onToggle     = { viewModel.toggleSelection(it.id) },
+                            onPin        = { viewModel.pin(it.id) },
+                            onUnpin      = { viewModel.unpin(it.id) },
+                            onRename     = { viewModel.requestRename(it) },
+                            onDelete     = { viewModel.requestDelete(it) },
+                            loadStats    = { ids -> viewModel.loadPlayStats(ids) },
+                        )
+                    }
                 }
             }
         }
     }
-    } // CoachMarkHost
 
     // Dialogs
 
@@ -296,8 +306,6 @@ fun PresetsScreen(
     }
 }
 
-// Top bar
-
 /** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
 private val PRESETS_COACH_MARKS = listOf(
     "add"    to R.string.coach_presets_add,
@@ -305,6 +313,10 @@ private val PRESETS_COACH_MARKS = listOf(
     "preset" to R.string.coach_presets_preset,
     "browse" to R.string.coach_presets_browse,
 )
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Top bar
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PresetsTopBar(
@@ -320,17 +332,17 @@ private fun PresetsTopBar(
     val selectedCount = (uiState.selectionMode as? SelectionMode.Active)?.selectedIds?.size ?: 0
 
     AnimatedContent(
-        targetState   = Triple(isSelecting, uiState.reorderMode, selectedCount),
+        targetState    = Triple(isSelecting, uiState.reorderMode, selectedCount),
         transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(150)) },
-        label         = "topbar_mode",
+        label          = "topbar_mode",
     ) { (selecting, reordering, count) ->
         when {
             selecting  -> SelectionTopBar(
-                count        = count,
-                total        = uiState.presetCount,
-                onClose      = onExitSelect,
-                onSelectAll  = onSelectAll,
-                onDelete     = onBulkDelete,
+                count       = count,
+                total       = uiState.presetCount,
+                onClose     = onExitSelect,
+                onSelectAll = onSelectAll,
+                onDelete    = onBulkDelete,
             )
             reordering -> ReorderTopBar(onDone = onDoneReorder)
             else       -> DefaultTopBar(
@@ -350,41 +362,32 @@ private fun DefaultTopBar(
     onBack: () -> Unit,
     onAdd: () -> Unit,
 ) {
-    Row(
-        modifier              = Modifier
+    Column(
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .padding(horizontal = Dimens.gutter)
+            .padding(top = 12.dp),
     ) {
-        SmallIconButton(onClick = onBack, description = stringResource(R.string.cd_back)) {
-            ChevronLeft(Charcoal)
-        }
-
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text  = stringResource(R.string.tab_presets),
-                style = MaterialTheme.typography.titleMedium,
-                color = Charcoal,
-            )
-            if (presetCount > 0) {
-                Text(
-                    text  = stringResource(R.string.presets_count_saved, presetCount),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MutedGray,
-                )
-            }
-        }
-
-        SmallIconButton(
-            onClick     = onAdd,
-            description = stringResource(R.string.presets_cd_add),
-            background  = if (hasReachedLimit) SurfaceMuted else Charcoal,
-            borderColor = if (hasReachedLimit) Border else Charcoal,
-            modifier    = Modifier.coachMarkAnchor("add"),
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            PlusIcon(tint = if (hasReachedLimit) MutedGray else White)
+            CircleIconButton(onClick = onBack, contentDescription = stringResource(R.string.cd_back)) {
+                GlyphIcon(Glyph.ChevronLeft, Charcoal, size = 16.dp)
+            }
+            CircleIconButton(
+                onClick            = onAdd,
+                filled             = !hasReachedLimit,
+                contentDescription = stringResource(R.string.presets_cd_add),
+                modifier           = Modifier.coachMarkAnchor("add"),
+            ) { GlyphIcon(Glyph.Plus, if (hasReachedLimit) MutedGray else White, size = 18.dp) }
         }
+        Spacer(Modifier.height(18.dp))
+        ScreenTitle(
+            title    = stringResource(R.string.tab_presets),
+            subtitle = if (presetCount > 0) stringResource(R.string.presets_count_saved, presetCount) else null,
+        )
     }
 }
 
@@ -396,42 +399,43 @@ private fun SelectionTopBar(
     onSelectAll: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    Row(
-        modifier              = Modifier
+    Column(
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .padding(horizontal = Dimens.gutter)
+            .padding(top = 12.dp),
     ) {
-        SmallIconButton(onClick = onClose, description = stringResource(R.string.presets_cd_exit_selection)) {
-            CloseIcon(Charcoal)
-        }
-
-        Text(
-            text  = stringResource(R.string.presets_selected_count, count, total),
-            style = MaterialTheme.typography.titleSmall,
-            color = Charcoal,
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (count < total) {
-                TextButton(onClick = onSelectAll) {
-                    Text(
-                        text  = stringResource(R.string.presets_select_all),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = Charcoal,
-                    )
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            CircleIconButton(onClick = onClose, contentDescription = stringResource(R.string.presets_cd_exit_selection)) {
+                GlyphIcon(Glyph.Close, Charcoal, size = 16.dp)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (count < total) {
+                    TextButton(onClick = onSelectAll) {
+                        Text(
+                            text  = stringResource(R.string.presets_select_all),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Charcoal,
+                        )
+                    }
                 }
-            }
-            SmallIconButton(
-                onClick     = onDelete,
-                description = stringResource(R.string.presets_cd_delete_selected),
-                background  = if (count > 0) PaleRed else SurfaceMuted,
-                borderColor = if (count > 0) PaleRedText else Border,
-            ) {
-                TrashIcon(tint = if (count > 0) PaleRedText else MutedGray)
+                CircleIconButton(
+                    onClick            = onDelete,
+                    contentDescription = stringResource(R.string.presets_cd_delete_selected),
+                    background         = if (count > 0) PaleRed else White,
+                    border             = if (count > 0) PaleRed else Border,
+                    enabled            = count > 0,
+                ) { GlyphIcon(Glyph.Trash, if (count > 0) PaleRedText else MutedGray, size = 18.dp) }
             }
         }
+        Spacer(Modifier.height(18.dp))
+        ScreenTitle(
+            title    = stringResource(R.string.presets_selected_count, count, total),
+        )
     }
 }
 
@@ -440,7 +444,7 @@ private fun ReorderTopBar(onDone: () -> Unit) {
     Row(
         modifier              = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = Dimens.gutter, vertical = 16.dp),
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -459,92 +463,24 @@ private fun ReorderTopBar(onDone: () -> Unit) {
     }
 }
 
-// Search bar
-
-@Composable
-private fun SearchBar(
-    query: String,
-    onChange: (String) -> Unit,
-    onClear: () -> Unit,
-    enabled: Boolean,
-) {
-    val focusRequester = remember { FocusRequester() }
-    val clearSearchLabel = stringResource(R.string.library_cd_clear_search)
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp)
-            .coachMarkAnchor("search")
-            .clip(RoundedCornerShape(8.dp))
-            .background(SurfaceMuted)
-            .border(1.dp, Border, RoundedCornerShape(8.dp))
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-    ) {
-        Row(
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SearchIcon(MutedGray)
-            BasicTextField(
-                value         = query,
-                onValueChange = { if (enabled) onChange(it) },
-                enabled       = enabled,
-                singleLine    = true,
-                textStyle     = MaterialTheme.typography.bodyMedium.copy(color = Charcoal),
-                cursorBrush   = SolidColor(Charcoal),
-                modifier      = Modifier
-                    .weight(1f)
-                    .focusRequester(focusRequester),
-                decorationBox = { inner ->
-                    Box {
-                        if (query.isEmpty()) {
-                            Text(
-                                text  = stringResource(R.string.presets_search_hint),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MutedGray,
-                            )
-                        }
-                        inner()
-                    }
-                },
-            )
-            if (query.isNotEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .size(18.dp)
-                        .clip(CircleShape)
-                        .background(MutedGray.copy(alpha = 0.2f))
-                        .clickable(onClick = onClear)
-                        .semantics { contentDescription = clearSearchLabel },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CloseIcon(MutedGray)
-                }
-            }
-        }
-    }
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
 // Body states
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PresetsLoadingSkeleton() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = Dimens.gutter, vertical = 16.dp),
     ) {
-        repeat(4) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Border),
-            )
-        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(320.dp)
+                .clip(RoundedCornerShape(Dimens.cardRadius))
+                .background(SurfaceMuted),
+        )
     }
 }
 
@@ -553,35 +489,29 @@ private fun PresetsEmptyState(onBrowse: () -> Unit) {
     Column(
         modifier            = Modifier
             .fillMaxSize()
-            .padding(horizontal = 40.dp, vertical = 80.dp),
+            .padding(horizontal = 40.dp, vertical = 64.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        IconCircle(SurfaceMuted, size = 64.dp) { GlyphIcon(Glyph.Sparkle, MutedGray, size = 26.dp) }
+        Spacer(Modifier.height(20.dp))
         Text(
             text  = stringResource(R.string.presets_empty_title),
             style = MaterialTheme.typography.headlineSmall,
             color = Charcoal,
         )
+        Spacer(Modifier.height(6.dp))
         Text(
-            text  = stringResource(R.string.presets_empty_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MutedGray,
+            text      = stringResource(R.string.presets_empty_body),
+            style     = MaterialTheme.typography.bodyMedium,
+            color     = MutedGray,
+            textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(8.dp))
-        Box(
-            modifier = Modifier
-                .coachMarkAnchor("browse")
-                .clip(RoundedCornerShape(6.dp))
-                .background(Charcoal)
-                .clickable(onClick = onBrowse)
-                .padding(horizontal = 24.dp, vertical = 12.dp),
-        ) {
-            Text(
-                text  = stringResource(R.string.presets_browse_sounds),
-                style = MaterialTheme.typography.labelLarge,
-                color = White,
-            )
-        }
+        Spacer(Modifier.height(24.dp))
+        PrimaryPill(
+            text     = stringResource(R.string.presets_browse_sounds),
+            onClick  = onBrowse,
+            modifier = Modifier.coachMarkAnchor("browse"),
+        )
     }
 }
 
@@ -592,29 +522,21 @@ private fun PresetsErrorState(message: String) {
             .fillMaxSize()
             .padding(horizontal = 40.dp, vertical = 80.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .background(PaleRed)
-                .padding(horizontal = 10.dp, vertical = 4.dp),
-        ) {
-            Text(
-                text  = stringResource(R.string.label_error),
-                style = MaterialTheme.typography.labelSmall,
-                color = PaleRedText,
-            )
-        }
+        Tag(stringResource(R.string.label_error), PaleRed, PaleRedText)
         Text(
-            text  = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MutedGray,
+            text      = message,
+            style     = MaterialTheme.typography.bodyMedium,
+            color     = MutedGray,
+            textAlign = TextAlign.Center,
         )
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Ready body
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PresetsReadyBody(
@@ -623,8 +545,6 @@ private fun PresetsReadyBody(
     onLaunch: (Domain.Preset) -> Unit,
     onLongPress: (Domain.Preset) -> Unit,
     onToggle: (Domain.Preset) -> Unit,
-    onReorder: (List<Long>) -> Unit,
-    onReorderEnd: (List<Long>) -> Unit,
     onPin: (Domain.Preset) -> Unit,
     onUnpin: (Domain.Preset) -> Unit,
     onRename: (Domain.Preset) -> Unit,
@@ -643,75 +563,53 @@ private fun PresetsReadyBody(
         loadStats(displayItems.map { it.preset.id })
     }
 
+    fun LazyListScope.presetGroup(items: List<PresetItemState>, reorderMode: Boolean) {
+        val count = items.size
+        itemsIndexed(items = items, key = { _, item -> item.preset.id }) { index, item ->
+            PresetRow(
+                item        = item,
+                position    = groupPosition(index, count),
+                isSelecting = isSelecting,
+                reorderMode = reorderMode,
+                showPin     = screen.isFiltered && item.preset.isPinned,
+                onTap       = { if (isSelecting) onToggle(item.preset) else onLaunch(item.preset) },
+                onLongPress = { onLongPress(item.preset) },
+                onPin       = { onPin(item.preset) },
+                onUnpin     = { onUnpin(item.preset) },
+                onRename    = { onRename(item.preset) },
+                onDelete    = { onDelete(item.preset) },
+                modifier    = if (item.preset.id == firstId) Modifier.coachMarkAnchor("preset") else Modifier,
+            )
+        }
+    }
+
     LazyColumn(
-        state           = listState,
-        contentPadding  = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier        = Modifier.fillMaxSize(),
+        state          = listState,
+        contentPadding = PaddingValues(horizontal = Dimens.gutter, vertical = 8.dp),
+        modifier       = Modifier.fillMaxSize(),
     ) {
-        // Free tier limit banner
         if (uiState.hasReachedLimit && !screen.isFiltered) {
-            item(key = "limit_banner") {
-                LimitBanner()
-            }
+            item(key = "limit_banner") { LimitBanner() }
         }
 
-        // Pinned section header
-        if (screen.pinned.isNotEmpty() && !screen.isFiltered) {
-            item(key = "pinned_header") {
-                SectionLabel(stringResource(R.string.presets_section_pinned))
-            }
-            items(
-                items    = screen.pinned,
-                key      = { it.preset.id },
-            ) { item ->
-                PresetCard(
-                    item        = item,
-                    isSelecting = isSelecting,
-                    reorderMode = uiState.reorderMode,
-                    onTap       = {
-                        if (isSelecting) onToggle(item.preset) else onLaunch(item.preset)
-                    },
-                    onLongPress = { onLongPress(item.preset) },
-                    onPin       = { onPin(item.preset) },
-                    onUnpin     = { onUnpin(item.preset) },
-                    onRename    = { onRename(item.preset) },
-                    onDelete    = { onDelete(item.preset) },
-                    modifier    = if (item.preset.id == firstId) Modifier.coachMarkAnchor("preset") else Modifier,
-                )
-            }
-        }
-
-        // Unpinned section header
-        if (screen.unpinned.isNotEmpty() && !screen.isFiltered) {
-            item(key = "unpinned_header") {
-                if (screen.pinned.isNotEmpty()) {
-                    SectionLabel(stringResource(R.string.presets_section_saved))
+        if (!screen.isFiltered) {
+            if (screen.pinned.isNotEmpty()) {
+                item(key = "pinned_header") {
+                    SectionLabel(stringResource(R.string.presets_section_pinned), topPadding = 12.dp)
                 }
+                presetGroup(screen.pinned, uiState.reorderMode)
             }
-            items(
-                items = screen.unpinned,
-                key   = { it.preset.id },
-            ) { item ->
-                PresetCard(
-                    item        = item,
-                    isSelecting = isSelecting,
-                    reorderMode = uiState.reorderMode,
-                    onTap       = {
-                        if (isSelecting) onToggle(item.preset) else onLaunch(item.preset)
-                    },
-                    onLongPress = { onLongPress(item.preset) },
-                    onPin       = { onPin(item.preset) },
-                    onUnpin     = { onUnpin(item.preset) },
-                    onRename    = { onRename(item.preset) },
-                    onDelete    = { onDelete(item.preset) },
-                    modifier    = if (item.preset.id == firstId) Modifier.coachMarkAnchor("preset") else Modifier,
-                )
+            if (screen.unpinned.isNotEmpty()) {
+                item(key = "unpinned_header") {
+                    if (screen.pinned.isNotEmpty()) {
+                        SectionLabel(stringResource(R.string.presets_section_saved), topPadding = 24.dp)
+                    } else {
+                        Spacer(Modifier.height(8.dp))
+                    }
+                }
+                presetGroup(screen.unpinned, uiState.reorderMode)
             }
-        }
-
-        // Filtered results
-        if (screen.isFiltered) {
+        } else {
             if (screen.filtered.isEmpty()) {
                 item(key = "no_results") {
                     Box(
@@ -728,41 +626,30 @@ private fun PresetsReadyBody(
                     }
                 }
             } else {
-                items(
-                    items = screen.filtered,
-                    key   = { it.preset.id },
-                ) { item ->
-                    PresetCard(
-                        item        = item,
-                        isSelecting = isSelecting,
-                        reorderMode = false,
-                        onTap       = {
-                            if (isSelecting) onToggle(item.preset) else onLaunch(item.preset)
-                        },
-                        onLongPress = { onLongPress(item.preset) },
-                        onPin       = { onPin(item.preset) },
-                        onUnpin     = { onUnpin(item.preset) },
-                        onRename    = { onRename(item.preset) },
-                        onDelete    = { onDelete(item.preset) },
-                        modifier    = if (item.preset.id == firstId) Modifier.coachMarkAnchor("preset") else Modifier,
-                    )
-                }
+                item(key = "filtered_gap") { Spacer(Modifier.height(8.dp)) }
+                presetGroup(screen.filtered, reorderMode = false)
             }
         }
 
         item(key = "bottom_spacer") {
+            Spacer(Modifier.height(16.dp))
             Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
         }
     }
 }
 
-// Preset card
+// ─────────────────────────────────────────────────────────────────────────────
+// Preset row
+// ─────────────────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PresetCard(
+private fun PresetRow(
     item: PresetItemState,
+    position: GroupPosition,
     isSelecting: Boolean,
     reorderMode: Boolean,
+    showPin: Boolean,
     onTap: () -> Unit,
     onLongPress: () -> Unit,
     onPin: () -> Unit,
@@ -775,24 +662,10 @@ private fun PresetCard(
     val preset = item.preset
 
     val bgColor by animateColorAsState(
-        targetValue   = when {
-            item.isActive    -> Charcoal
-            item.isSelected  -> PaleBlue
-            else             -> White
-        },
+        targetValue   = if (item.isSelected) PaleBlue else White,
         animationSpec = tween(250),
-        label         = "card_bg_${preset.id}",
+        label         = "row_bg_${preset.id}",
     )
-    val borderColor by animateColorAsState(
-        targetValue   = when {
-            item.isActive   -> Panel
-            item.isSelected -> PaleBlueText
-            else            -> Border
-        },
-        animationSpec = tween(250),
-        label         = "card_border_${preset.id}",
-    )
-    val textColor   = if (item.isActive) OnPanel else Charcoal
     val cardDescription = listOfNotNull(
         preset.name,
         stringResource(R.string.presets_cd_playing).takeIf { item.isActive },
@@ -801,90 +674,72 @@ private fun PresetCard(
         stringResource(R.string.presets_cd_locked_layers).takeIf { item.hasLockedLayers },
     ).joinToString(", ")
     val moreLabel = stringResource(R.string.presets_cd_more_options, preset.name)
-    val subColor    = if (item.isActive) OnPanel.copy(alpha = 0.6f) else MutedGray
 
-    Box(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onTap)
+            .groupedRow(position, background = bgColor)
+            .combinedClickable(onClick = onTap, onLongClick = onLongPress, role = Role.Button)
+            .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 12.dp)
             .semantics { contentDescription = cardDescription },
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier              = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            // Left indicator — selection checkbox, reorder handle, or emoji/waveform
-            when {
-                isSelecting -> SelectionIndicator(
-                    isSelected = item.isSelected,
-                    isActive   = item.isActive,
-                )
-                reorderMode -> ReorderHandle(tint = if (item.isActive) OnPanel.copy(alpha = 0.5f) else MutedGray)
-                else        -> PresetLeadingIcon(
-                    preset   = preset,
-                    isActive = item.isActive,
-                )
+        // Leading — selection circle, reorder handle, or the preset's mark
+        when {
+            isSelecting -> SelectionIndicator(isSelected = item.isSelected)
+            reorderMode -> Box(Modifier.size(Dimens.leadingCircle), contentAlignment = Alignment.Center) {
+                GlyphIcon(Glyph.Drag, MutedGray, size = 20.dp)
             }
+            else        -> PresetLeadingIcon(preset = preset, isActive = item.isActive)
+        }
 
-            // Content
-            Column(modifier = Modifier.weight(1f)) {
+        Spacer(Modifier.width(14.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text     = preset.name,
                     style    = MaterialTheme.typography.titleSmall,
-                    color    = textColor,
+                    color    = Charcoal,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
                 )
-                Spacer(Modifier.height(2.dp))
-                val layerSummary = preset.mix.layers
-                    .take(3)
-                    .map { it.sound.displayTitle() }
-                    .joinToString(" · ")
-                Text(
-                    text     = layerSummary.ifBlank {
-                        pluralStringResource(R.plurals.presets_sound_count, preset.mix.layers.size, preset.mix.layers.size)
-                    },
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = subColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (item.totalListenedMs > 0L) {
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text  = listenedDuration(item.totalListenedMs),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = subColor.copy(alpha = 0.7f),
-                    )
-                }
+                if (showPin) GlyphIcon(Glyph.Pin, MutedGray, size = 12.dp)
             }
+            Spacer(Modifier.height(2.dp))
+            val layerSummary = preset.mix.layers
+                .take(3)
+                .map { it.sound.displayTitle() }
+                .joinToString(" · ")
+            Text(
+                text     = layerSummary.ifBlank {
+                    pluralStringResource(R.plurals.presets_sound_count, preset.mix.layers.size, preset.mix.layers.size)
+                },
+                style    = MaterialTheme.typography.bodySmall,
+                color    = MutedGray,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
 
-            // Premium layers are skipped at launch on the free tier — flag it before the tap
+        Spacer(Modifier.width(10.dp))
+
+        // Trailing — premium flag, listening time, more
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             if (item.hasLockedLayers) PremiumPill()
-
-            // Trailing actions
+            if (item.totalListenedMs > 0L && !item.hasLockedLayers) {
+                Text(
+                    text  = listenedDuration(item.totalListenedMs),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MutedGray,
+                )
+            }
             if (!isSelecting && !reorderMode) {
                 Box {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(
-                                if (item.isActive) OnPanel.copy(alpha = 0.1f) else SurfaceMuted
-                            )
-                            .clickable { showMenu = true }
-                            .semantics { contentDescription = moreLabel },
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        DotsIcon(tint = if (item.isActive) OnPanel.copy(alpha = 0.7f) else MutedGray)
+                    GhostIconButton(onClick = { showMenu = true }, contentDescription = moreLabel) {
+                        GlyphIcon(Glyph.More, MutedGray, size = 20.dp)
                     }
-
                     PresetContextMenu(
                         expanded  = showMenu,
                         isPinned  = preset.isPinned,
@@ -895,6 +750,8 @@ private fun PresetCard(
                         onDelete  = { showMenu = false; onDelete() },
                     )
                 }
+            } else {
+                Spacer(Modifier.width(8.dp))
             }
         }
     }
@@ -902,104 +759,40 @@ private fun PresetCard(
 
 @Composable
 private fun PresetLeadingIcon(preset: Domain.Preset, isActive: Boolean) {
-    Box(
-        modifier         = Modifier.size(36.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        when {
-            isActive -> ActiveWaveform()
-            preset.emoji != null -> Text(
-                text  = preset.emoji,
-                style = MaterialTheme.typography.titleMedium,
-            )
-            preset.isPinned -> PinIcon(MutedGray)
-            else -> {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(SurfaceMuted),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text  = "${preset.mix.layers.size}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MutedGray,
-                    )
-                }
-            }
+    when {
+        isActive -> IconCircle(Charcoal) { GlyphIcon(Glyph.WaveBars, White, size = 18.dp) }
+        preset.emoji != null -> IconCircle(SurfaceMuted) {
+            Text(text = preset.emoji, style = MaterialTheme.typography.titleMedium)
         }
-    }
-}
-
-@Composable
-private fun SelectionIndicator(isSelected: Boolean, isActive: Boolean) {
-    Box(
-        modifier = Modifier
-            .size(22.dp)
-            .clip(CircleShape)
-            .background(
-                when {
-                    isSelected && isActive -> OnPanel
-                    isSelected            -> PaleBlueText
-                    else                  -> Color.Transparent
-                }
-            )
-            .border(
-                width = 1.5.dp,
-                color = when {
-                    isSelected && isActive -> OnPanel
-                    isSelected            -> PaleBlueText
-                    isActive              -> OnPanel.copy(alpha = 0.5f)
-                    else                  -> Border
-                },
-                shape = CircleShape,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (isSelected) {
-            CheckIcon(tint = if (isActive) Panel else White, size = 10.dp)
-        }
-    }
-}
-
-@Composable
-private fun ActiveWaveform() {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment     = Alignment.CenterVertically,
-    ) {
-        listOf(10.dp, 16.dp, 12.dp, 16.dp, 10.dp).forEach { h ->
-            Box(
-                modifier = Modifier
-                    .width(2.dp)
-                    .height(h)
-                    .clip(RoundedCornerShape(1.dp))
-                    .background(OnPanel.copy(alpha = 0.8f)),
+        else -> IconCircle(SurfaceMuted) {
+            Text(
+                text  = "${preset.mix.layers.size}",
+                style = MaterialTheme.typography.labelLarge,
+                color = MutedGray,
             )
         }
     }
 }
 
 @Composable
-private fun ReorderHandle(tint: Color) {
-    Column(
-        modifier              = Modifier.size(20.dp),
-        verticalArrangement   = Arrangement.spacedBy(3.dp),
-        horizontalAlignment   = Alignment.CenterHorizontally,
-    ) {
-        repeat(3) {
-            Box(
-                Modifier
-                    .width(14.dp)
-                    .height(1.5.dp)
-                    .background(tint)
-            )
+private fun SelectionIndicator(isSelected: Boolean) {
+    Box(Modifier.size(Dimens.leadingCircle), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier
+                .size(24.dp)
+                .clip(CircleShape)
+                .background(if (isSelected) PaleBlueText else Color.Transparent)
+                .border(1.5.dp, if (isSelected) PaleBlueText else Border, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (isSelected) GlyphIcon(Glyph.Check, White, size = 12.dp)
         }
     }
 }
 
-// Context menu
+// ─────────────────────────────────────────────────────────────────────────────
+// Context menu · banner
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PresetContextMenu(
@@ -1014,73 +807,58 @@ private fun PresetContextMenu(
     DropdownMenu(
         expanded         = expanded,
         onDismissRequest = onDismiss,
-        modifier         = Modifier
-            .background(White)
-            .border(1.dp, Border, RoundedCornerShape(8.dp)),
+        shape            = RoundedCornerShape(16.dp),
+        containerColor   = White,
+        border           = androidx.compose.foundation.BorderStroke(Dimens.hairline, Border),
     ) {
         DropdownMenuItem(
-            text    = { MenuLabel(stringResource(if (isPinned) R.string.presets_menu_unpin else R.string.presets_menu_pin)) },
-            onClick = if (isPinned) onUnpin else onPin,
+            text        = { MenuLabel(stringResource(if (isPinned) R.string.presets_menu_unpin else R.string.presets_menu_pin)) },
+            leadingIcon = { GlyphIcon(Glyph.Pin, MutedGray, size = 18.dp) },
+            onClick     = if (isPinned) onUnpin else onPin,
         )
         DropdownMenuItem(
-            text    = { MenuLabel(stringResource(R.string.presets_menu_rename)) },
-            onClick = onRename,
+            text        = { MenuLabel(stringResource(R.string.presets_menu_rename)) },
+            leadingIcon = { GlyphIcon(Glyph.Sliders, MutedGray, size = 18.dp) },
+            onClick     = onRename,
         )
         DropdownMenuItem(
-            text    = { MenuLabel(stringResource(R.string.action_delete), color = PaleRedText) },
-            onClick = onDelete,
+            text        = { MenuLabel(stringResource(R.string.action_delete), color = PaleRedText) },
+            leadingIcon = { GlyphIcon(Glyph.Trash, PaleRedText, size = 18.dp) },
+            onClick     = onDelete,
         )
     }
 }
 
 @Composable
 private fun MenuLabel(text: String, color: Color = Charcoal) {
-    Text(
-        text  = text,
-        style = MaterialTheme.typography.bodyMedium,
-        color = color,
-    )
+    Text(text = text, style = MaterialTheme.typography.bodyMedium, color = color)
 }
-
-// Banners and labels
 
 @Composable
 private fun LimitBanner() {
-    Row(
-        modifier = Modifier
+    SurfaceCard(
+        modifier       = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(PaleYellow)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(top = 8.dp),
+        background     = PaleYellow,
+        border         = Color.Transparent,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(6.dp)
-                .clip(CircleShape)
-                .background(PaleYellowText),
-        )
-        Text(
-            text  = stringResource(R.string.presets_limit_banner, FREE_PRESET_LIMIT),
-            style = MaterialTheme.typography.bodySmall,
-            color = PaleYellowText,
-            modifier = Modifier.weight(1f),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            GlyphIcon(Glyph.Sparkle, PaleYellowText, size = 18.dp)
+            Text(
+                text     = stringResource(R.string.presets_limit_banner, FREE_PRESET_LIMIT),
+                style    = MaterialTheme.typography.bodySmall,
+                color    = PaleYellowText,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
-@Composable
-private fun SectionLabel(label: String) {
-    Text(
-        text     = label.uppercase(),
-        style    = MaterialTheme.typography.labelSmall,
-        color    = MutedGray,
-        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
-    )
-}
-
+// ─────────────────────────────────────────────────────────────────────────────
 // Dialogs
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun DeleteConfirmDialog(
@@ -1090,7 +868,8 @@ private fun DeleteConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = WarmWhite,
+        containerColor   = White,
+        shape            = RoundedCornerShape(Dimens.panelRadius),
         title = {
             Text(
                 text  = stringResource(R.string.presets_delete_title),
@@ -1126,7 +905,8 @@ private fun BulkDeleteConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = WarmWhite,
+        containerColor   = White,
+        shape            = RoundedCornerShape(Dimens.panelRadius),
         title = {
             Text(
                 text  = pluralStringResource(R.plurals.presets_bulk_delete_title, count, count),
@@ -1168,7 +948,8 @@ private fun RenameDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = WarmWhite,
+        containerColor   = White,
+        shape            = RoundedCornerShape(Dimens.panelRadius),
         title = {
             Text(
                 text  = stringResource(R.string.presets_rename_title),
@@ -1177,25 +958,13 @@ private fun RenameDialog(
             )
         },
         text = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(SurfaceMuted)
-                    .border(1.dp, if (isValid) Charcoal else Border, RoundedCornerShape(6.dp))
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-            ) {
-                BasicTextField(
-                    value         = name,
-                    onValueChange = { name = it },
-                    singleLine    = true,
-                    textStyle     = MaterialTheme.typography.bodyMedium.copy(color = Charcoal),
-                    cursorBrush   = SolidColor(Charcoal),
-                    modifier      = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester),
-                )
-            }
+            SleepTextInput(
+                value          = name,
+                onValueChange  = { name = it },
+                hint           = stringResource(R.string.preset_field_name),
+                focusRequester = focusRequester,
+                active         = isValid,
+            )
         },
         confirmButton = {
             TextButton(
@@ -1215,89 +984,4 @@ private fun RenameDialog(
             }
         },
     )
-}
-
-// Micro-components — all drawn, no bitmap resources
-
-@Composable
-private fun SmallIconButton(
-    onClick: () -> Unit,
-    description: String,
-    background: Color  = White,
-    borderColor: Color = Border,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Box(
-        modifier = modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(background)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .semantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
-        content          = { content() },
-    )
-}
-
-@Composable
-private fun PlusIcon(tint: Color) {
-    Box(Modifier.size(14.dp), contentAlignment = Alignment.Center) {
-        Box(Modifier.fillMaxWidth().height(1.5.dp).background(tint))
-        Box(Modifier.width(1.5.dp).height(14.dp).background(tint))
-    }
-}
-
-@Composable
-private fun CloseIcon(tint: Color) {
-    Box(Modifier.size(10.dp).drawBehind {
-        val s = Stroke(1.5.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-        drawLine(tint, Offset(0f, 0f), Offset(size.width, size.height), s.width)
-        drawLine(tint, Offset(size.width, 0f), Offset(0f, size.height), s.width)
-    })
-}
-
-@Composable
-private fun TrashIcon(tint: Color) {
-    Box(Modifier.size(14.dp).drawBehind {
-        val s = Stroke(1.5.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-        drawLine(tint, Offset(0f, 3.dp.toPx()), Offset(size.width, 3.dp.toPx()), s.width)
-        drawRect(tint, Offset(2.dp.toPx(), 3.dp.toPx()),
-            Size(size.width - 4.dp.toPx(), size.height - 3.dp.toPx()), style = s)
-        drawLine(tint, Offset(4.dp.toPx(), 0f), Offset(size.width - 4.dp.toPx(), 0f), s.width)
-    })
-}
-
-@Composable
-private fun DotsIcon(tint: Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        repeat(3) {
-            Box(Modifier.size(3.dp).clip(CircleShape).background(tint))
-        }
-    }
-}
-
-@Composable
-private fun SearchIcon(tint: Color) {
-    Box(Modifier.size(14.dp).drawBehind {
-        val r  = 4.5.dp.toPx()
-        val cx = r; val cy = r
-        drawCircle(tint, r, Offset(cx, cy),
-            style = Stroke(1.5.dp.toPx()))
-        val s  = Stroke(1.5.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-        val d  = (r * 0.707f)
-        drawLine(tint, Offset(cx + d, cy + d), Offset(size.width, size.height), s.width)
-    })
-}
-
-@Composable
-private fun PinIcon(tint: Color) {
-    Box(Modifier.size(14.dp).drawBehind {
-        val s = Stroke(1.5.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round)
-        drawCircle(tint, size.minDimension / 3f,
-            Offset(size.width / 2f, size.height / 3f), style = s)
-        drawLine(tint, Offset(size.width / 2f, size.height / 3f * 2f),
-            Offset(size.width / 2f, size.height), s.width)
-    })
 }
