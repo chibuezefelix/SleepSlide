@@ -68,6 +68,8 @@ import com.opxl.sleepslide.R
 import com.opxl.sleepslide.domain.repository.CoachMarkScreens
 import com.opxl.sleepslide.presentation.components.CircleIconButton
 import com.opxl.sleepslide.presentation.components.Glyph
+import com.opxl.sleepslide.presentation.components.GlowCorner
+import com.opxl.sleepslide.presentation.components.Glow
 import com.opxl.sleepslide.presentation.components.GlyphIcon
 import com.opxl.sleepslide.presentation.components.GroupCard
 import com.opxl.sleepslide.presentation.components.IconCircle
@@ -364,6 +366,7 @@ private fun UnlockHero(
         background     = Panel,
         border         = Panel,
         contentPadding = PaddingValues(20.dp),
+        glow           = Glow(OnPanel, corner = GlowCorner.TopEnd),
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
