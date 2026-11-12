@@ -149,7 +149,10 @@ data class SleepSlideExtendedColors(
     val paleGreenText: Color,
 
     val paleYellow: Color,
-    val paleYellowText: Color
+    val paleYellowText: Color,
+
+    /** Peak alpha of the soft corner glow on feature cards. Dark grounds take more before it reads as light. */
+    val glowStrength: Float,
 )
 
 private val LightExtendedColors = SleepSlideExtendedColors(
@@ -176,7 +179,9 @@ private val LightExtendedColors = SleepSlideExtendedColors(
     paleGreenText = LightPalette.PaleGreenText,
 
     paleYellow = LightPalette.PaleYellow,
-    paleYellowText = LightPalette.PaleYellowText
+    paleYellowText = LightPalette.PaleYellowText,
+
+    glowStrength = 0.065f,
 )
 
 private val DarkExtendedColors = SleepSlideExtendedColors(
@@ -203,7 +208,9 @@ private val DarkExtendedColors = SleepSlideExtendedColors(
     paleGreenText = Color(0xFFB6DDB5),
 
     paleYellow = Color(0xFF403716),
-    paleYellowText = Color(0xFFE8D18A)
+    paleYellowText = Color(0xFFE8D18A),
+
+    glowStrength = 0.12f,
 )
 
 val LocalSleepSlideColors = staticCompositionLocalOf {
