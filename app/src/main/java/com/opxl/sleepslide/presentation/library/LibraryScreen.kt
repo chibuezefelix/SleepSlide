@@ -618,7 +618,7 @@ private fun SoundRow(
                 Text("${(item.mixPosition ?: 0) + 1}", style = MaterialTheme.typography.labelLarge, color = White)
             }
             locked     -> IconCircle(SurfaceMuted) { GlyphIcon(Glyph.Lock, MutedGray, size = 18.dp) }
-            else       -> IconCircle(circleBg) { GlyphIcon(item.sound.category.glyph, circleFg, size = 18.dp) }
+            else       -> IconCircle(circleBg, glow = circleFg) { GlyphIcon(item.sound.category.glyph, circleFg, size = 18.dp) }
         }
 
         Spacer(Modifier.width(14.dp))
