@@ -62,7 +62,7 @@ android {
 
             applicationIdSuffix=".release"
             versionNameSuffix="-release"
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             buildConfigField("String", "REVENUECAT_KEY", localProperties.get("REVENUECAT_KEY") as String)
             //Assets
             buildConfigField("String", "WHITE_NOISE", localProperties.get("WHITE_NOISE") as String)
