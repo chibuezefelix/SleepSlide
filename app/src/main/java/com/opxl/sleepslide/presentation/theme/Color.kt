@@ -84,14 +84,15 @@ val OverlayMark = Color(0xFFEEEEEB)
 val BrandYellow = Color(0xFFFBED34)
 val BrandInk = Color(0xFF111111)
 
-// Dark theme neutrals
+// Dark theme neutrals — a near-black warm ground, surfaces one step up, and a hairline
+// border that is felt more than seen (the old #333330 read as a drawn box around every card).
 
-val DarkBackground = Color(0xFF151514)
-val DarkSurface = Color(0xFF1C1C1A)
-val DarkSurfaceVariant = Color(0xFF242422)
-val DarkPanel = Color(0xFF2C2C29)
+val DarkBackground = Color(0xFF121211)
+val DarkSurface = Color(0xFF1A1A19)
+val DarkSurfaceVariant = Color(0xFF232322)
+val DarkPanel = Color(0xFF262625)
 
 val DarkText = Color(0xFFF5F4F0)
-val DarkTextSecondary = Color(0xFFB5B3AE)
+val DarkTextSecondary = Color(0xFFA9A7A1)
 
-val DarkBorder = Color(0xFF333330)
+val DarkBorder = Color(0xFF262625)
