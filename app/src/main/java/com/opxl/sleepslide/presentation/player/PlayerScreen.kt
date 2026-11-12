@@ -82,6 +82,7 @@ import com.opxl.sleepslide.presentation.components.DashedCard
 import com.opxl.sleepslide.presentation.components.GhostIconButton
 import com.opxl.sleepslide.presentation.components.Glyph
 import com.opxl.sleepslide.presentation.components.GlyphIcon
+import com.opxl.sleepslide.presentation.components.Glow
 import com.opxl.sleepslide.presentation.components.GroupCard
 import com.opxl.sleepslide.presentation.components.IconCircle
 import com.opxl.sleepslide.presentation.components.LineSlider
@@ -255,6 +256,8 @@ fun PlayerScreen(
 
                     MixerSection(
                         mixer                 = uiState.mixer,
+                        isPlaying             = uiState.playback is PlayerPlaybackState.Playing ||
+                                                uiState.playback is PlayerPlaybackState.FadingIn,
                         isHeadphonesConnected = uiState.isHeadphonesConnected,
                         onVolume              = viewModel::onLayerVolumeChanged,
                         onDragEnd             = viewModel::onLayerVolumeDragEnded,
@@ -717,6 +720,7 @@ private fun TimerChip(label: String, onClick: () -> Unit, tint: Color) {
 @Composable
 private fun MixerSection(
     mixer: MixerState,
+    isPlaying: Boolean,
     isHeadphonesConnected: Boolean,
     onVolume: (Int, Float) -> Unit,
     onDragEnd: (Int) -> Unit,
@@ -747,7 +751,7 @@ private fun MixerSection(
         if (mixer.layers.isEmpty()) {
             EmptyMixerCard(onAddSound)
         } else {
-            GroupCard {
+            GroupCard(glow = Glow(Charcoal, animated = isPlaying)) {
                 mixer.layers.forEachIndexed { index, layer ->
                     LayerRow(
                         layer              = layer,
@@ -819,7 +823,10 @@ private fun LayerRow(
             modifier          = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconCircle(if (layer.isMuted) SurfaceMuted else circleBg) {
+            IconCircle(
+                background = if (layer.isMuted) SurfaceMuted else circleBg,
+                glow       = circleFg.takeUnless { layer.isMuted },
+            ) {
                 GlyphIcon(layer.sound.category.glyph, if (layer.isMuted) MutedGray else circleFg, size = 18.dp)
             }
             Spacer(Modifier.width(14.dp))
