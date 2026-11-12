@@ -73,6 +73,9 @@ val PaleGreenText: Color @Composable @ReadOnlyComposable get() = LocalSleepSlide
 val PaleYellow: Color @Composable @ReadOnlyComposable get() = LocalSleepSlideColors.current.paleYellow
 val PaleYellowText: Color @Composable @ReadOnlyComposable get() = LocalSleepSlideColors.current.paleYellowText
 
+/** Peak alpha for card glows — see [com.opxl.sleepslide.presentation.components.Glow]. */
+val GlowStrength: Float @Composable @ReadOnlyComposable get() = LocalSleepSlideColors.current.glowStrength
+
 // Fixed in both themes — text and scrims laid over photos or a dimmed screen.
 
 val OnImage = Color(0xFFFFFFFF)
