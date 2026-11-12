@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
@@ -520,7 +521,7 @@ private fun AppearanceSection(
         Column(modifier = Modifier.padding(vertical = 14.dp)) {
             RowHeader(glyph = Glyph.Moon, label = "Theme")
             Spacer(Modifier.height(12.dp))
-            ChipRow(Domain.ThemeMode.values().toList()) { mode ->
+            ChipRow(Domain.ThemeMode.values().toList(), selected = { it == state.themeMode }) { mode ->
                 SelectChip(
                     label    = mode.name.lowercase().replaceFirstChar { it.uppercase() },
                     selected = mode == state.themeMode,
@@ -560,7 +561,7 @@ private fun HourStepRow(glyph: Glyph, label: String, hour: Int, onSelect: (Int) 
     Column(modifier = Modifier.padding(vertical = 14.dp)) {
         RowHeader(glyph = glyph, label = label, value = "${hour}:00")
         Spacer(Modifier.height(12.dp))
-        ChipRow(listOf(20, 21, 22, 23, 0, 6, 7, 8, 9)) { h ->
+        ChipRow(listOf(20, 21, 22, 23, 0, 6, 7, 8, 9), selected = { it == hour }) { h ->
             SelectChip(label = "${h}:00", selected = h == hour, onClick = { onSelect(h) })
         }
     }
@@ -605,7 +606,7 @@ private fun WindDownSection(
                         Spacer(Modifier.height(14.dp))
                         ChipCaption("Hour")
                         // Evening hours are the relevant ones
-                        ChipRow((18..23).toList()) { h ->
+                        ChipRow((18..23).toList(), selected = { it == state.hour }) { h ->
                             SelectChip(
                                 label    = "${h}:00",
                                 selected = h == state.hour,
@@ -614,7 +615,7 @@ private fun WindDownSection(
                         }
                         Spacer(Modifier.height(12.dp))
                         ChipCaption("Minute")
-                        ChipRow(listOf(0, 15, 30, 45)) { m ->
+                        ChipRow(listOf(0, 15, 30, 45), selected = { it == state.minute }) { m ->
                             SelectChip(
                                 label    = "%02d".format(m),
                                 selected = m == state.minute,
@@ -908,7 +909,7 @@ private fun StepSelectorRow(
     Column(modifier = modifier.fillMaxWidth().padding(vertical = 14.dp)) {
         RowHeader(glyph = glyph, label = label, value = sublabel)
         Spacer(Modifier.height(12.dp))
-        ChipRow(steps) { (ms, stepLabel) ->
+        ChipRow(steps, selected = { it.first == selected }) { (ms, stepLabel) ->
             SelectChip(label = stepLabel, selected = ms == selected, onClick = { onSelect(ms) })
         }
     }
@@ -935,10 +936,16 @@ private fun RowHeader(glyph: Glyph, label: String, value: String? = null) {
     }
 }
 
-/** Chips line up with the row's title and scroll to the card's edge. */
+/**
+ * Chips line up with the row's title and scroll to the card's edge. Opens scrolled so the
+ * [selected] chip is in view, with its left neighbour peeking as a hint that the row scrolls.
+ */
 @Composable
-private fun <T> ChipRow(items: List<T>, chip: @Composable (T) -> Unit) {
+private fun <T> ChipRow(items: List<T>, selected: (T) -> Boolean, chip: @Composable (T) -> Unit) {
+    val selectedIndex = items.indexOfFirst(selected)
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = (selectedIndex - 1).coerceAtLeast(0))
     LazyRow(
+        state                 = listState,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding        = PaddingValues(start = DividerInset, end = 16.dp),
     ) {
