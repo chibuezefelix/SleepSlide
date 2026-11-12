@@ -50,20 +50,22 @@ val SleepSlideTypography = Typography(
         letterSpacing = (-0.9).sp
     ),
 
+    // Hero numerals — the timer countdown, a price. One per screen at most.
     displaySmall = TextStyle(
         fontFamily = EditorialFont,
-        fontWeight = FontWeight.Medium,
-        fontSize = 30.sp,
-        lineHeight = 34.sp,
-        letterSpacing = (-0.7).sp
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 40.sp,
+        lineHeight = 44.sp,
+        letterSpacing = (-1.0).sp
     ),
 
+    // Page titles ("Library", "Settings") and the Home greeting.
     headlineLarge = TextStyle(
         fontFamily = EditorialFont,
-        fontWeight = FontWeight.Medium,
-        fontSize = 28.sp,
-        lineHeight = 32.sp,
-        letterSpacing = (-0.6).sp
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 30.sp,
+        lineHeight = 36.sp,
+        letterSpacing = (-0.7).sp
     ),
 
     headlineMedium = TextStyle(
