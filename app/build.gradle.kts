@@ -59,18 +59,29 @@ android {
             ndk {
                 debugSymbolLevel = "FULL"
             }
+
+            applicationIdSuffix=".release"
+            versionNameSuffix="-release"
+            isMinifyEnabled = true
+            buildConfigField("String", "REVENUECAT_KEY", localProperties.get("REVENUECAT_KEY") as String)
+            //Assets
+            buildConfigField("String", "WHITE_NOISE", localProperties.get("WHITE_NOISE") as String)
+            // Opt in with TESTING_MODE=true in local.properties. Release never reads it.
+            val testingMode = (localProperties["'  '"] as String?)?.trim().toBoolean()
+            buildConfigField("boolean", "TESTING_MODE", testingMode.toString())
+        
         }
 
         debug {
             applicationIdSuffix=".debug"
             versionNameSuffix="-debug"
             isMinifyEnabled = false
-            buildConfigField("String", "REVENUECAT_KEY", localProperties.get("REVENUECAT_KEY") as String)
+            buildConfigField("String", "REVENUECAT_KEY", localProperties.get("TEST_REVENUECAT_KEY") as String)
             //Assets
             buildConfigField("String", "WHITE_NOISE", localProperties.get("WHITE_NOISE") as String)
             // Opt in with TESTING_MODE=true in local.properties. Release never reads it.
-            val testingMode = (localProperties["TESTING_MODE"] as String?)?.trim().toBoolean()
-            buildConfigField("boolean", "TESTING_MODE", testingMode.toString())
+            val testingMode = (localProperties["'  '"] as String?)?.trim().toBoolean()
+            buildConfigField("boolean", "TESTING_MODE_DEBUG", testingMode.toString())
         }
     }
     compileOptions {
