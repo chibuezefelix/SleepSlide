@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -90,6 +91,7 @@ import com.opxl.sleepslide.presentation.settings.SettingsScreen
 import com.opxl.sleepslide.presentation.tutorial.TutorialScreen
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
+import com.opxl.sleepslide.ui.theme.Dimens
 import com.opxl.sleepslide.ui.theme.MutedGray
 import com.opxl.sleepslide.ui.theme.PaleBlueText
 import com.opxl.sleepslide.ui.theme.WarmWhite
@@ -424,7 +426,7 @@ private fun LockedLayersNoticeHost(
             containerColor = Charcoal,
             contentColor   = White,
             actionColor    = PaleBlueText,
-            shape          = RoundedCornerShape(8.dp),
+            shape          = RoundedCornerShape(Dimens.controlRadius),
         )
     }
 }
@@ -494,8 +496,8 @@ private fun NavController.navigateToTab(tab: AppTab) {
 // Bottom navigation bar
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Bar height above the system navigation inset: vertical padding + icon + gaps + indicator. */
-private val TabBarFixedHeight = 64.dp
+/** Bar height above the system navigation inset: vertical padding + icon + gap. */
+private val TabBarFixedHeight = 60.dp
 
 /** Full bar content height. The label line follows font scale, so it is added in sp → dp. */
 @Composable
@@ -581,11 +583,11 @@ private fun SleepSlideBottomBar(selected: AppTab, onSelect: (AppTab) -> Unit) {
             }
         }
 
-        // Top border line
+        // Top hairline
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(1.dp)
+                .height(Dimens.hairline)
                 .background(Border),
         )
     }
@@ -597,23 +599,23 @@ private fun TabButton(
     selected: Boolean,
     onSelect: (AppTab) -> Unit,
 ) {
-    val tint = if (selected) Charcoal else MutedGray
+    val tint by animateColorAsState(if (selected) Charcoal else MutedGray, tween(200), label = "tab_tint")
 
     Column(
         modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(Dimens.controlRadius))
             // selectable + Role.Tab: TalkBack announces "Library, tab, selected, 2 of 4"
             // from the label below — no separate contentDescription to read twice.
             .selectable(selected = selected, role = Role.Tab, onClick = { onSelect(tab) })
-            .padding(horizontal = 16.dp, vertical = 6.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         Icon(
             painter            = painterResource(tab.icon),
             contentDescription = null,   // the label names the tab
             tint               = tint,
-            modifier           = Modifier.size(22.dp),
+            modifier           = Modifier.size(24.dp),
         )
 
         Text(
@@ -621,16 +623,6 @@ private fun TabButton(
             style    = MaterialTheme.typography.labelSmall,
             color    = tint,
             maxLines = 1,
-        )
-
-        // Active indicator — always laid out so selecting a tab never shifts the column
-        val indicator = Charcoal
-        Box(
-            modifier = Modifier
-                .size(width = 16.dp, height = 2.dp)
-                .drawBehind {
-                    if (selected) drawRoundRect(indicator, cornerRadius = CornerRadius(1.dp.toPx()))
-                },
         )
     }
 }
