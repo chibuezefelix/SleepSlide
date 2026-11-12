@@ -28,7 +28,7 @@ android {
         applicationId = "com.opxl.sleepslide"
         minSdk = 26
         targetSdk = 37
-        versionCode = 4
+        versionCode = 5
         versionName = "1.0.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
