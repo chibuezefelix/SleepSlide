@@ -57,6 +57,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.opxl.sleepslide.R
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.presentation.components.categoryColors
+import com.opxl.sleepslide.presentation.components.Glow
+import com.opxl.sleepslide.presentation.components.GlowCorner
+import com.opxl.sleepslide.presentation.components.glow
 import com.opxl.sleepslide.presentation.components.CircleIconButton
 import com.opxl.sleepslide.presentation.components.DashedCard
 import com.opxl.sleepslide.presentation.components.GhostIconButton
@@ -360,6 +364,7 @@ private fun HomeHero(
         showCaption = false,
         onTap       = onTap,
         modifier    = Modifier.padding(bottom = 4.dp),
+        glow        = Glow(OnImage, animated = true, corner = GlowCorner.TopEnd),
     ) {
         // Timer badge
         if (timer is HomeViewState.TimerUiState.Active) {
@@ -478,13 +483,16 @@ private fun HomeReadyBody(
     onSoundClick: (Domain.Sound) -> Unit,
     onAddPreset: () -> Unit,
 ) {
-    val activeId = (uiState.playback as? HomeViewState.PlaybackUiState.Active)?.activePresetId
+    val active    = uiState.playback as? HomeViewState.PlaybackUiState.Active
+    val activeId  = active?.activePresetId
+    val playingId = activeId.takeIf { active?.status == Domain.PlaybackStatus.PLAYING }
     Column {
         if (screen.pinnedPresets.isNotEmpty()) {
             HomeSectionLabel("Pinned")
             PresetGrid(
                 presets     = screen.pinnedPresets,
                 activeId    = activeId,
+                playingId   = playingId,
                 onClick     = onPresetClick,
                 onLongClick = onPresetLong,
                 anchorFirst = true,
@@ -496,6 +504,7 @@ private fun HomeReadyBody(
             PresetGrid(
                 presets     = screen.recentPresets,
                 activeId    = activeId,
+                playingId   = playingId,
                 onClick     = onPresetClick,
                 onLongClick = onPresetLong,
                 anchorFirst = screen.pinnedPresets.isEmpty(),
@@ -529,6 +538,7 @@ private fun HomeSectionLabel(text: String) {
 private fun PresetGrid(
     presets: List<Domain.Preset>,
     activeId: Long?,
+    playingId: Long?,
     onClick: (Domain.Preset) -> Unit,
     onLongClick: (Domain.Preset) -> Unit,
     anchorFirst: Boolean = false,   // first card is the coach mark target for "your presets"
@@ -550,6 +560,7 @@ private fun PresetGrid(
                     PresetCard(
                         preset      = preset,
                         isActive    = preset.id == activeId,
+                        isPlaying   = preset.id == playingId,
                         onClick     = { onClick(preset) },
                         onLongClick = { onLongClick(preset) },
                         modifier    = Modifier
@@ -569,6 +580,7 @@ private fun PresetGrid(
 private fun PresetCard(
     preset: Domain.Preset,
     isActive: Boolean,
+    isPlaying: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -582,11 +594,19 @@ private fun PresetCard(
     val context = LocalContext.current
     val soundNames = preset.mix.layers.take(3).joinToString(" · ") { it.sound.displayTitle(context) }
     val layerCount = preset.mix.layers.size
+    // The tile carries the hue of its lead sound; on the inverted active tile the light is neutral.
+    val leadCategory = preset.mix.layers.firstOrNull()?.sound?.category
+    val glowTint = when {
+        isActive             -> OnPanel
+        leadCategory != null -> categoryColors(leadCategory).second
+        else                 -> Charcoal
+    }
 
     Column(
         modifier = modifier
             .clip(shape)
             .background(bg)
+            .glow(Glow(glowTint, animated = isPlaying))
             .border(Dimens.hairline, stroke, shape)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(16.dp)
