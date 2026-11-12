@@ -1,21 +1,16 @@
 package com.opxl.sleepslide.presentation.player
 
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,10 +18,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,8 +31,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,8 +39,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -63,50 +55,60 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.opxl.sleepslide.presentation.permission.isNotificationPermissionGranted
+import com.opxl.sleepslide.R
+import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.model.Domain.needsHeadphones
 import com.opxl.sleepslide.domain.repository.CoachMarkScreens
+import com.opxl.sleepslide.presentation.components.CircleIconButton
+import com.opxl.sleepslide.presentation.components.DashedCard
+import com.opxl.sleepslide.presentation.components.GhostIconButton
+import com.opxl.sleepslide.presentation.components.Glyph
+import com.opxl.sleepslide.presentation.components.GlyphIcon
+import com.opxl.sleepslide.presentation.components.GroupCard
+import com.opxl.sleepslide.presentation.components.IconCircle
+import com.opxl.sleepslide.presentation.components.LineSlider
+import com.opxl.sleepslide.presentation.components.LineSliderColors
+import com.opxl.sleepslide.presentation.components.LoadingDots
+import com.opxl.sleepslide.presentation.components.RowDivider
+import com.opxl.sleepslide.presentation.components.SecondaryPill
+import com.opxl.sleepslide.presentation.components.SectionLabel
+import com.opxl.sleepslide.presentation.components.SelectChip
+import com.opxl.sleepslide.presentation.components.SleepTextInput
+import com.opxl.sleepslide.presentation.components.SurfaceCard
+import com.opxl.sleepslide.presentation.components.displayTitle
+import com.opxl.sleepslide.presentation.components.glyph
+import com.opxl.sleepslide.presentation.components.labelRes
+import com.opxl.sleepslide.presentation.components.shortDuration
+import com.opxl.sleepslide.presentation.permission.isNotificationPermissionGranted
+import com.opxl.sleepslide.presentation.scene.SceneBackdrop
 import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
 import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
 import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
 import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
-import com.opxl.sleepslide.presentation.components.LineSlider
-import com.opxl.sleepslide.presentation.components.ChevronLeft
-import com.opxl.sleepslide.presentation.components.ClockIcon
-import com.opxl.sleepslide.presentation.components.LineSliderColors
-import com.opxl.sleepslide.presentation.scene.SceneBackdrop
-import com.opxl.sleepslide.domain.model.Domain
-import com.opxl.sleepslide.domain.model.Domain.needsHeadphones
-import com.opxl.sleepslide.ui.theme.OnPanel
-import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
 import com.opxl.sleepslide.ui.theme.DarkBackground
-import com.opxl.sleepslide.ui.theme.DarkSurface
 import com.opxl.sleepslide.ui.theme.DarkText
 import com.opxl.sleepslide.ui.theme.DarkTextSecondary
-import com.opxl.sleepslide.ui.theme.LocalSleepSlideColors
+import com.opxl.sleepslide.ui.theme.Dimens
 import com.opxl.sleepslide.ui.theme.MutedGray
 import com.opxl.sleepslide.ui.theme.PaleBlue
 import com.opxl.sleepslide.ui.theme.PaleBlueText
@@ -120,14 +122,6 @@ import com.opxl.sleepslide.ui.theme.SurfaceMuted
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import com.opxl.sleepslide.ui.theme.White
 import kotlinx.coroutines.launch
-import androidx.compose.ui.res.stringResource
-import com.opxl.sleepslide.R
-import com.opxl.sleepslide.presentation.components.displayTitle
-import com.opxl.sleepslide.presentation.components.labelRes
-import com.opxl.sleepslide.presentation.components.shortDuration
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -168,8 +162,7 @@ fun PlayerScreen(
                     scope.launch { snackbarHostState.showSnackbar(event.message.asString(context)) }
                 is PlayerEvent.ShowInfo                 ->
                     scope.launch { snackbarHostState.showSnackbar(event.message.asString(context)) }
-                is PlayerEvent.ShowServiceUnavailable   ->
-                    scope.launch { /*snackbarHostState.showSnackbar("Audio service is starting") */ }
+                is PlayerEvent.ShowServiceUnavailable   -> Unit
                 is PlayerEvent.AudioInterrupted         ->
                     scope.launch {
                         snackbarHostState.showSnackbar(
@@ -195,95 +188,90 @@ fun PlayerScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         CoachMarkHost(viewModel = tutorial, labels = PLAYER_COACH_MARKS) {
-        Scaffold(
-            snackbarHost   = { SnackbarHost(snackbarHostState) },
-            containerColor = WarmWhite,
-        ) { innerPadding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                PlayerTopBar(
-                    preset   = uiState.preset,
-                    onBack   = { viewModel.onBackRequested() },
-                    onSave   = { viewModel.requestSaveAsPreset() },
-                    onUpdate = { viewModel.updateActivePreset() },
-                )
-
-                Spacer(Modifier.height(4.dp))
-
-                // Photo backdrop chosen for the mix + time of day; drifts while playing
-                SceneBackdrop(
-                    sounds    = uiState.mixer.layers.map { it.sound },
-                    isPlaying = uiState.playback is PlayerPlaybackState.Playing ||
-                                uiState.playback is PlayerPlaybackState.FadingIn,
-                )
-
-                Spacer(Modifier.height(20.dp))
-
-                PlaybackHub(
-                    playback  = uiState.playback,
-                    timer     = uiState.timer,
-                    bluetooth = uiState.isBluetoothConnected,
-                    onPlay    = { viewModel.resume() },
-                    onPause   = { viewModel.pause() },
-                    onStop    = { viewModel.stop() },
-                    onTimer   = { viewModel.requestTimer() },
-                )
-
-                Spacer(Modifier.height(24.dp))
-
-                AnimatedVisibility(
-                    visible = uiState.playback is PlayerPlaybackState.Interrupted,
-                    enter   = fadeIn(tween(250)) + slideInVertically { -it },
-                    exit    = fadeOut(tween(200)) + slideOutVertically { -it },
+            Scaffold(
+                snackbarHost   = { SnackbarHost(snackbarHostState) },
+                containerColor = WarmWhite,
+            ) { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .verticalScroll(rememberScrollState()),
                 ) {
-                    InterruptionBanner(
-                        reason = (uiState.playback as? PlayerPlaybackState.Interrupted)?.reason
+                    PlayerTopBar(
+                        preset   = uiState.preset,
+                        onBack   = { viewModel.onBackRequested() },
+                        onSave   = { viewModel.requestSaveAsPreset() },
+                        onUpdate = { viewModel.updateActivePreset() },
                     )
+
+                    // Photo backdrop chosen for the mix + time of day; drifts while playing
+                    SceneBackdrop(
+                        sounds    = uiState.mixer.layers.map { it.sound },
+                        isPlaying = uiState.playback is PlayerPlaybackState.Playing ||
+                                    uiState.playback is PlayerPlaybackState.FadingIn,
+                    )
+
+                    Spacer(Modifier.height(28.dp))
+
+                    PlaybackHub(
+                        playback  = uiState.playback,
+                        timer     = uiState.timer,
+                        nightLock = uiState.nightLock,
+                        bluetooth = uiState.isBluetoothConnected,
+                        onPlay    = { viewModel.resume() },
+                        onPause   = { viewModel.pause() },
+                        onStop    = { viewModel.stop() },
+                        onTimer   = { viewModel.requestTimer() },
+                        onLockOn  = { viewModel.enableNightLock() },
+                        onLockOff = { viewModel.disableNightLock() },
+                    )
+
+                    AnimatedVisibility(
+                        visible = uiState.playback is PlayerPlaybackState.Interrupted,
+                        enter   = fadeIn(tween(250)) + slideInVertically { -it },
+                        exit    = fadeOut(tween(200)) + slideOutVertically { -it },
+                    ) {
+                        InterruptionBanner(
+                            reason = (uiState.playback as? PlayerPlaybackState.Interrupted)?.reason
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = uiState.timer is PlayerTimerState.Active,
+                        enter   = fadeIn(tween(250)) + slideInVertically { -it / 2 },
+                        exit    = fadeOut(tween(200)),
+                    ) {
+                        val active = uiState.timer as? PlayerTimerState.Active
+                        if (active != null) {
+                            ActiveTimerCard(
+                                timer    = active,
+                                onAdd    = { viewModel.addFiveMinutes() },
+                                onReduce = { viewModel.reduceFiveMinutes() },
+                                onCancel = { viewModel.cancelTimer() },
+                            )
+                        }
+                    }
+
+                    MixerSection(
+                        mixer                 = uiState.mixer,
+                        isHeadphonesConnected = uiState.isHeadphonesConnected,
+                        onVolume              = viewModel::onLayerVolumeChanged,
+                        onDragEnd             = viewModel::onLayerVolumeDragEnded,
+                        onMute                = viewModel::muteLayer,
+                        onUnmute              = viewModel::unmuteLayer,
+                        onRemove              = viewModel::removeLayer,
+                        onAddSound            = { viewModel.onAddSoundRequested() },
+                        masterVolume          = uiState.mixer.masterVolume,
+                        onMasterVolume        = viewModel::onMasterVolumeChanged,
+                        onMasterDragEnd       = { viewModel.onMasterVolumeDragEnded() },
+                    )
+
+                    Spacer(Modifier.height(40.dp))
+                    Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
                 }
-
-                Spacer(Modifier.height(8.dp))
-
-                MixerSection(
-                    mixer           = uiState.mixer,
-                    isHeadphonesConnected = uiState.isHeadphonesConnected,
-                    onVolume        = viewModel::onLayerVolumeChanged,
-                    onDragEnd       = viewModel::onLayerVolumeDragEnded,
-                    onMute          = viewModel::muteLayer,
-                    onUnmute        = viewModel::unmuteLayer,
-                    onRemove        = viewModel::removeLayer,
-                    onAddSound      = { viewModel.onAddSoundRequested() },
-                    masterVolume    = uiState.mixer.masterVolume,
-                    onMasterVolume  = viewModel::onMasterVolumeChanged,
-                    onMasterDragEnd = { viewModel.onMasterVolumeDragEnded() },
-                )
-
-                Spacer(Modifier.height(24.dp))
-
-                TimerStrip(
-                    timer        = uiState.timer,
-                    onAddTime    = { viewModel.addFiveMinutes() },
-                    onReduceTime = { viewModel.reduceFiveMinutes() },
-                    onCancel     = { viewModel.cancelTimer() },
-                    onSetTimer   = { viewModel.requestTimer() },
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                NightLockToggleRow(
-                    nightLock = uiState.nightLock,
-                    onEnable  = { viewModel.enableNightLock() },
-                    onDisable = { viewModel.disableNightLock() },
-                )
-
-                Spacer(Modifier.height(40.dp))
-                Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
             }
         }
-        } // CoachMarkHost
 
         if (uiState.nightLock != NightLockState.Disabled) {
             NightLockOverlay(
@@ -346,7 +334,9 @@ private val PLAYER_COACH_MARKS = listOf(
     "night_lock" to R.string.coach_player_night_lock,
 )
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Top bar
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun PlayerTopBar(
@@ -360,14 +350,13 @@ private fun PlayerTopBar(
     Row(
         modifier              = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = Dimens.gutter, vertical = 14.dp),
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        IconButton(
-            onClick             = onBack,
-            contentDescription  = stringResource(R.string.cd_back),
-        ) { ChevronLeft(tint = Charcoal) }
+        CircleIconButton(onClick = onBack, contentDescription = stringResource(R.string.cd_back)) {
+            GlyphIcon(Glyph.ChevronLeft, Charcoal, size = 16.dp)
+        }
 
         Column(
             modifier            = Modifier
@@ -377,9 +366,9 @@ private fun PlayerTopBar(
         ) {
             Text(
                 text      = when (preset) {
-                    is ActivePresetState.Loaded  -> preset.preset.name
-                    is ActivePresetState.Saving  -> stringResource(R.string.player_saving)
-                    else                         -> stringResource(R.string.player_now_playing)
+                    is ActivePresetState.Loaded -> preset.preset.name
+                    is ActivePresetState.Saving -> stringResource(R.string.player_saving)
+                    else                        -> stringResource(R.string.player_now_playing)
                 },
                 style     = MaterialTheme.typography.titleMedium,
                 color     = if (preset is ActivePresetState.Saving) MutedGray else Charcoal,
@@ -396,14 +385,13 @@ private fun PlayerTopBar(
             }
         }
 
-        IconButton(
-            onClick             = { if (isDirtyLoaded) onUpdate() else onSave() },
-            background          = if (isDirtyLoaded) Charcoal else SurfaceMuted,
-            borderColor         = if (isDirtyLoaded) Charcoal else Border,
-            contentDescription  = stringResource(if (isDirtyLoaded) R.string.player_cd_save_changes else R.string.player_cd_save_as_preset),
-            modifier            = Modifier.coachMarkAnchor("save"),
+        CircleIconButton(
+            onClick            = { if (isDirtyLoaded) onUpdate() else onSave() },
+            filled             = isDirtyLoaded,
+            contentDescription = stringResource(if (isDirtyLoaded) R.string.player_cd_save_changes else R.string.player_cd_save_as_preset),
+            modifier           = Modifier.coachMarkAnchor("save"),
         ) {
-            SaveIcon(tint = if (isDirtyLoaded) White else MutedGray)
+            GlyphIcon(Glyph.Save, if (isDirtyLoaded) White else Charcoal, size = 18.dp)
         }
     }
 }
@@ -416,17 +404,23 @@ private fun PlayerTopBar(
 private fun PlaybackHub(
     playback: PlayerPlaybackState,
     timer: PlayerTimerState,
+    nightLock: NightLockState,
     bluetooth: Boolean,
     onPlay: () -> Unit,
     onPause: () -> Unit,
     onStop: () -> Unit,
     onTimer: () -> Unit,
+    onLockOn: () -> Unit,
+    onLockOff: () -> Unit,
 ) {
-    val isPlaying   = playback is PlayerPlaybackState.Playing
-    val isFadingIn  = playback is PlayerPlaybackState.FadingIn
-    val fadeProgress = (playback as? PlayerPlaybackState.Playing)?.fadeInProgress
-    val timerFraction = (timer as? PlayerTimerState.Active)?.progressFraction ?: 0f
-    val timerFading   = (timer as? PlayerTimerState.Active)?.isFading == true
+    val isPlaying     = playback is PlayerPlaybackState.Playing
+    val isFadingIn    = playback is PlayerPlaybackState.FadingIn
+    val fadeProgress  = (playback as? PlayerPlaybackState.Playing)?.fadeInProgress
+    val activeTimer   = timer as? PlayerTimerState.Active
+    val timerFraction = activeTimer?.progressFraction ?: 0f
+    val timerFading   = activeTimer?.isFading == true
+    val canStop       = isPlaying || playback is PlayerPlaybackState.Paused
+    val lockOn        = nightLock != NightLockState.Disabled
 
     val arcColor by animateColorAsState(
         targetValue   = when { timerFading -> PaleYellowText; isPlaying -> Charcoal; else -> Border },
@@ -439,33 +433,91 @@ private fun PlaybackHub(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            modifier         = Modifier
-                .size(200.dp)
-                .padding(12.dp),
+            modifier         = Modifier.size(168.dp),
             contentAlignment = Alignment.Center,
         ) {
             TimerArc(progress = timerFraction, color = arcColor, modifier = Modifier.fillMaxSize())
-
             if (isFadingIn && fadeProgress != null) {
                 FadeInArc(progress = fadeProgress, modifier = Modifier.fillMaxSize())
             }
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                MainTransportButton(playback = playback, onPlay = onPlay, onPause = onPause)
-
-                AnimatedVisibility(visible = isPlaying || playback is PlayerPlaybackState.Paused) {
-                    StopButtonSmall(onClick = onStop)
-                }
-            }
+            MainTransportButton(playback = playback, onPlay = onPlay, onPause = onPause)
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(14.dp))
         PlaybackStatusLine(playback = playback, bluetooth = bluetooth)
-        Spacer(Modifier.height(16.dp))
-        TimerTriggerButton(timer = timer, onClick = onTimer)
+        Spacer(Modifier.height(24.dp))
+
+        // Secondary actions — labelled circles, so each reads at a glance in the dark
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(28.dp),
+            verticalAlignment     = Alignment.Top,
+        ) {
+            ActionCircle(
+                glyph              = Glyph.Stop,
+                label              = stringResource(R.string.player_cd_stop),
+                contentDescription = stringResource(R.string.player_cd_stop),
+                enabled            = canStop,
+                onClick            = onStop,
+            )
+            ActionCircle(
+                glyph              = Glyph.Timer,
+                label              = activeTimer?.remainingLabel
+                    ?: stringResource(if (timer is PlayerTimerState.Finished) R.string.player_timer_ended else R.string.player_set_timer),
+                contentDescription = activeTimer?.let { stringResource(R.string.player_cd_timer_active, it.remainingLabel) }
+                    ?: stringResource(R.string.player_cd_set_sleep_timer),
+                onClick            = onTimer,
+                tint               = if (timerFading) PaleYellowText else null,
+                active             = activeTimer != null,
+                modifier           = Modifier.coachMarkAnchor("timer"),
+            )
+            ActionCircle(
+                glyph              = Glyph.Lock,
+                label              = stringResource(R.string.player_night_lock),
+                contentDescription = stringResource(if (lockOn) R.string.player_cd_night_lock_on else R.string.player_cd_night_lock_off),
+                onClick            = if (lockOn) onLockOff else onLockOn,
+                active             = lockOn,
+                modifier           = Modifier.coachMarkAnchor("night_lock"),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+/** A round action with its name under it. `active` fills the circle with ink. */
+@Composable
+private fun ActionCircle(
+    glyph: Glyph,
+    label: String,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    active: Boolean = false,
+    tint: Color? = null,
+) {
+    val fg = tint ?: if (active) White else Charcoal
+    Column(
+        modifier            = modifier.width(72.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        CircleIconButton(
+            onClick            = onClick,
+            contentDescription = contentDescription,
+            size               = 52.dp,
+            filled             = active,
+            enabled            = enabled,
+            background         = when { active -> Charcoal; tint != null -> PaleYellow; else -> White },
+            border             = when { active -> Charcoal; tint != null -> PaleYellow; else -> Border },
+        ) { GlyphIcon(glyph, fg, size = 22.dp) }
+        Text(
+            text      = label,
+            style     = MaterialTheme.typography.labelMedium,
+            color     = tint ?: if (active) Charcoal else MutedGray,
+            maxLines  = 1,
+            overflow  = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -511,48 +563,31 @@ private fun MainTransportButton(
         when { isLoading -> R.string.player_cd_loading; isPlaying -> R.string.player_cd_pause; else -> R.string.player_cd_play }
     )
 
-    val bgColor  by animateColorAsState(if (isPlaying) Charcoal else White,  tween(300), "tb")
-    val iconTint by animateColorAsState(if (isPlaying) White    else Charcoal, tween(300), "ti")
+    val bgColor  by animateColorAsState(if (isPlaying) Charcoal else White,    tween(300), label = "tb")
+    val iconTint by animateColorAsState(if (isPlaying) White    else Charcoal, tween(300), label = "ti")
 
     Box(
         modifier = Modifier
-            .size(72.dp)
+            .size(84.dp)
             .coachMarkAnchor("transport")
             .clip(CircleShape)
             .background(bgColor)
-            .border(1.dp, Border, CircleShape)
-            .clickable(enabled = !isLoading, onClick = if (isPlaying) onPause else onPlay)
+            .border(Dimens.hairline, if (isPlaying) Charcoal else Border, CircleShape)
+            .clickable(enabled = !isLoading, onClick = if (isPlaying) onPause else onPlay, role = Role.Button)
             .semantics { contentDescription = transportLabel },
         contentAlignment = Alignment.Center,
     ) {
         AnimatedContent(
-            targetState   = isLoading to isPlaying,
+            targetState    = isLoading to isPlaying,
             transitionSpec = { fadeIn(tween(200)) togetherWith fadeOut(tween(200)) },
-            label         = "transport",
+            label          = "transport",
         ) { (loading, playing) ->
             when {
                 loading -> LoadingDots(MutedGray)
-                playing -> PauseIcon(iconTint, 22)
-                else    -> PlayIcon(iconTint, 22)
+                playing -> GlyphIcon(Glyph.Pause, iconTint, size = 30.dp)
+                else    -> GlyphIcon(Glyph.Play, iconTint, size = 30.dp)
             }
         }
-    }
-}
-
-@Composable
-private fun StopButtonSmall(onClick: () -> Unit) {
-    val stopLabel = stringResource(R.string.player_cd_stop)
-    Box(
-        modifier = Modifier
-            .size(32.dp)
-            .clip(CircleShape)
-            .background(SurfaceMuted)
-            .border(1.dp, Border, CircleShape)
-            .clickable(onClick = onClick)
-            .semantics { contentDescription = stopLabel },
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(Modifier.size(10.dp).clip(RoundedCornerShape(2.dp)).background(MutedGray))
     }
 }
 
@@ -584,60 +619,94 @@ private fun PlaybackStatusLine(playback: PlayerPlaybackState, bluetooth: Boolean
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         if (bluetooth && playback is PlayerPlaybackState.Playing) {
-            Box(Modifier.size(6.dp).clip(CircleShape).background(PaleBlueText))
+            GlyphIcon(Glyph.Bluetooth, PaleBlueText, size = 14.dp)
         }
-        Text(text = stringResource(label), style = MaterialTheme.typography.bodySmall, color = color)
-    }
-}
-
-@Composable
-private fun TimerTriggerButton(timer: PlayerTimerState, onClick: () -> Unit) {
-    val active   = timer as? PlayerTimerState.Active
-    val label    = active?.remainingLabel
-        ?: stringResource(if (timer is PlayerTimerState.Finished) R.string.player_timer_ended else R.string.player_set_timer)
-    val bg       = if (active?.isFading == true) PaleYellow else SurfaceMuted
-    val fg       = if (active?.isFading == true) PaleYellowText else if (active != null) Charcoal else MutedGray
-    val desc     = active?.let { stringResource(R.string.player_cd_timer_active, it.remainingLabel) }
-        ?: stringResource(R.string.player_cd_set_sleep_timer)
-
-    Row(
-        modifier = Modifier
-            .coachMarkAnchor("timer")
-            .clip(RoundedCornerShape(6.dp))
-            .background(bg)
-            .border(1.dp, Border, RoundedCornerShape(6.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp)
-            .semantics { contentDescription = desc },
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        ClockIcon(tint = fg, size = 14.dp)
-        Text(text = label, style = MaterialTheme.typography.labelLarge, color = fg)
+        Text(text = stringResource(label), style = MaterialTheme.typography.labelLarge, color = color)
     }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Interruption banner
+// Interruption banner · active timer
 // ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun InterruptionBanner(reason: InterruptionReason?) {
     reason ?: return
     val (bg, fg, msg) = when (reason) {
-        InterruptionReason.PHONE_CALL     -> Triple(PaleYellow,  PaleYellowText, stringResource(R.string.player_banner_call))
-        InterruptionReason.ANOTHER_APP    -> Triple(PaleRed,     PaleRedText,    stringResource(R.string.player_banner_other_app))
-        InterruptionReason.BLUETOOTH_LOST -> Triple(PaleRed,     PaleRedText,    stringResource(R.string.player_headphones_disconnected))
+        InterruptionReason.PHONE_CALL     -> Triple(PaleYellow, PaleYellowText, stringResource(R.string.player_banner_call))
+        InterruptionReason.ANOTHER_APP    -> Triple(PaleRed,    PaleRedText,    stringResource(R.string.player_banner_other_app))
+        InterruptionReason.BLUETOOTH_LOST -> Triple(PaleRed,    PaleRedText,    stringResource(R.string.player_headphones_disconnected))
     }
-    Box(
-        modifier = Modifier
+    SurfaceCard(
+        modifier       = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(bg)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = Dimens.gutter)
+            .padding(top = 20.dp),
+        background     = bg,
+        border         = Color.Transparent,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
     ) {
         Text(text = msg, style = MaterialTheme.typography.bodySmall, color = fg)
+    }
+}
+
+@Composable
+private fun ActiveTimerCard(
+    timer: PlayerTimerState.Active,
+    onAdd: () -> Unit,
+    onReduce: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val fading = timer.isFading
+    val fg  = if (fading) PaleYellowText else Charcoal
+    val sub = if (fading) PaleYellowText.copy(alpha = 0.75f) else MutedGray
+
+    SurfaceCard(
+        modifier       = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Dimens.gutter)
+            .padding(top = 20.dp),
+        background     = if (fading) PaleYellow else White,
+        border         = if (fading) Color.Transparent else Border,
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 16.dp),
+    ) {
+        Row(
+            modifier              = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment     = Alignment.CenterVertically,
+        ) {
+            Column {
+                Text(timer.remainingLabel, style = MaterialTheme.typography.displaySmall, color = fg)
+                Text(
+                    stringResource(if (fading) R.string.player_timer_fading_now else R.string.player_timer_until_sleep),
+                    style = MaterialTheme.typography.bodySmall, color = sub,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                TimerChip(stringResource(R.string.player_timer_minus_5), onReduce, fg)
+                TimerChip(stringResource(R.string.player_timer_plus_5), onAdd, fg)
+                GhostIconButton(
+                    onClick            = onCancel,
+                    contentDescription = stringResource(R.string.player_cancel_timer),
+                    size               = 36.dp,
+                    background         = if (fading) PaleYellowText.copy(alpha = 0.12f) else SurfaceMuted,
+                ) { GlyphIcon(Glyph.Close, sub, size = 14.dp) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimerChip(label: String, onClick: () -> Unit, tint: Color) {
+    Box(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(SurfaceMuted)
+            .border(Dimens.hairline, Border, CircleShape)
+            .clickable(onClick = onClick, role = Role.Button)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = tint)
     }
 }
 
@@ -662,35 +731,43 @@ private fun MixerSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = Dimens.gutter),
     ) {
-        SectionDivider(stringResource(R.string.player_section_mix))
-        Spacer(Modifier.height(16.dp))
+        SectionLabel(
+            text     = stringResource(R.string.player_section_mix),
+            trailing = if (mixer.layers.isNotEmpty()) ({
+                Text(
+                    text  = "${mixer.layers.size} of ${mixer.layers.size + mixer.availableSlots.size}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MutedGray,
+                )
+            }) else null,
+        )
 
         if (mixer.layers.isEmpty()) {
             EmptyMixerCard(onAddSound)
         } else {
-            mixer.layers.forEachIndexed { index, layer ->
-                LayerRow(
-                    layer    = layer,
-                    showHeadphonesNote = layer.sound.needsHeadphones && !isHeadphonesConnected,
-                    modifier = if (index == 0) Modifier.coachMarkAnchor("layer") else Modifier,
-                    onVolume = { vol -> onVolume(layer.position, vol) },
-                    onDragEnd = { onDragEnd(layer.position) },
-                    onMute   = { onMute(layer.position) },
-                    onUnmute = { onUnmute(layer.position) },
-                    onRemove = { onRemove(layer.position) },
-                )
-                Spacer(Modifier.height(8.dp))
-            }
-
-            if (mixer.layers.size > 1) {
-                Spacer(Modifier.height(4.dp))
-                MasterVolumeRow(volume = masterVolume, onChange = onMasterVolume, onDragEnd = onMasterDragEnd)
+            GroupCard {
+                mixer.layers.forEachIndexed { index, layer ->
+                    LayerRow(
+                        layer              = layer,
+                        showHeadphonesNote = layer.sound.needsHeadphones && !isHeadphonesConnected,
+                        modifier           = if (index == 0) Modifier.coachMarkAnchor("layer") else Modifier,
+                        onVolume           = { vol -> onVolume(layer.position, vol) },
+                        onDragEnd          = { onDragEnd(layer.position) },
+                        onMute             = { onMute(layer.position) },
+                        onUnmute           = { onUnmute(layer.position) },
+                        onRemove           = { onRemove(layer.position) },
+                    )
+                    if (index < mixer.layers.lastIndex || mixer.layers.size > 1) RowDivider()
+                }
+                if (mixer.layers.size > 1) {
+                    MasterVolumeRow(volume = masterVolume, onChange = onMasterVolume, onDragEnd = onMasterDragEnd)
+                }
             }
 
             if (mixer.canAddLayer) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
                 AddLayerButton(onAddSound)
             }
         }
@@ -699,21 +776,22 @@ private fun MixerSection(
 
 @Composable
 private fun EmptyMixerCard(onAddSound: () -> Unit) {
-    Box(
-        modifier = Modifier
+    DashedCard(
+        onClick        = onAddSound,
+        modifier       = Modifier
             .fillMaxWidth()
-            .coachMarkAnchor("add_sound")
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Border, RoundedCornerShape(8.dp))
-            .background(SurfaceMuted)
-            .clickable(onClick = onAddSound)
-            .padding(24.dp),
-        contentAlignment = Alignment.Center,
+            .coachMarkAnchor("add_sound"),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 24.dp),
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier            = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            IconCircle(SurfaceMuted, size = 44.dp) { GlyphIcon(Glyph.Plus, Charcoal, size = 18.dp) }
+            Spacer(Modifier.height(12.dp))
             Text(stringResource(R.string.player_empty_title), style = MaterialTheme.typography.titleSmall, color = Charcoal)
-            Spacer(Modifier.height(4.dp))
-            Text(stringResource(R.string.player_empty_subtitle), style = MaterialTheme.typography.bodySmall,  color = MutedGray)
+            Spacer(Modifier.height(2.dp))
+            Text(stringResource(R.string.player_empty_subtitle), style = MaterialTheme.typography.bodySmall, color = MutedGray)
         }
     }
 }
@@ -729,57 +807,51 @@ private fun LayerRow(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val extended = LocalSleepSlideColors.current
-    val (pillBg, pillFg) = when (layer.sound.category) {
-        Domain.SoundCategory.TINNITUS -> PaleBlue  to PaleBlueText
-        Domain.SoundCategory.NATURE   -> PaleGreen to PaleGreenText
-        Domain.SoundCategory.ASMR     -> PaleYellow to PaleYellowText
-        else                          -> extended.mutedSurface to MutedGray
-    }
+    val (circleBg, circleFg) = categoryColors(layer.sound.category)
+    val titleColor = if (layer.isMuted) MutedGray else Charcoal
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Border, RoundedCornerShape(8.dp))
-            .background(White)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 10.dp),
     ) {
         Row(
-            modifier              = Modifier.fillMaxWidth(),
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier          = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier          = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                CategoryPill(label = stringResource(layer.sound.category.labelRes).uppercase(), bg = pillBg, fg = pillFg)
+            IconCircle(if (layer.isMuted) SurfaceMuted else circleBg) {
+                GlyphIcon(layer.sound.category.glyph, if (layer.isMuted) MutedGray else circleFg, size = 18.dp)
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text     = layer.sound.displayTitle(),
                     style    = MaterialTheme.typography.titleSmall,
-                    color    = if (layer.isMuted) MutedGray else Charcoal,
+                    color    = titleColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text  = stringResource(if (layer.isMuted) R.string.player_layer_muted else layer.sound.category.labelRes),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedGray,
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                MuteButton(layer.isMuted, onMute, onUnmute)
-                RemoveButton(onRemove)
+            GhostIconButton(
+                onClick            = if (layer.isMuted) onUnmute else onMute,
+                contentDescription = stringResource(if (layer.isMuted) R.string.cd_unmute else R.string.cd_mute),
+            ) {
+                GlyphIcon(if (layer.isMuted) Glyph.VolumeOff else Glyph.Volume, if (layer.isMuted) MutedGray else Charcoal, size = 18.dp)
             }
+            GhostIconButton(
+                onClick            = onRemove,
+                contentDescription = stringResource(R.string.player_cd_remove_layer),
+            ) { GlyphIcon(Glyph.Minus, MutedGray, size = 18.dp) }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text     = "${(layer.volume * 100).toInt()}",
-                style    = MaterialTheme.typography.labelSmall,
-                color    = MutedGray,
-                modifier = Modifier.width(28.dp),
-            )
             LineSlider(
                 value                 = layer.volume,
                 onValueChange         = onVolume,
@@ -787,266 +859,100 @@ private fun LayerRow(
                 modifier              = Modifier.weight(1f),
                 colors                = LineSliderColors.light(muted = layer.isMuted),
             )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text      = "${(layer.volume * 100).toInt()}",
+                style     = MaterialTheme.typography.labelSmall,
+                color     = MutedGray,
+                textAlign = TextAlign.End,
+                modifier  = Modifier.width(32.dp).padding(end = 8.dp),
+            )
         }
 
         if (showHeadphonesNote) {
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text  = stringResource(R.string.headphones_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MutedGray,
-            )
+            Row(
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier              = Modifier.padding(end = 8.dp, bottom = 4.dp),
+            ) {
+                GlyphIcon(Glyph.Headphones, MutedGray, size = 12.dp)
+                Text(
+                    text  = stringResource(R.string.headphones_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedGray,
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun CategoryPill(label: String, bg: Color, fg: Color) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(bg)
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-    ) {
-        Text(
-            text  = label.lowercase().replaceFirstChar { it.uppercase() },
-            style = MaterialTheme.typography.labelSmall,
-            color = fg,
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 private fun MasterVolumeRow(volume: Float, onChange: (Float) -> Unit, onDragEnd: () -> Unit) {
     Row(
-        modifier          = Modifier.fillMaxWidth().padding(horizontal = 2.dp),
+        modifier          = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(stringResource(R.string.player_master), style = MaterialTheme.typography.labelSmall, color = MutedGray,
-            modifier = Modifier.width(48.dp))
+        IconCircle(SurfaceMuted) { GlyphIcon(Glyph.Sliders, Charcoal, size = 18.dp) }
+        Spacer(Modifier.width(14.dp))
+        Text(
+            text     = stringResource(R.string.player_master),
+            style    = MaterialTheme.typography.titleSmall,
+            color    = Charcoal,
+            modifier = Modifier.width(64.dp),
+        )
         LineSlider(
             value                 = volume,
             onValueChange         = onChange,
             onValueChangeFinished = onDragEnd,
             modifier              = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(8.dp))
         Text(
             text      = "${(volume * 100).toInt()}",
             style     = MaterialTheme.typography.labelSmall,
             color     = MutedGray,
             textAlign = TextAlign.End,
-            modifier  = Modifier.width(28.dp),
+            modifier  = Modifier.width(32.dp).padding(end = 8.dp),
         )
     }
 }
 
 @Composable
 private fun AddLayerButton(onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
+    DashedCard(
+        onClick        = onClick,
+        modifier       = Modifier
             .fillMaxWidth()
-            .coachMarkAnchor("add_sound")
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Border, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .coachMarkAnchor("add_sound"),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        PlusCircle()
-        Text(stringResource(R.string.player_add_sound), style = MaterialTheme.typography.bodySmall, color = MutedGray)
-    }
-}
-
-@Composable
-private fun MuteButton(isMuted: Boolean, onMute: () -> Unit, onUnmute: () -> Unit) {
-    val muteLabel = stringResource(if (isMuted) R.string.cd_unmute else R.string.cd_mute)
-    Box(
-        modifier = Modifier
-            .size(28.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(if (isMuted) SurfaceMuted else White)
-            .border(1.dp, Border, RoundedCornerShape(4.dp))
-            .clickable(onClick = if (isMuted) onUnmute else onMute)
-            .semantics { contentDescription = muteLabel },
-        contentAlignment = Alignment.Center,
-    ) {
-        if (isMuted) {
-            Box(Modifier.size(10.dp).clip(RoundedCornerShape(1.dp)).background(MutedGray))
-        } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
-                Box(Modifier.width(3.dp).height(8.dp).background(Charcoal))
-                Box(Modifier.width(3.dp).height(6.dp).background(Charcoal))
-            }
-        }
-    }
-}
-
-@Composable
-private fun RemoveButton(onClick: () -> Unit) {
-    val removeLabel = stringResource(R.string.player_cd_remove_layer)
-    Box(
-        modifier = Modifier
-            .size(28.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(White)
-            .border(1.dp, Border, RoundedCornerShape(4.dp))
-            .clickable(onClick = onClick)
-            .semantics { contentDescription = removeLabel },
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(Modifier.width(10.dp).height(1.5.dp).background(MutedGray))
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Timer strip
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun TimerStrip(
-    timer: PlayerTimerState,
-    onAddTime: () -> Unit,
-    onReduceTime: () -> Unit,
-    onCancel: () -> Unit,
-    onSetTimer: () -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-        SectionDivider(stringResource(R.string.player_section_timer))
-        Spacer(Modifier.height(12.dp))
-        when (timer) {
-            is PlayerTimerState.Active   -> ActiveTimerCard(timer, onAddTime, onReduceTime, onCancel)
-            is PlayerTimerState.Finished -> TimerIdleCard(stringResource(R.string.player_timer_ended_set_another), onSetTimer)
-            is PlayerTimerState.Idle     -> TimerIdleCard(stringResource(R.string.player_set_a_sleep_timer), onSetTimer)
-        }
-    }
-}
-
-@Composable
-private fun TimerIdleCard(label: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Border, RoundedCornerShape(8.dp))
-            .background(SurfaceMuted)
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MutedGray)
-    }
-}
-
-@Composable
-private fun ActiveTimerCard(
-    timer: PlayerTimerState.Active,
-    onAdd: () -> Unit,
-    onReduce: () -> Unit,
-    onCancel: () -> Unit,
-) {
-    val fading = timer.isFading
-    val fg  = if (fading) PaleYellowText else Charcoal
-    val sub = if (fading) PaleYellowText.copy(alpha = 0.7f) else MutedGray
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, if (fading) PaleYellowText else Border, RoundedCornerShape(8.dp))
-            .background(if (fading) PaleYellow else SurfaceMuted)
-            .padding(16.dp),
-    ) {
-        Row(
-            modifier              = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment     = Alignment.CenterVertically,
-        ) {
-            Column {
-                Text(timer.remainingLabel, style = MaterialTheme.typography.headlineSmall, color = fg)
-                Text(
-                    stringResource(if (fading) R.string.player_timer_fading_now else R.string.player_timer_until_sleep),
-                    style = MaterialTheme.typography.bodySmall, color = sub,
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                TimerChip(stringResource(R.string.player_timer_minus_5), onReduce, fg)
-                TimerChip(stringResource(R.string.player_timer_plus_5), onAdd,    fg)
-                TimerChip("✕",  onCancel, sub)
-            }
-        }
-    }
-}
-
-@Composable
-private fun TimerChip(label: String, onClick: () -> Unit, tint: Color) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(White.copy(alpha = 0.5f))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-    ) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = tint)
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Night lock toggle row
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun NightLockToggleRow(
-    nightLock: NightLockState,
-    onEnable: () -> Unit,
-    onDisable: () -> Unit,
-) {
-    val isOn = nightLock != NightLockState.Disabled
-    val toggleLabel = stringResource(if (isOn) R.string.player_cd_night_lock_on else R.string.player_cd_night_lock_off)
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .coachMarkAnchor("night_lock")
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Border, RoundedCornerShape(8.dp))
-            .background(if (isOn) Panel else White)
-            .clickable(onClick = if (isOn) onDisable else onEnable)
-            .padding(horizontal = 16.dp, vertical = 14.dp)
-            .semantics { contentDescription = toggleLabel },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment     = Alignment.CenterVertically,
-    ) {
-        Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconCircle(SurfaceMuted, size = 36.dp) { GlyphIcon(Glyph.Plus, Charcoal, size = 16.dp) }
+            Spacer(Modifier.width(14.dp))
             Text(
-                stringResource(R.string.player_night_lock),
-                style = MaterialTheme.typography.titleSmall,
-                color = if (isOn) OnPanel else Charcoal,
+                text     = stringResource(R.string.player_add_sound),
+                style    = MaterialTheme.typography.titleSmall,
+                color    = Charcoal,
+                modifier = Modifier.weight(1f),
             )
-            Text(
-                stringResource(if (isOn) R.string.player_night_lock_on_subtitle else R.string.player_night_lock_off_subtitle),
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isOn) OnPanel.copy(alpha = 0.6f) else MutedGray,
-            )
-        }
-        Box(
-            modifier = Modifier
-                .size(width = 40.dp, height = 24.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(if (isOn) OnPanel.copy(alpha = 0.2f) else Border),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                stringResource(if (isOn) R.string.toggle_on else R.string.toggle_off),
-                style = MaterialTheme.typography.labelSmall,
-                color = if (isOn) OnPanel else MutedGray,
-            )
+            GlyphIcon(Glyph.ChevronRight, MutedGray, size = 14.dp)
         }
     }
 }
 
+@Composable
+private fun categoryColors(category: Domain.SoundCategory): Pair<Color, Color> = when (category) {
+    Domain.SoundCategory.TINNITUS -> PaleBlue   to PaleBlueText
+    Domain.SoundCategory.NATURE   -> PaleGreen  to PaleGreenText
+    Domain.SoundCategory.ASMR     -> PaleYellow to PaleYellowText
+    else                          -> SurfaceMuted to Charcoal
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Night lock overlay
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun NightLockOverlay(
@@ -1067,7 +973,7 @@ fun NightLockOverlay(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkBackground.copy(alpha = 0.92f))
+            .background(DarkBackground.copy(alpha = 0.94f))
             .pointerInput(Unit) {
                 detectTapGestures(
                     onLongPress = { onLongPressStarted() },
@@ -1084,36 +990,41 @@ fun NightLockOverlay(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            LockIcon(tint = if (unlocking) DarkText.copy(alpha = 0.5f) else DarkText, sizeDp = 32)
-            Text(stringResource(if (unlocking) R.string.player_keep_holding else R.string.player_night_lock),
-                style = MaterialTheme.typography.titleMedium, color = DarkText)
-            Text(stringResource(R.string.player_long_press_unlock),
-                style = MaterialTheme.typography.bodySmall, color = DarkTextSecondary)
-
-            if (unlocking) {
-                UnlockProgressRing(progress)
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(72.dp)) {
+                UnlockProgressRing(if (unlocking) progress else 0f)
+                GlyphIcon(Glyph.Lock, if (unlocking) DarkText.copy(alpha = 0.5f) else DarkText, size = 28.dp)
             }
+            Text(
+                stringResource(if (unlocking) R.string.player_keep_holding else R.string.player_night_lock),
+                style = MaterialTheme.typography.titleMedium, color = DarkText,
+            )
+            Text(
+                stringResource(R.string.player_long_press_unlock),
+                style = MaterialTheme.typography.bodySmall, color = DarkTextSecondary,
+            )
         }
     }
 }
 
 @Composable
 private fun UnlockProgressRing(progress: Float) {
-    Box(modifier = Modifier.size(56.dp).drawBehind {
+    Box(modifier = Modifier.size(72.dp).drawBehind {
         val stroke = 2.dp.toPx()
         val r      = size.minDimension / 2f - stroke
         val c      = Offset(size.width / 2f, size.height / 2f)
         val tl     = Offset(c.x - r, c.y - r)
         val sz     = Size(r * 2, r * 2)
         val style  = Stroke(stroke, cap = StrokeCap.Round)
-        drawArc(DarkText.copy(alpha = 0.2f), -90f, 360f,            false, tl, sz, style = style)
-        drawArc(DarkText,                    -90f, 360f * progress,  false, tl, sz, style = style)
+        drawArc(DarkText.copy(alpha = 0.18f), -90f, 360f,           false, tl, sz, style = style)
+        drawArc(DarkText,                     -90f, 360f * progress, false, tl, sz, style = style)
     })
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Timer picker sheet
+// ─────────────────────────────────────────────────────────────────────────────
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun TimerPickerSheet(
     currentTimer: PlayerTimerState,
@@ -1125,13 +1036,14 @@ private fun TimerPickerSheet(
         onDismissRequest = onDismiss,
         sheetState       = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         containerColor   = WarmWhite,
+        shape            = RoundedCornerShape(topStart = Dimens.panelRadius, topEnd = Dimens.panelRadius),
         dragHandle       = {
             Box(
                 Modifier
                     .padding(vertical = 12.dp)
                     .width(36.dp)
-                    .height(3.dp)
-                    .clip(RoundedCornerShape(2.dp))
+                    .height(4.dp)
+                    .clip(CircleShape)
                     .background(Border),
             )
         },
@@ -1139,53 +1051,40 @@ private fun TimerPickerSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 40.dp),
+                .padding(horizontal = Dimens.gutter)
+                .padding(bottom = 36.dp),
         ) {
             Text(stringResource(R.string.player_timer_sheet_title), style = MaterialTheme.typography.headlineSmall, color = Charcoal)
             Spacer(Modifier.height(4.dp))
-            Text(stringResource(R.string.player_timer_sheet_subtitle),
-                style = MaterialTheme.typography.bodySmall, color = MutedGray)
-            Spacer(Modifier.height(24.dp))
+            Text(stringResource(R.string.player_timer_sheet_subtitle), style = MaterialTheme.typography.bodyMedium, color = MutedGray)
+            Spacer(Modifier.height(20.dp))
 
-            val labels = TIMER_PRESETS_MS.map { shortDuration(it) }
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(TIMER_PRESETS_MS.zip(labels)) { (ms, label) ->
-                    val active = currentTimer is PlayerTimerState.Active &&
-                            currentTimer.totalDurationMs == ms
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (active) Charcoal else SurfaceMuted)
-                            .border(1.dp, if (active) Charcoal else Border, RoundedCornerShape(6.dp))
-                            .clickable { onSelect(ms) }
-                            .padding(horizontal = 16.dp, vertical = 10.dp),
-                    ) {
-                        Text(label, style = MaterialTheme.typography.labelLarge,
-                            color = if (active) White else Charcoal)
-                    }
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement   = Arrangement.spacedBy(8.dp),
+            ) {
+                TIMER_PRESETS_MS.forEach { ms ->
+                    val active = currentTimer is PlayerTimerState.Active && currentTimer.totalDurationMs == ms
+                    SelectChip(label = shortDuration(ms), selected = active, onClick = { onSelect(ms) })
                 }
             }
 
             if (currentTimer is PlayerTimerState.Active) {
                 Spacer(Modifier.height(24.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, Border, RoundedCornerShape(8.dp))
-                        .clickable(onClick = onCancel)
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(stringResource(R.string.player_cancel_timer), style = MaterialTheme.typography.labelLarge, color = PaleRedText)
-                }
+                SecondaryPill(
+                    text         = stringResource(R.string.player_cancel_timer),
+                    onClick      = onCancel,
+                    contentColor = PaleRedText,
+                    modifier     = Modifier.fillMaxWidth(),
+                )
             }
         }
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Dialogs
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun SavePresetDialog(
@@ -1198,21 +1097,23 @@ private fun SavePresetDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = WarmWhite,
+        containerColor   = White,
+        shape            = RoundedCornerShape(Dimens.panelRadius),
         title   = { Text(stringResource(R.string.player_save_preset_title), style = MaterialTheme.typography.headlineSmall, color = Charcoal) },
         text    = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SleepTextField(value = name, label = stringResource(R.string.preset_field_name), onValueChange = { name = it })
-                SleepTextField(
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                SleepTextInput(value = name, onValueChange = { name = it }, hint = stringResource(R.string.preset_field_name))
+                SleepTextInput(
                     value         = emoji,
-                    label         = stringResource(R.string.preset_field_emoji),
                     onValueChange = { if (it.length <= 2) emoji = it },
+                    hint          = stringResource(R.string.preset_field_emoji),
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (name.isNotBlank()) onSave(name, emoji.ifBlank { null }) }) {
-                Text(stringResource(R.string.action_save), style = MaterialTheme.typography.labelLarge, color = Charcoal)
+            TextButton(onClick = { if (name.isNotBlank()) onSave(name, emoji.ifBlank { null }) }, enabled = name.isNotBlank()) {
+                Text(stringResource(R.string.action_save), style = MaterialTheme.typography.labelLarge,
+                    color = if (name.isNotBlank()) Charcoal else MutedGray)
             }
         },
         dismissButton = {
@@ -1231,13 +1132,11 @@ private fun UnsavedChangesDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = WarmWhite,
+        containerColor   = White,
+        shape            = RoundedCornerShape(Dimens.panelRadius),
         title   = { Text(stringResource(R.string.player_unsaved_title), style = MaterialTheme.typography.headlineSmall, color = Charcoal) },
         text    = {
-            Text(
-                stringResource(R.string.player_unsaved_body),
-                style = MaterialTheme.typography.bodyMedium, color = MutedGray,
-            )
+            Text(stringResource(R.string.player_unsaved_body), style = MaterialTheme.typography.bodyMedium, color = MutedGray)
         },
         confirmButton  = {
             TextButton(onClick = onSave) {
@@ -1251,146 +1150,3 @@ private fun UnsavedChangesDialog(
         },
     )
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared micro-components
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun SleepTextField(value: String, label: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value         = value,
-        onValueChange = onValueChange,
-        label         = { Text(label, style = MaterialTheme.typography.bodySmall) },
-        singleLine    = true,
-        modifier      = Modifier.fillMaxWidth(),
-        colors        = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor   = Charcoal,
-            unfocusedBorderColor = Border,
-            focusedLabelColor    = Charcoal,
-            unfocusedLabelColor  = MutedGray,
-        ),
-    )
-}
-
-@Composable
-private fun IconButton(
-    onClick: () -> Unit,
-    contentDescription: String,
-    background: Color  = White,
-    borderColor: Color = Border,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Box(
-        modifier = modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(background)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .semantics { this.contentDescription = contentDescription },
-        contentAlignment = Alignment.Center,
-        content          = { content() },
-    )
-}
-
-@Composable
-private fun SectionDivider(label: String) {
-    Row(
-        modifier              = Modifier.fillMaxWidth(),
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, color = MutedGray)
-        Box(Modifier.weight(1f).height(1.dp).background(Border))
-    }
-}
-
-@Composable
-private fun PlusCircle() {
-    Box(
-        modifier = Modifier
-            .size(20.dp)
-            .clip(CircleShape)
-            .background(SurfaceMuted)
-            .border(1.dp, Border, CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(Modifier.fillMaxWidth(0.5f).height(1.dp).background(MutedGray))
-        Box(Modifier.width(1.dp).fillMaxHeight(0.5f).background(MutedGray))
-    }
-}
-
-@Composable
-private fun LoadingDots(tint: Color) {
-    val alpha by rememberInfiniteTransition(label = "load").animateFloat(
-        initialValue = 0.3f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(600, easing = LinearEasing), RepeatMode.Reverse),
-        label = "alpha",
-    )
-    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        repeat(3) { Box(Modifier.size(5.dp).clip(CircleShape).alpha(alpha).background(tint)) }
-    }
-}
-
-private val TriangleShape = object : Shape {
-    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density) =
-        Outline.Generic(Path().apply {
-            moveTo(size.width * 0.15f, 0f)
-            lineTo(size.width, size.height / 2f)
-            lineTo(size.width * 0.15f, size.height)
-            close()
-        })
-}
-
-@Composable
-private fun PlayIcon(tint: Color, sizeDp: Int) {
-    Box(Modifier.size(sizeDp.dp).background(tint, TriangleShape))
-}
-
-@Composable
-private fun PauseIcon(tint: Color, sizeDp: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy((sizeDp * 0.2f).dp)) {
-        Box(Modifier.width((sizeDp * 0.28f).dp).height(sizeDp.dp).background(tint))
-        Box(Modifier.width((sizeDp * 0.28f).dp).height(sizeDp.dp).background(tint))
-    }
-}
-
-@Composable
-private fun LockIcon(tint: Color, sizeDp: Int) {
-    Box(Modifier.size(sizeDp.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Box(
-                Modifier
-                    .size(width = (sizeDp * 0.5f).dp, height = (sizeDp * 0.4f).dp)
-                    .border(2.dp, tint, RoundedCornerShape(topStart = 50.dp, topEnd = 50.dp))
-            )
-            Box(
-                Modifier
-                    .size(width = (sizeDp * 0.7f).dp, height = (sizeDp * 0.5f).dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(tint)
-            )
-        }
-    }
-}
-
-@Composable
-private fun SaveIcon(tint: Color) {
-    val notch = if (tint == White) DarkSurface else WarmWhite
-    Box(Modifier.size(16.dp).drawBehind {
-        val p = Path().apply {
-            moveTo(2.dp.toPx(), 0f); lineTo(size.width - 2.dp.toPx(), 0f)
-            lineTo(size.width, 2.dp.toPx()); lineTo(size.width, size.height)
-            lineTo(0f, size.height); lineTo(0f, 2.dp.toPx()); close()
-        }
-        drawPath(p, tint)
-        drawRect(
-            color   = notch,
-            topLeft = Offset(4.dp.toPx(), 0f),
-            size    = Size(size.width - 8.dp.toPx(), 5.dp.toPx()),
-        )
-    })
-}
-
