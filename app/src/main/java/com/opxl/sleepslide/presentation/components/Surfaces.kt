@@ -64,12 +64,14 @@ fun SurfaceCard(
     border: Color = Border,
     onClick: (() -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues(16.dp),
+    glow: Glow? = null,
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
         modifier = modifier
             .clip(shape)
             .background(background)
+            .glow(glow)
             .border(Dimens.hairline, border, shape)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(contentPadding),
@@ -83,6 +85,7 @@ fun GroupCard(
     modifier: Modifier = Modifier,
     background: Color = White,
     border: Color = Border,
+    glow: Glow? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(Dimens.cardRadius)
@@ -91,6 +94,7 @@ fun GroupCard(
             .fillMaxWidth()
             .clip(shape)
             .background(background)
+            .glow(glow)
             .border(Dimens.hairline, border, shape),
         content = content,
     )
@@ -241,6 +245,7 @@ fun IconCircle(
     modifier: Modifier = Modifier,
     size: Dp = Dimens.leadingCircle,
     border: Color? = null,
+    glow: Color? = null,          // faint highlight in this hue — list rows' only glow
     content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
@@ -248,6 +253,7 @@ fun IconCircle(
             .size(size)
             .clip(CircleShape)
             .background(background)
+            .circleGlow(glow)
             .then(if (border != null) Modifier.border(Dimens.hairline, border, CircleShape) else Modifier),
         contentAlignment = Alignment.Center,
         content = content,
