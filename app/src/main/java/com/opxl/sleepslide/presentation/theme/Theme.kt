@@ -105,18 +105,21 @@ private val DarkColors = darkColorScheme(
 // Shapes
 
 /**
- * SleepSlide deliberately avoids excessive rounding.
+ * One radius per role, so a screen never mixes five corner sizes (see [Dimens]).
  *
- * 4dp  -> buttons / compact controls
- * 8dp  -> cards
- * 12dp -> larger surfaces
+ * extraSmall -> tags and small badges
+ * small      -> inputs and square icon buttons
+ * medium     -> inner cards and menus
+ * large      -> cards and list groups
+ * extraLarge -> hero panels and sheets
+ * Buttons and chips are full pills ([androidx.compose.foundation.shape.CircleShape]).
  */
 val SleepSlideShapes = Shapes(
-    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
-    small = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
-    medium = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-    large = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.tagRadius),
+    small = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.controlRadius),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.cardRadius),
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.panelRadius)
 )
 
 // Extended SleepSlide design tokens
