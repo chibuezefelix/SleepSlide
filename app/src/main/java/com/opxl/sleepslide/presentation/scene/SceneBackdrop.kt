@@ -60,6 +60,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 import androidx.compose.ui.res.stringResource
+import com.opxl.sleepslide.presentation.components.Glow
+import com.opxl.sleepslide.presentation.components.glow
 import com.opxl.sleepslide.R
 
 /**
@@ -80,6 +82,7 @@ fun SceneBackdrop(
     horizontalPadding: Dp = Dimens.gutter,
     height: Dp? = null,            // fixed height; null = animate between the compact/full sizes
     showCaption: Boolean = true,   // the scene title in the bottom-left corner
+    glow: Glow? = null,            // soft light over the scrim; off unless the caller opts in
     overlay: (@Composable BoxScope.() -> Unit)? = null,   // content drawn over the scrim (Home hero)
 ) {
     // Re-pick only when the set of sounds changes, not on every volume tick
@@ -162,6 +165,7 @@ fun SceneBackdrop(
                         1.0f to ImageScrim.copy(alpha = if (overlay != null) 0.82f else 0.72f),
                     )
                 )
+                .glow(glow)
         )
         if (overlay != null) overlay()
         if (showCaption) Column(
