@@ -1,23 +1,20 @@
 package com.opxl.sleepslide.presentation.home
 
-
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,11 +30,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Divider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -51,47 +46,53 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.opxl.sleepslide.R
 import com.opxl.sleepslide.domain.model.Domain
-import com.opxl.sleepslide.domain.repository.CoachMarkScreens
+import com.opxl.sleepslide.presentation.components.CircleIconButton
+import com.opxl.sleepslide.presentation.components.DashedCard
+import com.opxl.sleepslide.presentation.components.GhostIconButton
+import com.opxl.sleepslide.presentation.components.Glyph
+import com.opxl.sleepslide.presentation.components.GlyphIcon
+import com.opxl.sleepslide.presentation.components.IconCircle
+import com.opxl.sleepslide.presentation.components.PrimaryPill
+import com.opxl.sleepslide.presentation.components.SectionLabel
+import com.opxl.sleepslide.presentation.components.SurfaceCard
+import com.opxl.sleepslide.presentation.components.Tag
+import com.opxl.sleepslide.presentation.components.displayTitle
+import com.opxl.sleepslide.presentation.components.glyph
 import com.opxl.sleepslide.presentation.scene.SceneBackdrop
 import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
+import com.opxl.sleepslide.domain.repository.CoachMarkScreens
 import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
 import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
 import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
-import com.opxl.sleepslide.ui.theme.OnPanel
-import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
-import com.opxl.sleepslide.ui.theme.DarkBackground
-import com.opxl.sleepslide.ui.theme.DarkBorder
-import com.opxl.sleepslide.ui.theme.DarkSurface
-import com.opxl.sleepslide.ui.theme.DarkText
-import com.opxl.sleepslide.ui.theme.LocalSleepSlideColors
+import com.opxl.sleepslide.ui.theme.Dimens
+import com.opxl.sleepslide.ui.theme.ImageScrim
 import com.opxl.sleepslide.ui.theme.MutedGray
+import com.opxl.sleepslide.ui.theme.OnImage
+import com.opxl.sleepslide.ui.theme.OnPanel
 import com.opxl.sleepslide.ui.theme.PaleBlue
 import com.opxl.sleepslide.ui.theme.PaleBlueText
-import com.opxl.sleepslide.ui.theme.PaleGreen
 import com.opxl.sleepslide.ui.theme.PaleGreenText
+import com.opxl.sleepslide.ui.theme.PaleRed
+import com.opxl.sleepslide.ui.theme.PaleRedText
 import com.opxl.sleepslide.ui.theme.PaleYellow
 import com.opxl.sleepslide.ui.theme.PaleYellowText
+import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.SurfaceMuted
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import com.opxl.sleepslide.ui.theme.White
-
 
 @Composable
 fun HomeScreen(
@@ -103,7 +104,6 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-
 
     // One-shot event handler
     LaunchedEffect(Unit) {
@@ -125,103 +125,74 @@ fun HomeScreen(
     }
 
     CoachMarkHost(viewModel = tutorial, labels = HOME_COACH_MARKS) {
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = WarmWhite,
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 40.dp),
-        ) {
-            item {
-                HomeHeader(
-                    greeting        = uiState.greeting,
-                    bluetooth       = uiState.bluetooth,
-                    onLibraryClick  = { viewModel.requestNewPreset() },
-                )
-            }
-
-item{
-            AnimatedVisibility(
-                visible = uiState.playback is HomeViewState.PlaybackUiState.Active ||
-                        uiState.playback is HomeViewState.PlaybackUiState.AudioFocusLost,
-                enter   = fadeIn(tween(300)) + slideInVertically { -it },
-                exit    = fadeOut(tween(200)),
+        Scaffold(
+            snackbarHost   = { SnackbarHost(snackbarHostState) },
+            containerColor = WarmWhite,
+        ) { innerPadding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(bottom = 40.dp),
             ) {
-                Column {
-                    // Scene for what's playing — tap opens the full player
-                    val active = uiState.playback as? HomeViewState.PlaybackUiState.Active
-                    val activeSounds = active?.activeMix?.layers?.map { it.sound }.orEmpty()
-                    if (activeSounds.isNotEmpty()) {
-                        Spacer(Modifier.height(8.dp))
-                        SceneBackdrop(
-                            sounds    = activeSounds,
-                            isPlaying = active?.status == Domain.PlaybackStatus.PLAYING,
-                            compact   = true,
-                            onTap     = { viewModel.navigateToPlayer() },
+                item {
+                    HomeHeader(
+                        greeting       = uiState.greeting,
+                        bluetooth      = uiState.bluetooth,
+                        onLibraryClick = { viewModel.requestNewPreset() },
+                    )
+                }
+
+                // The hero: what's playing, or what to pick up next. Always present once the
+                // screen has loaded, so the page has one anchor instead of bars sliding in and out.
+                item {
+                    val screen = uiState.screen
+                    if (screen !is HomeViewState.ScreenState.Loading) {
+                        HomeHero(
+                            playback   = uiState.playback,
+                            timer      = uiState.timer,
+                            resumeCard = (screen as? HomeViewState.ScreenState.Ready)?.resumeCard,
+                            onPlayPause = {
+                                val pb = uiState.playback
+                                if (pb is HomeViewState.PlaybackUiState.Active &&
+                                    pb.status == Domain.PlaybackStatus.PLAYING
+                                ) viewModel.pausePlayback()
+                                else viewModel.resumePlayback()
+                            },
+                            onStop   = { viewModel.stopPlayback() },
+                            onExpand = { viewModel.navigateToPlayer() },
+                            onResume = { viewModel.resumeLastPlayed() },
+                            onBrowse = { viewModel.requestNewPreset() },
                         )
-                        Spacer(Modifier.height(8.dp))
                     }
-                ActivePlaybackBar(
-                    playback       = uiState.playback,
-                    timer          = uiState.timer,
-                    onPlayPause    = {
-                        val pb = uiState.playback
-                        if (pb is HomeViewState.PlaybackUiState.Active &&
-                            pb.status == Domain.PlaybackStatus.PLAYING
-                        ) viewModel.pausePlayback()
-                        else viewModel.resumePlayback()
-                    },
-                    onStop         = { viewModel.stopPlayback() },
-                    onExpandPlayer = { viewModel.navigateToPlayer() },
-                )
+                }
+
+                item {
+                    AnimatedContent(
+                        targetState    = uiState.screen,
+                        transitionSpec = { fadeIn(tween(350)) togetherWith fadeOut(tween(200)) },
+                        label          = "home_screen_body",
+                    ) { screen ->
+                        when (screen) {
+                            is HomeViewState.ScreenState.Loading -> HomeLoadingBody()
+                            is HomeViewState.ScreenState.Empty   -> HomeEmptyBody(
+                                onBrowse = { viewModel.requestNewPreset() }
+                            )
+                            is HomeViewState.ScreenState.Error   -> HomeErrorBody(message = screen.message)
+                            is HomeViewState.ScreenState.Ready   -> HomeReadyBody(
+                                screen        = screen,
+                                uiState       = uiState,
+                                onPresetClick = { viewModel.launchPreset(it) },
+                                onPresetLong  = { viewModel.navigateToPreset(it.id) },
+                                onSoundClick  = { viewModel.onSoundClicked(it) },
+                                onAddPreset   = { viewModel.requestNewPreset() },
+                            )
+                        }
+                    }
                 }
             }
         }
-
-            item {
-                val screen = uiState.screen
-                if (screen is HomeViewState.ScreenState.Ready && screen.resumeCard != null) {
-                    SectionLabel("Continue")
-                    ResumeCard(
-                        resumeCard  = screen.resumeCard,
-                        isPlaying   = uiState.playback is HomeViewState.PlaybackUiState.Active &&
-                                (uiState.playback as HomeViewState.PlaybackUiState.Active).status ==Domain.PlaybackStatus.PLAYING,
-                        onClick     = { viewModel.resumeLastPlayed() },
-                    )
-                }
-            }
-
-
-            item {
-                AnimatedContent(
-                    targetState = uiState.screen,
-                    transitionSpec = {
-                        fadeIn(tween(350)) togetherWith fadeOut(tween(200))
-                    },
-                    label = "home_screen_body",
-                ) { screen ->
-                    when (screen) {
-                        is HomeViewState.ScreenState.Loading -> HomeLoadingBody()
-                        is HomeViewState.ScreenState.Empty   -> HomeEmptyBody(
-                            onBrowse = { viewModel.requestNewPreset() }
-                        )
-                        is HomeViewState.ScreenState.Error   -> HomeErrorBody(message = screen.message)
-                        is HomeViewState.ScreenState.Ready   -> HomeReadyBody(
-                            screen          = screen,
-                            uiState         = uiState,
-                            onPresetClick   = { viewModel.launchPreset(it) },
-                            onPresetLong    = { viewModel.navigateToPreset(it.id) },
-                            onSoundClick    = { viewModel.onSoundClicked(it) },
-                            onAddPreset     = { viewModel.requestNewPreset() },
-                        )
-                    }
-                }}
-        } // LazyColumn
-    } // Scaffold
-    } // CoachMarkHost
+    }
 }
 
 /** Anchor key → label for the first-visit coach marks; only laid-out targets are shown. */
@@ -234,65 +205,60 @@ private val HOME_COACH_MARKS = listOf(
     "browse"      to R.string.coach_home_browse,
 )
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Header
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 fun HomeHeader(
     greeting: HomeViewState.GreetingUiState,
     bluetooth: HomeViewState.BluetoothUiState,
-    onLibraryClick: () -> Unit
-){
-
-
+    onLibraryClick: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(horizontal = 24.dp)
-            .padding(top = 16.dp, bottom = 8.dp),
+            .padding(horizontal = Dimens.gutter)
+            .padding(top = 12.dp, bottom = 20.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier              = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment     = Alignment.CenterVertically,
         ) {
+            AppLogo()
             Row(
-                modifier = Modifier.weight(1f),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                AppLogo()
-//                Column {
-//                    Text(
-//                        text  = greeting.headline,
-//                        style = MaterialTheme.typography.headlineMedium,
-//                        color = Charcoal,
-//                    )
-//                    Spacer(Modifier.height(2.dp))
-//                    Text(
-//                        text  = greeting.subtext,
-//                        style = MaterialTheme.typography.bodyMedium,
-//                        color = MutedGray,
-//                    )
-//                }
-            }
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                if (bluetooth is HomeViewState.BluetoothUiState.Connected) {
-                    BluetoothChip()
-                }
-                LibraryIconButton(onClick = onLibraryClick)
+                if (bluetooth is HomeViewState.BluetoothUiState.Connected) BluetoothBadge()
+                CircleIconButton(
+                    onClick            = onLibraryClick,
+                    contentDescription = "Browse sounds",
+                    modifier           = Modifier.coachMarkAnchor("library"),
+                ) { GlyphIcon(Glyph.Plus, Charcoal, size = 18.dp) }
             }
         }
 
-        Spacer(Modifier.height(16.dp))
-//        Divider()
+        if (greeting.headline.isNotBlank()) {
+            Spacer(Modifier.height(24.dp))
+            Text(
+                text  = greeting.headline,
+                style = MaterialTheme.typography.headlineLarge,
+                color = Charcoal,
+            )
+            if (greeting.subtext.isNotBlank()) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text  = greeting.subtext,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MutedGray,
+                )
+            }
+        }
     }
-
 }
-
 
 @Composable
 private fun AppLogo() {
@@ -301,212 +267,207 @@ private fun AppLogo() {
         contentDescription = "SleepSlide",
         contentScale       = ContentScale.Crop,
         modifier           = Modifier
-            .size(44.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, Border, RoundedCornerShape(12.dp)),
+            .size(36.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .border(Dimens.hairline, Border, RoundedCornerShape(10.dp)),
     )
 }
 
 @Composable
-private fun BluetoothChip() {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(PaleBlue)
-            .padding(horizontal = 10.dp, vertical = 5.dp)
-            .semantics { contentDescription = "Bluetooth headphones connected" },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(5.dp)
-                .clip(CircleShape)
-                .background(PaleBlueText),
-        )
-        Text(
-            text  = "BT",
-            style = MaterialTheme.typography.labelSmall,
-            color = PaleBlueText,
-        )
-    }
+private fun BluetoothBadge() {
+    IconCircle(
+        background = PaleBlue,
+        size       = Dimens.iconButton,
+        modifier   = Modifier.semantics { contentDescription = "Bluetooth headphones connected" },
+    ) { GlyphIcon(Glyph.Bluetooth, PaleBlueText, size = 18.dp) }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Hero
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * One photo card that carries the current session: transport controls while something is
+ * playing, a "Continue" action when nothing is, and a nudge to build a first mix otherwise.
+ */
 @Composable
-private fun LibraryIconButton(onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Border, RoundedCornerShape(8.dp))
-            .background(White)
-            .clickable(onClick = onClick)
-            .coachMarkAnchor("library")
-            .semantics { contentDescription = "Browse sounds" },
-        contentAlignment = Alignment.Center,
-    ) {
-        // Plus icon — SVG primitive, 16×16
-        Box(
-            modifier = Modifier.size(16.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(Modifier.fillMaxWidth().height(1.5.dp).background(Charcoal))
-            Box(Modifier.width(1.5.dp).height(16.dp).background(Charcoal))
-        }
-    }
-}
-
-
-
-@Composable
-private fun ActivePlaybackBar(
+private fun HomeHero(
     playback: HomeViewState.PlaybackUiState,
     timer: HomeViewState.TimerUiState,
+    resumeCard: HomeViewState.ResumeCardState?,
     onPlayPause: () -> Unit,
     onStop: () -> Unit,
-    onExpandPlayer: () -> Unit,
+    onExpand: () -> Unit,
+    onResume: () -> Unit,
+    onBrowse: () -> Unit,
 ) {
-    val isPlaying = playback is HomeViewState.PlaybackUiState.Active &&
-            (playback as HomeViewState.PlaybackUiState.Active).status == Domain.PlaybackStatus.PLAYING
+    val active      = playback as? HomeViewState.PlaybackUiState.Active
+    val interrupted = playback as? HomeViewState.PlaybackUiState.AudioFocusLost
+    val isPlaying   = active?.status == Domain.PlaybackStatus.PLAYING
 
-    val presetName = (playback as? HomeViewState.PlaybackUiState.Active)?.activePresetName
-
-    val interrupted = playback is HomeViewState.PlaybackUiState.AudioFocusLost
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
-            .coachMarkAnchor("now_playing")
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (interrupted) PaleYellow else Panel)
-            .clickable(onClick = onExpandPlayer)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = when {
-                        interrupted -> "Sound paused"
-                        isPlaying   -> presetName ?: "Playing"
-                        else        -> "Paused"
-                    },
-                    style    = MaterialTheme.typography.titleSmall,
-                    color    = if (interrupted) PaleYellowText else OnPanel,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (timer is HomeViewState.TimerUiState.Active) {
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text  = "Stops in ${timer.remainingLabel}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (interrupted) PaleYellowText.copy(alpha = 0.7f)
-                        else OnPanel.copy(alpha = 0.6f),
-                    )
-                }
-                if (playback is HomeViewState.PlaybackUiState.AudioFocusLost &&
-                    playback.reason == Domain.AudioFocusLostReason.PHONE_CALL
-                ) {
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text  = "Resuming after call",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = PaleYellowText.copy(alpha = 0.7f),
-                    )
-                }
-            }
-
-            Spacer(Modifier.width(12.dp))
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                if (!interrupted) {
-                    PlayPauseButton(
-                        isPlaying = isPlaying,
-                        tint      = OnPanel,
-                        onClick   = onPlayPause,
-                    )
-                }
-                StopButton(
-                    tint    = if (interrupted) PaleYellowText else OnPanel.copy(alpha = 0.5f),
-                    onClick = onStop,
-                )
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun ResumeCard(
-    resumeCard:HomeViewState. ResumeCardState,
-    isPlaying: Boolean,
-    onClick: () -> Unit,
-) {
-    val name = when (resumeCard) {
+    val resumeName = when (resumeCard) {
         is HomeViewState.ResumeCardState.FromPreset       -> resumeCard.preset.name
         is HomeViewState.ResumeCardState.FromEphemeralMix -> "Last session"
+        null -> null
     }
-    val layerCount = when (resumeCard) {
-        is HomeViewState.ResumeCardState.FromPreset       -> resumeCard.preset.mix.layers.size
-        is HomeViewState.ResumeCardState.FromEphemeralMix -> resumeCard.mix.layers.size
-    }
-    val soundNames = when (resumeCard) {
-        is HomeViewState.ResumeCardState.FromPreset       ->
-            resumeCard.preset.mix.layers.joinToString(" · ") { it.sound.title }
-        is HomeViewState.ResumeCardState.FromEphemeralMix ->
-            resumeCard.mix.layers.joinToString(" · ") { it.sound.title }
+    val resumeSounds = when (resumeCard) {
+        is HomeViewState.ResumeCardState.FromPreset       -> resumeCard.preset.mix.layers.map { it.sound }
+        is HomeViewState.ResumeCardState.FromEphemeralMix -> resumeCard.mix.layers.map { it.sound }
+        null -> emptyList()
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-            .coachMarkAnchor("resume")
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Border, RoundedCornerShape(8.dp))
-            .background(White)
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+    val activeSounds = active?.activeMix?.layers?.map { it.sound }.orEmpty()
+    val heroSounds   = if (activeSounds.isNotEmpty()) activeSounds else resumeSounds
+    val context = LocalContext.current
+
+    // What the card says, and what tapping it does
+    val label: String
+    val title: String
+    val subtitle: String
+    val onTap: () -> Unit
+    when {
+        interrupted != null -> {
+            label    = "Paused"
+            title    = "Sound paused"
+            subtitle = if (interrupted.reason == Domain.AudioFocusLostReason.PHONE_CALL)
+                "Resuming after your call" else "Another app took over audio"
+            onTap    = onExpand
+        }
+        active != null -> {
+            label    = if (isPlaying) "Now playing" else "Paused"
+            title    = active.activePresetName ?: resumeName ?: "Your mix"
+            subtitle = activeSounds.joinToString(" · ") { it.displayTitle(context) }
+            onTap    = onExpand
+        }
+        resumeCard != null -> {
+            label    = "Continue"
+            title    = resumeName.orEmpty()
+            subtitle = resumeSounds.joinToString(" · ") { it.displayTitle(context) }
+            onTap    = onResume
+        }
+        else -> {
+            label    = "Tonight"
+            title    = "Build your first mix"
+            subtitle = "Layer up to three sounds and save them"
+            onTap    = onBrowse
+        }
+    }
+
+    SceneBackdrop(
+        sounds      = heroSounds,
+        isPlaying   = isPlaying,
+        height      = 224.dp,
+        showCaption = false,
+        onTap       = onTap,
+        modifier    = Modifier.padding(bottom = 4.dp),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text     = name,
-                style    = MaterialTheme.typography.titleMedium,
-                color    = Charcoal,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(3.dp))
-            Text(
-                text     = soundNames.ifBlank { "$layerCount sound${if (layerCount != 1) "s" else ""}" },
-                style    = MaterialTheme.typography.bodySmall,
-                color    = MutedGray,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        // Timer badge
+        if (timer is HomeViewState.TimerUiState.Active) {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(14.dp)
+                    .clip(CircleShape)
+                    .background(ImageScrim.copy(alpha = 0.45f))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                GlyphIcon(Glyph.Timer, OnImage, size = 14.dp)
+                Text(timer.remainingLabel, style = MaterialTheme.typography.labelMedium, color = OnImage)
+            }
         }
 
-        Spacer(Modifier.width(12.dp))
-
-        PlayPauseButton(
-            isPlaying = isPlaying,
-            tint      = Charcoal,
-            onClick   = onClick,
-        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp, vertical = 16.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (isPlaying) PlayingDot(OnImage)
+                Text(
+                    text  = label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = OnImage.copy(alpha = 0.72f),
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text     = title,
+                        style    = MaterialTheme.typography.titleLarge,
+                        color    = OnImage,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (subtitle.isNotBlank()) {
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text     = subtitle,
+                            style    = MaterialTheme.typography.bodySmall,
+                            color    = OnImage.copy(alpha = 0.72f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Row(
+                    verticalAlignment     = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.coachMarkAnchor(
+                        if (active != null || interrupted != null) "now_playing" else "resume"
+                    ),
+                ) {
+                    when {
+                        interrupted != null -> HeroGhostButton(Glyph.Stop, "Stop playback", onStop)
+                        active != null -> {
+                            HeroGhostButton(Glyph.Stop, "Stop playback", onStop)
+                            HeroMainButton(
+                                glyph              = if (isPlaying) Glyph.Pause else Glyph.Play,
+                                contentDescription = if (isPlaying) "Pause" else "Play",
+                                onClick            = onPlayPause,
+                            )
+                        }
+                        resumeCard != null -> HeroMainButton(Glyph.Play, "Play", onResume)
+                        else -> HeroMainButton(Glyph.Plus, "Browse sounds", onBrowse)
+                    }
+                }
+            }
+        }
     }
 }
 
+@Composable
+private fun HeroMainButton(glyph: Glyph, contentDescription: String, onClick: () -> Unit) {
+    GhostIconButton(
+        onClick            = onClick,
+        contentDescription = contentDescription,
+        size               = 52.dp,
+        background         = OnImage,
+    ) { GlyphIcon(glyph, ImageScrim, size = 22.dp) }
+}
 
+@Composable
+private fun HeroGhostButton(glyph: Glyph, contentDescription: String, onClick: () -> Unit) {
+    GhostIconButton(
+        onClick            = onClick,
+        contentDescription = contentDescription,
+        size               = 40.dp,
+        background         = OnImage.copy(alpha = 0.16f),
+    ) { GlyphIcon(glyph, OnImage, size = 20.dp) }
+}
+
+@Composable
+private fun PlayingDot(tint: Color) {
+    Box(Modifier.size(6.dp).clip(CircleShape).background(tint))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Body
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun HomeReadyBody(
@@ -517,52 +478,51 @@ private fun HomeReadyBody(
     onSoundClick: (Domain.Sound) -> Unit,
     onAddPreset: () -> Unit,
 ) {
+    val activeId = (uiState.playback as? HomeViewState.PlaybackUiState.Active)?.activePresetId
     Column {
-        // Pinned presets
         if (screen.pinnedPresets.isNotEmpty()) {
-            SectionLabel("Pinned")
+            HomeSectionLabel("Pinned")
             PresetGrid(
-                presets   = screen.pinnedPresets,
-                activeId  = (uiState.playback as? HomeViewState.PlaybackUiState.Active)?.activePresetId,
-                onClick   = onPresetClick,
+                presets     = screen.pinnedPresets,
+                activeId    = activeId,
+                onClick     = onPresetClick,
                 onLongClick = onPresetLong,
                 anchorFirst = true,
             )
         }
 
-        // Recent presets
         if (screen.recentPresets.isNotEmpty()) {
-            SectionLabel("Recent")
+            HomeSectionLabel("Recent")
             PresetGrid(
-                presets   = screen.recentPresets,
-                activeId  = (uiState.playback as? HomeViewState.PlaybackUiState.Active)?.activePresetId,
-                onClick   = onPresetClick,
+                presets     = screen.recentPresets,
+                activeId    = activeId,
+                onClick     = onPresetClick,
                 onLongClick = onPresetLong,
                 anchorFirst = screen.pinnedPresets.isEmpty(),
             )
         }
 
-        // Add preset CTA — only shown when not at limit
+        Spacer(Modifier.height(12.dp))
         if (!uiState.hasReachedFreePresetLimit) {
             AddPresetButton(onClick = onAddPreset)
         } else {
             PresetLimitBanner()
         }
 
-        // Recently played sounds
         if (screen.recentSounds.isNotEmpty()) {
-            SectionLabel("Sounds you've used")
-            RecentSoundsRow(
-                sounds  = screen.recentSounds,
-                onClick = onSoundClick,
-            )
+            HomeSectionLabel("Sounds you've used")
+            RecentSoundsRow(sounds = screen.recentSounds, onClick = onSoundClick)
         }
 
-        // Stats row
         if (screen.totalListenedMs > 0L) {
             StatsRow(totalListenedMs = screen.totalListenedMs)
         }
     }
+}
+
+@Composable
+private fun HomeSectionLabel(text: String) {
+    SectionLabel(text, modifier = Modifier.padding(horizontal = Dimens.gutter))
 }
 
 @Composable
@@ -576,13 +536,15 @@ private fun PresetGrid(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = Dimens.gutter),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         presets.chunked(2).forEachIndexed { rowIndex, rowPresets ->
             Row(
-                modifier            = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier              = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 rowPresets.forEachIndexed { colIndex, preset ->
                     PresetCard(
@@ -592,22 +554,17 @@ private fun PresetGrid(
                         onLongClick = { onLongClick(preset) },
                         modifier    = Modifier
                             .weight(1f)
+                            .fillMaxHeight()
                             .then(if (anchorFirst && rowIndex == 0 && colIndex == 0) Modifier.coachMarkAnchor("preset") else Modifier),
-                        animDelay   = (rowIndex * 2 + colIndex) * 60,
                     )
                 }
-                // Pad incomplete rows
-                if (rowPresets.size == 1) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+                if (rowPresets.size == 1) Spacer(Modifier.weight(1f))
             }
         }
     }
-    Spacer(Modifier.height(16.dp))
 }
 
-
-
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PresetCard(
     preset: Domain.Preset,
@@ -615,71 +572,107 @@ private fun PresetCard(
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
-    animDelay: Int = 0,
 ) {
-    val extended = LocalSleepSlideColors.current
+    val bg     by animateColorAsState(if (isActive) Panel else White,  tween(250), label = "preset_bg")
+    val stroke by animateColorAsState(if (isActive) Panel else Border, tween(250), label = "preset_border")
+    val textColor = if (isActive) OnPanel else Charcoal
+    val subColor  = if (isActive) OnPanel.copy(alpha = 0.6f) else MutedGray
+    val shape = RoundedCornerShape(Dimens.cardRadius)
 
-    val bgColor    = if (isActive) Panel else White
-    val textColor  = if (isActive) OnPanel else Charcoal
-    val subColor   = if (isActive) OnPanel.copy(alpha = 0.6f) else MutedGray
-    val borderColor = if (isActive) Color.Transparent else Border
+    val context = LocalContext.current
+    val soundNames = preset.mix.layers.take(3).joinToString(" · ") { it.sound.displayTitle(context) }
+    val layerCount = preset.mix.layers.size
 
-    val soundNames = preset.mix.layers
-        .take(3)
-        .joinToString(" · ") { it.sound.title }
-
-    Box(
+    Column(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .clickable(onClick = onClick)
+            .clip(shape)
+            .background(bg)
+            .border(Dimens.hairline, stroke, shape)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(16.dp)
             .semantics {
-                contentDescription = "${preset.name}, ${preset.mix.layers.size} sounds" +
+                contentDescription = "${preset.name}, $layerCount sounds" +
                         if (isActive) ", currently playing" else ""
             },
     ) {
-        Column {
-            // Emoji or active indicator
-            if (preset.emoji != null) {
-                Text(
-                    text  = preset.emoji,
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-            } else if (isActive) {
-                ActivePulse()
-            } else {
-                SoundCountBadge(
-                    count      = preset.mix.layers.size,
-                    background = extended.mutedSurface,
-                )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            when {
+                isActive -> IconCircle(OnPanel.copy(alpha = 0.14f), size = 36.dp) {
+                    GlyphIcon(Glyph.WaveBars, OnPanel, size = 18.dp)
+                }
+                preset.emoji != null -> IconCircle(SurfaceMuted, size = 36.dp) {
+                    Text(preset.emoji, style = MaterialTheme.typography.titleMedium)
+                }
+                else -> IconCircle(SurfaceMuted, size = 36.dp) {
+                    Text("$layerCount", style = MaterialTheme.typography.labelMedium, color = MutedGray)
+                }
             }
+            Spacer(Modifier.weight(1f))
+            if (preset.isPinned && !isActive) GlyphIcon(Glyph.Pin, MutedGray, size = 14.dp)
+        }
 
-            Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(18.dp))
 
-            Text(
-                text     = preset.name,
-                style    = MaterialTheme.typography.titleSmall,
-                color    = textColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        Text(
+            text     = preset.name,
+            style    = MaterialTheme.typography.titleMedium,
+            color    = textColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text     = soundNames.ifBlank { "$layerCount sound layers" },
+            style    = MaterialTheme.typography.bodySmall,
+            color    = subColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
 
-            Spacer(Modifier.height(2.dp))
-
-            Text(
-                text     = soundNames.ifBlank { "${preset.mix.layers.size} sound layers" },
-                style    = MaterialTheme.typography.bodySmall,
-                color    = subColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+@Composable
+private fun AddPresetButton(onClick: () -> Unit) {
+    DashedCard(
+        onClick  = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Dimens.gutter)
+            .coachMarkAnchor("add_mix"),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconCircle(SurfaceMuted, size = 36.dp) { GlyphIcon(Glyph.Plus, Charcoal, size = 16.dp) }
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Build a new mix", style = MaterialTheme.typography.titleSmall, color = Charcoal)
+                Text("Pick sounds from the library", style = MaterialTheme.typography.bodySmall, color = MutedGray)
+            }
+            GlyphIcon(Glyph.ChevronRight, MutedGray, size = 14.dp)
         }
     }
 }
 
-
+@Composable
+private fun PresetLimitBanner() {
+    SurfaceCard(
+        modifier   = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = Dimens.gutter),
+        background = PaleYellow,
+        border     = Color.Transparent,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            GlyphIcon(Glyph.Sparkle, PaleYellowText, size = 18.dp)
+            Text(
+                text  = "10 preset limit reached — unlock all for unlimited",
+                style = MaterialTheme.typography.bodySmall,
+                color = PaleYellowText,
+            )
+        }
+    }
+}
 
 @Composable
 private fun RecentSoundsRow(
@@ -687,143 +680,62 @@ private fun RecentSoundsRow(
     onClick: (Domain.Sound) -> Unit,
 ) {
     LazyRow(
-        contentPadding        = PaddingValues(horizontal = 24.dp),
+        contentPadding        = PaddingValues(horizontal = Dimens.gutter),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        itemsIndexed(sounds) { _, sound ->
+        items(sounds, key = { it.id }) { sound ->
             SoundPill(sound = sound, onClick = { onClick(sound) })
         }
     }
-    Spacer(Modifier.height(24.dp))
 }
 
+@Composable
+private fun SoundPill(sound: Domain.Sound, onClick: () -> Unit) {
+    val title = sound.displayTitle()
+    Row(
+        modifier = Modifier
+            .clip(CircleShape)
+            .background(White)
+            .border(Dimens.hairline, Border, CircleShape)
+            .combinedClickable(onClick = onClick)
+            .padding(start = 12.dp, end = 16.dp, top = 9.dp, bottom = 9.dp)
+            .semantics { contentDescription = "$title sound" },
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        GlyphIcon(sound.category.glyph, categoryTint(sound.category), size = 16.dp)
+        Text(text = title, style = MaterialTheme.typography.labelLarge, color = Charcoal)
+    }
+}
+
+@Composable
+private fun categoryTint(category: Domain.SoundCategory): Color = when (category) {
+    Domain.SoundCategory.TINNITUS -> PaleBlueText
+    Domain.SoundCategory.NATURE   -> PaleGreenText
+    Domain.SoundCategory.ASMR     -> PaleYellowText
+    else                          -> MutedGray
+}
 
 @Composable
 private fun StatsRow(totalListenedMs: Long) {
     val hours   = totalListenedMs / 3_600_000L
     val minutes = (totalListenedMs % 3_600_000L) / 60_000L
-    val label   = when {
-        hours > 0   -> "${hours}h ${minutes}m of calm"
-        minutes > 0 -> "${minutes}m of calm"
-        else        -> "Your first session"
+    val value   = when {
+        hours > 0   -> "${hours}h ${minutes}m"
+        minutes > 0 -> "${minutes}m"
+        else        -> "<1m"
     }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(SurfaceMuted)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = Dimens.gutter)
+            .padding(top = 28.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment     = Alignment.CenterVertically,
     ) {
-        Text(
-            text  = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MutedGray,
-        )
-        Text(
-            text  = "Total",
-            style = MaterialTheme.typography.labelSmall,
-            color = MutedGray.copy(alpha = 0.6f),
-        )
+        Text("Time spent in calm", style = MaterialTheme.typography.bodySmall, color = MutedGray)
+        Text(value, style = MaterialTheme.typography.titleMedium, color = Charcoal)
     }
-    Spacer(Modifier.height(24.dp))
-}
-
-
-@Composable
-private fun SoundPill(
-    sound: Domain.Sound,
-    onClick: () -> Unit,
-) {
-    val extended = LocalSleepSlideColors.current
-    val (bg, fg) = when (sound.category.name) {
-        "TINNITUS" -> PaleBlue to PaleBlueText
-        "NATURE"   -> PaleGreen to PaleGreenText
-        "ASMR"     -> PaleYellow to PaleYellowText
-        else       -> extended.mutedSurface to MutedGray
-    }
-
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(bg)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 9.dp)
-            .semantics { contentDescription = "${sound.title} sound" },
-    ) {
-        Text(
-            text  = sound.title,
-            style = MaterialTheme.typography.labelMedium,
-            color = fg,
-        )
-    }
-}
-
-
-
-@Composable
-private fun AddPresetButton(onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-            .coachMarkAnchor("add_mix")
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, Border, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(SurfaceMuted),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(Modifier.fillMaxWidth(0.5f).height(1.5.dp).background(Charcoal))
-            Box(Modifier.width(1.5.dp).fillMaxHeight(0.5f).background(Charcoal))
-        }
-        Text(
-            text  = "Build a new mix",
-            style = MaterialTheme.typography.titleSmall,
-            color = Charcoal,
-        )
-    }
-    Spacer(Modifier.height(8.dp))
-}
-
-
-
-@Composable
-private fun PresetLimitBanner() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(PaleYellow)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(6.dp)
-                .clip(CircleShape)
-                .background(PaleYellowText),
-        )
-        Text(
-            text  = "10 preset limit reached — unlock all for unlimited",
-            style = MaterialTheme.typography.bodySmall,
-            color = PaleYellowText,
-        )
-    }
-    Spacer(Modifier.height(8.dp))
 }
 
 @Composable
@@ -831,225 +743,64 @@ private fun HomeLoadingBody() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(horizontal = Dimens.gutter, vertical = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        repeat(2) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(96.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Border),
-            )
-            Spacer(Modifier.height(8.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(224.dp)
+                .clip(RoundedCornerShape(Dimens.panelRadius))
+                .background(SurfaceMuted),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            repeat(2) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(120.dp)
+                        .clip(RoundedCornerShape(Dimens.cardRadius))
+                        .background(SurfaceMuted),
+                )
+            }
         }
     }
 }
-
 
 @Composable
 private fun HomeEmptyBody(onBrowse: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 64.dp),
+            .padding(horizontal = Dimens.gutter, vertical = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(
-            text  = "No sounds yet",
-            style = MaterialTheme.typography.headlineSmall,
-            color = Charcoal,
-        )
+        Text("No sounds yet", style = MaterialTheme.typography.headlineSmall, color = Charcoal)
+        Spacer(Modifier.height(6.dp))
         Text(
             text  = "Pick a sound from the library to build your first mix.",
             style = MaterialTheme.typography.bodyMedium,
             color = MutedGray,
         )
-        Spacer(Modifier.height(8.dp))
-        Box(
-            modifier = Modifier
-                .coachMarkAnchor("browse")
-                .clip(RoundedCornerShape(6.dp))
-                .background(Charcoal)
-                .clickable(onClick = onBrowse)
-                .padding(horizontal = 24.dp, vertical = 12.dp),
-        ) {
-            Text(
-                text  = "Browse sounds",
-                style = MaterialTheme.typography.labelLarge,
-                color = White,
-            )
-        }
+        Spacer(Modifier.height(20.dp))
+        PrimaryPill(
+            text     = "Browse sounds",
+            onClick  = onBrowse,
+            modifier = Modifier.coachMarkAnchor("browse"),
+        )
     }
 }
-
 
 @Composable
 private fun HomeErrorBody(message: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 64.dp),
+            .padding(horizontal = Dimens.gutter, vertical = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .background(LocalSleepSlideColors.current.paleRed)
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-        ) {
-            Text(
-                text  = "Error",
-                style = MaterialTheme.typography.labelMedium,
-                color = LocalSleepSlideColors.current.paleRedText,
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text  = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MutedGray,
-        )
+        Tag("Error", PaleRed, PaleRedText)
+        Text(message, style = MaterialTheme.typography.bodyMedium, color = MutedGray)
     }
 }
-
-
-
-@Composable
-private fun SectionLabel(label: String) {
-    Text(
-        text     = label.uppercase(),
-        style    = MaterialTheme.typography.labelSmall,
-        color    = MutedGray,
-        modifier = Modifier
-            .padding(horizontal = 24.dp)
-            .padding(top = 24.dp, bottom = 10.dp),
-    )
-}
-
-@Composable
-private fun Divider() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(1.dp)
-            .background(Border),
-    )
-}
-
-
-
-@Composable
-private fun ActivePulse() {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        repeat(3) { i ->
-            val height = when (i) { 0 -> 8.dp; 1 -> 14.dp; else -> 8.dp }
-            Box(
-                modifier = Modifier
-                    .width(2.dp)
-                    .height(height)
-                    .clip(RoundedCornerShape(1.dp))
-                    .background(White.copy(alpha = 0.7f)),
-            )
-        }
-    }
-}
-
-
-@Composable
-private fun SoundCountBadge(count: Int, background: Color) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(background)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-    ) {
-        Text(
-            text  = "$count",
-            style = MaterialTheme.typography.labelSmall,
-            color = MutedGray,
-        )
-    }
-}
-
-
-
-@Composable
-private fun PlayPauseButton(
-    isPlaying: Boolean,
-    tint: Color,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick)
-            .semantics {
-                contentDescription = if (isPlaying) "Pause" else "Play"
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        if (isPlaying) {
-            // Two vertical bars = pause
-            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                Box(Modifier.width(2.5.dp).height(12.dp).background(tint))
-                Box(Modifier.width(2.5.dp).height(12.dp).background(tint))
-            }
-        } else {
-            // Right-pointing triangle = play
-            Box(
-                modifier = Modifier
-                    .size(12.dp)
-                    .background(
-                        color = tint,
-                        shape = object : androidx.compose.ui.graphics.Shape {
-                            override fun createOutline(
-                                size: androidx.compose.ui.geometry.Size,
-                                layoutDirection: androidx.compose.ui.unit.LayoutDirection,
-                                density: androidx.compose.ui.unit.Density,
-                            ) = androidx.compose.ui.graphics.Outline.Generic(
-                                androidx.compose.ui.graphics.Path().apply {
-                                    moveTo(0f, 0f)
-                                    lineTo(size.width, size.height / 2)
-                                    lineTo(0f, size.height)
-                                    close()
-                                }
-                            )
-                        }
-                    ),
-            )
-        }
-    }
-}
-
-
-
-@Composable
-private fun StopButton(
-    tint: Color,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .clickable(onClick = onClick)
-            .semantics { contentDescription = "Stop playback" },
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            Modifier
-                .size(10.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(tint),
-        )
-    }
-}
-
