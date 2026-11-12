@@ -126,6 +126,7 @@ val SleepSlideShapes = Shapes(
 
 @Immutable
 data class SleepSlideExtendedColors(
+    val isDark: Boolean,
     val bone: Color,
     val ground: Color,
     val surface: Color,
@@ -152,6 +153,7 @@ data class SleepSlideExtendedColors(
 )
 
 private val LightExtendedColors = SleepSlideExtendedColors(
+    isDark = false,
     bone = LightPalette.Bone,
     ground = LightPalette.WarmWhite,
     surface = LightPalette.White,
@@ -178,6 +180,7 @@ private val LightExtendedColors = SleepSlideExtendedColors(
 )
 
 private val DarkExtendedColors = SleepSlideExtendedColors(
+    isDark = true,
     bone = DarkSurfaceVariant,
     ground = DarkBackground,
     surface = DarkSurface,
