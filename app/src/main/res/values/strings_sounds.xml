@@ -28,6 +28,8 @@
     <string name="sound_title_binaural_theta">Theta Beats · 6 Hz</string>
     <string name="sound_title_binaural_delta">Delta Beats · 2 Hz</string>
     <string name="sound_title_asmr_tap">Wooden Taps</string>
+    <string name="sound_title_fan">Box Fan</string>
+    <string name="sound_title_wind_soft">Soft Wind</string>
 
     <!-- Sound categories -->
     <string name="sound_category_tinnitus">Tinnitus</string>

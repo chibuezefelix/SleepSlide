@@ -23,8 +23,8 @@ import com.opxl.sleepslide.BuildConfig
  *           · tinnitus (notched therapy) · headphones (binaural / ASMR — stereo placement is lost on a speaker)
  *   asmr:   asmr (every ASMR sound) · tapping
  *
- * Noise colours are synthesised by tools/gen_noise.py and binaural beats by
- * tools/gen_binaural.py — loop-perfect, no licence. For notched noise, frequencyHz is
+ * Noise colours are synthesised by tools/gen_noise.py, binaural beats by
+ * tools/gen_binaural.py, and the fan and wind by tools/gen_ambient.py — loop-perfect, no licence. For notched noise, frequencyHz is
  * the notch centre.
  * Field recordings were cleaned with tools/oggtool.py; provenance in docs/SOUND_CREDITS.md.
  */
@@ -56,10 +56,16 @@ internal object BundledSoundCatalogue {
         Domain.Sound(id = "pond",           title = "Pond at Dawn",   category = NATURE, assetPath = "sounds/nature/pond.ogg",           tags = listOf("water", "garden", "birds", "day", "calm")),
         Domain.Sound(id = "night_crickets", title = "Night Crickets", category = NATURE, assetPath = "sounds/nature/night_crickets.ogg", tags = listOf("forest", "garden", "night", "calm")),
 
+        // ── Wind (synthesised by tools/gen_ambient.py, 47 s seamless loop) ─────────
+        // Gusts swell ~7 dB over 6-24 s, so it is not tagged baby ("steady, event-free").
+        Domain.Sound(id = "wind_soft",   title = "Soft Wind",       category = NATURE, assetPath = "sounds/nature/wind_soft.wav",   tags = listOf("calm", "night", "deep")),
+
         // ── Ambient ────────────────────────────────────────────────────────────────
         Domain.Sound(id = "fireplace",   title = "Fireplace",       category = AMBIENT, assetPath = "sounds/ambient/fireplace.ogg",   tags = listOf("fire", "cozy", "indoor", "evening")),
         Domain.Sound(id = "deep_rumble", title = "Deep Ocean Vent", category = AMBIENT, assetPath = "sounds/ambient/deep_rumble.ogg", tags = listOf("deep", "water", "hearing", "masking", "baby"), frequencyHz = 100),
         Domain.Sound(id = "womb_heart",  title = "Womb & Heartbeat", category = AMBIENT, assetPath = "sounds/nature/womb_heart_1.ogg", tags = listOf("baby", "deep", "calm", "masking", "night")),
+        // Synthesised by tools/gen_ambient.py, 24 s seamless loop; steady and event-free.
+        Domain.Sound(id = "fan",         title = "Box Fan",         category = AMBIENT, assetPath = "sounds/ambient/fan.wav",         tags = listOf("indoor", "calm", "night", "hearing", "masking", "baby")),
 
         // ── Binaural (synthesised stereo, 12 s seamless loops — headphones only) ──
         Domain.Sound(id = "binaural_alpha", title = "Alpha Beats · 10 Hz", category = BINAURAL, assetPath = "sounds/binaural/alpha.wav", tags = listOf("binaural", "headphones", "calm", "evening"), isPremium = true),

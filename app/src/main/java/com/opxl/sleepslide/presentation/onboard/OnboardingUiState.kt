@@ -52,7 +52,7 @@ val ONBOARDING_PATHS = listOf(
         description = R.string.onboarding_path_general_description,
         whoIsThisFor = R.string.onboarding_path_general_who,
         sounds      = listOf(
-            R.string.onboarding_pill_rain, R.string.onboarding_pill_ocean,
+            R.string.onboarding_pill_rain, R.string.onboarding_pill_wind,
             R.string.onboarding_pill_forest, R.string.onboarding_pill_fireplace,
         ),
     ),
