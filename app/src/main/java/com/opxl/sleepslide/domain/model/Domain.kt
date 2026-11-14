@@ -194,6 +194,9 @@ object Domain {
 
         // One-time "binaural needs headphones" hint in the Library
         val hasSeenHeadphonesHint: Boolean      = false,
+
+        // Quick Start (reminder button, Quick Settings tile): start the last-used timer too
+        val isQuickStartTimerEnabled: Boolean   = true,
     )
 
     enum class ThemeMode { LIGHT, DARK, SYSTEM, SCHEDULED }

@@ -40,6 +40,8 @@ interface UserPreferencesRepository {
 
     suspend fun setWindDownTime(hour: Int, minute: Int)
 
+    suspend fun setQuickStartTimerEnabled(enabled: Boolean)
+
     suspend fun markNotificationPermissionRequested()
 
     suspend fun markHeadphonesHintSeen()

@@ -13,6 +13,8 @@ import com.opxl.sleepslide.domain.repository.PresetRepository
 import com.opxl.sleepslide.domain.repository.SoundRepository
 import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
 import com.opxl.sleepslide.domain.service.PlaybackGate
+import com.opxl.sleepslide.domain.service.QuickStartService
+import com.opxl.sleepslide.domain.service.ResumePicker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -52,6 +54,7 @@ class HomeViewModel @Inject constructor(
     private val entitlementObserver: EntitlementObserver,
     private val mixSerializer: MixSerializer,
     private val playbackGate: PlaybackGate,
+    private val quickStartService: QuickStartService,
 ) : ViewModel() {
 
 
@@ -88,44 +91,29 @@ class HomeViewModel @Inject constructor(
 
     fun resumeLastPlayed() {
         viewModelScope.launch {
-            val service = audioServiceHolder.current
-            if (service == null) {
+            if (audioServiceHolder.current == null) {
                 _events.send(HomeViewState.HomeEvent.ShowServiceUnavailableSnackbar)
                 return@launch
             }
 
-            val state = uiState.value.screen as? HomeViewState.ScreenState.Ready ?: return@launch
-            val resume = state.resumeCard ?: run {
-                _events.send(HomeViewState.HomeEvent.NavigateToLibrary)
-                return@launch
-            }
-
-            runCatching {
-                when (resume) {
-                    is HomeViewState.ResumeCardState.FromPreset -> {
-                        val preset = presetRepository.getById(resume.preset.id)
-                            ?: return@launch
-                        val mix = gatedMix(preset.mix) ?: return@launch
-                        service.play(mix)
-                        presetRepository.recordUsed(preset.id)
-                        userPreferencesRepository.setLastPlayedPreset(preset.id)
-                        _events.send(HomeViewState.HomeEvent.PlaybackStarted(preset.name))
-                    }
-                    is HomeViewState.ResumeCardState.FromEphemeralMix -> {
-                        val mix = gatedMix(resume.mix) ?: return@launch
-                        service.play(mix)
-                        // The full mix, locked layers included — they come back once premium is unlocked
-                        userPreferencesRepository.setLastPlayedEphemeralMix(
-                            mixSerializer.serialize(resume.mix)
-                        )
-                        _events.send(HomeViewState.HomeEvent.PlaybackStarted(null))
-                    }
+            // Same code path as the widget, tile and reminder button; Home keeps its 24 h limit
+            // and does not start a timer (the user is looking at the app and can pick one).
+            val outcome = quickStartService.start(
+                QuickStartService.Options(maxAgeMs = RESUME_STALENESS_MS, applyTimer = false)
+            )
+            when (outcome) {
+                is QuickStartService.Outcome.Started -> {
+                    _events.send(HomeViewState.HomeEvent.PlaybackStarted(outcome.presetName))
+                    _events.send(HomeViewState.HomeEvent.NavigateToPlayer)
                 }
-                _events.send(HomeViewState.HomeEvent.NavigateToPlayer)
-            }.onFailure { e ->
-                _events.send(HomeViewState.HomeEvent.ShowError(
-                    e.message ?: "Could not resume playback"
-                ))
+                is QuickStartService.Outcome.AlreadyPlaying ->
+                    _events.send(HomeViewState.HomeEvent.NavigateToPlayer)
+                // The gate has already told the user which layers are locked.
+                is QuickStartService.Outcome.NeedsUpgrade -> Unit
+                is QuickStartService.Outcome.NothingToPlay ->
+                    _events.send(HomeViewState.HomeEvent.NavigateToLibrary)
+                is QuickStartService.Outcome.Failed ->
+                    _events.send(HomeViewState.HomeEvent.ShowError(outcome.reason))
             }
         }
     }
@@ -475,37 +463,20 @@ class HomeViewModel @Inject constructor(
         recentPresets: List<Domain.Preset>,
     ): HomeViewState.ResumeCardState? {
         val now = System.currentTimeMillis()
-
-        // Priority 1: last used preset within 24 hours
-        val lastPresetId = prefs.lastPlayedPresetId
-        if (lastPresetId != null) {
-            val preset = recentPresets.find { it.id == lastPresetId }
-            val lastUsedAt = preset?.lastUsedAt
-            if (preset != null && lastUsedAt != null && (now - lastUsedAt) < RESUME_STALENESS_MS) {
-                return HomeViewState.ResumeCardState.FromPreset(preset, lastUsedAt)
-            }
+        return when (val pick = ResumePicker.pick(
+            prefs          = prefs,
+            presets        = recentPresets,
+            now            = now,
+            maxAgeMs       = RESUME_STALENESS_MS,
+            deserializeMix = { mixSerializer.deserialize(it) },
+        )) {
+            is ResumePicker.Pick.FromPreset ->
+                HomeViewState.ResumeCardState.FromPreset(pick.preset, pick.lastUsedAt)
+            // No timestamp is stored for unsaved mixes; assume 2 h ago for display.
+            is ResumePicker.Pick.FromMix ->
+                HomeViewState.ResumeCardState.FromEphemeralMix(pick.mix, now - 2 * 60 * 60 * 1000L)
+            null -> null
         }
-
-        // Priority 2: most recently used preset from the list (even without explicit lastPlayed pref)
-        val mostRecent = recentPresets
-            .filter { it.lastUsedAt != null && (now - it.lastUsedAt!!) < RESUME_STALENESS_MS }
-            .maxByOrNull { it.lastUsedAt!! }
-        if (mostRecent != null) {
-            return HomeViewState.ResumeCardState.FromPreset(mostRecent, mostRecent.lastUsedAt!!)
-        }
-
-        // Priority 3: last played ephemeral mix (Sandra's un-saved sessions)
-        val mixJson = prefs.lastPlayedMixJson
-        if (mixJson != null) {
-            val mix = runCatching { mixSerializer.deserialize(mixJson) }.getOrNull()
-            if (mix != null && !mix.isEmpty) {
-                // Approximate timestamp from the mix itself — no dedicated timestamp on ephemeral
-                val approxTimestamp = now - (2 * 60 * 60 * 1000L) // assume 2h ago as fallback
-                return HomeViewState.ResumeCardState.FromEphemeralMix(mix, approxTimestamp)
-            }
-        }
-
-        return null
     }
 
 
