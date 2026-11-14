@@ -29,6 +29,7 @@ class SleepSlideApp : Application(), Configuration.Provider {
     @Inject lateinit var playHistoryRepository: PlayHistoryRepositoryImpl
     @Inject lateinit var purchaseService: PurchaseServiceImpl
     @Inject lateinit var playSessionTracker: PlaySessionTracker
+    @Inject lateinit var widgetUpdater: com.opxl.sleepslide.presentation.widget.WidgetUpdater
     @Inject @ApplicationScope lateinit var appScope: CoroutineScope
     @Inject lateinit var windDownRepository: com.opxl.sleepslide.domain.repository.WindDownRepository
     @Inject lateinit var windDownNotificationService: com.opxl.sleepslide.domain.service.WindDownNotificationService
@@ -45,6 +46,7 @@ class SleepSlideApp : Application(), Configuration.Provider {
         // RevenueCat is configured by PurchaseModule.providePurchases() during Hilt
         // injection above — it must exist before PurchaseService is constructed.
         playSessionTracker.start()
+        widgetUpdater.start()
         runStartupSequence()
     }
 

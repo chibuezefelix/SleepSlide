@@ -23,6 +23,7 @@ room                    = "2.8.4"
 datastore               = "1.1.1"
 media3                  = "1.4.1"   # ExoPlayer + MediaSessionService
 workManager             = "2.9.1"
+glance                  = "1.1.1"   # home-screen widget
 revenuecat              = "10.21.1"
 coroutines              = "1.9.0"
 splashscreen            = "1.0.1"
@@ -75,6 +76,7 @@ media3-ui               = { group = "androidx.media3", name = "media3-ui",      
 media3-common           = { group = "androidx.media3", name = "media3-common",            version.ref = "media3" }
 
 workmanager-ktx         = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
+glance-appwidget        = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 
 
 revenuecat              = { group = "com.revenuecat.purchases", name = "purchases",      version.ref = "revenuecat" }

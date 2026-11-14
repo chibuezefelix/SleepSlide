@@ -147,6 +147,7 @@ dependencies {
 
     // WorkManager + Hilt-Work
     implementation(libs.workmanager.ktx)
+    implementation(libs.glance.appwidget)
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
 
