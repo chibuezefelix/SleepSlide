@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.repository.CoachMarkScreens
 import org.json.JSONArray
 
 
@@ -25,6 +26,16 @@ object PrefKeys {
     val IS_HIGH_CONTRAST            = booleanPreferencesKey("is_high_contrast")
     val LAST_PLAYED_PRESET_ID       = longPreferencesKey("last_played_preset_id")
     val LAST_PLAYED_MIX_JSON        = stringPreferencesKey("last_played_mix_json")
+    val WIND_DOWN_ENABLED = booleanPreferencesKey("wind_down_enabled")
+    val IS_WIND_DOWN_ENABLED            = booleanPreferencesKey("is_wind_down_enabled")
+    val WIND_DOWN_HOUR = intPreferencesKey("wind_down_hour")
+    val WIND_DOWN_MINUTE = intPreferencesKey("wind_down_minute")
+    val IS_QUICK_START_TIMER_ENABLED    = booleanPreferencesKey("is_quick_start_timer_enabled")
+    val HAS_REQUESTED_NOTIFICATION_PERM = booleanPreferencesKey("has_requested_notification_perm")
+    val HAS_SEEN_HEADPHONES_HINT    = booleanPreferencesKey("has_seen_headphones_hint")
+
+    /** One boolean per screen — true once that screen's first-visit coach marks were dismissed. */
+    fun coachMarkSeen(screen: String) = booleanPreferencesKey("has_seen_coach_mark_$screen")
 }
 object Mapper {
 
@@ -146,6 +157,14 @@ object Mapper {
                 ?: defaults.isHighContrastEnabled,
             lastPlayedPresetId          = this[PrefKeys.LAST_PLAYED_PRESET_ID],
             lastPlayedMixJson           = this[PrefKeys.LAST_PLAYED_MIX_JSON],
+
+            isWindDownEnabled           = this[PrefKeys.IS_WIND_DOWN_ENABLED]        ?: defaults.isWindDownEnabled,
+            windDownHour                = this[PrefKeys.WIND_DOWN_HOUR]              ?: defaults.windDownHour,
+            windDownMinute              = this[PrefKeys.WIND_DOWN_MINUTE]            ?: defaults.windDownMinute,
+            seenCoachMarks              = CoachMarkScreens.ALL
+                .filterTo(mutableSetOf()) { this[PrefKeys.coachMarkSeen(it)] == true },
+            hasSeenHeadphonesHint       = this[PrefKeys.HAS_SEEN_HEADPHONES_HINT]    ?: defaults.hasSeenHeadphonesHint,
+            isQuickStartTimerEnabled    = this[PrefKeys.IS_QUICK_START_TIMER_ENABLED] ?: defaults.isQuickStartTimerEnabled,
         )
     }
 
@@ -181,6 +200,14 @@ object Mapper {
         this[PrefKeys.IS_HIGH_CONTRAST]              = prefs.isHighContrastEnabled
         prefs.lastPlayedPresetId?.let { this[PrefKeys.LAST_PLAYED_PRESET_ID] = it }
         prefs.lastPlayedMixJson?.let  { this[PrefKeys.LAST_PLAYED_MIX_JSON]  = it }
+
+        this[PrefKeys.IS_WIND_DOWN_ENABLED]         = prefs.isWindDownEnabled
+        this[PrefKeys.WIND_DOWN_HOUR]               = prefs.windDownHour
+        this[PrefKeys.WIND_DOWN_MINUTE]             = prefs.windDownMinute
+        this[PrefKeys.HAS_REQUESTED_NOTIFICATION_PERM] = prefs.hasRequestedNotificationPermission
+        CoachMarkScreens.ALL.forEach { this[PrefKeys.coachMarkSeen(it)] = it in prefs.seenCoachMarks }
+        this[PrefKeys.HAS_SEEN_HEADPHONES_HINT]     = prefs.hasSeenHeadphonesHint
+        this[PrefKeys.IS_QUICK_START_TIMER_ENABLED] = prefs.isQuickStartTimerEnabled
     }
 
     fun Local.PlayHistoryEntity.toDomain(): Domain.PlaySession = Domain.PlaySession(

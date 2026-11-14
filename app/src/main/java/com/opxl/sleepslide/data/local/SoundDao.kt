@@ -37,7 +37,12 @@ interface SoundDao {
     """)
     fun observeRecentlyPlayed(limit: Int = 10): Flow<List<Local.SoundEntity>>
 
-    @Query("SELECT * FROM sounds ORDER BY playCount DESC LIMIT :limit")
+    @Query("""
+        SELECT * FROM sounds
+        WHERE playCount > 0
+        ORDER BY playCount DESC, lastPlayedAt DESC
+        LIMIT :limit
+    """)
     fun observeMostPlayed(limit: Int = 10): Flow<List<Local.SoundEntity>>
 
     @Query("SELECT * FROM sounds WHERE isBundled = 0 AND downloadedPath IS NOT NULL")
@@ -52,6 +57,24 @@ interface SoundDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(sounds: List<Local.SoundEntity>)
 
+    @Query("SELECT id FROM sounds WHERE isBundled = 1")
+    suspend fun getBundledIds(): List<String>
+
+    /** Catalogue-owned columns only — never touches playCount / lastPlayedAt / download state. */
+    @Query("""
+        UPDATE sounds
+        SET title = :title, category = :category, assetPath = :assetPath,
+            isPremium = :isPremium, tags = :tags, frequencyHz = :frequencyHz
+        WHERE id = :id
+    """)
+    suspend fun updateCatalogueFields(
+        id: String, title: String, category: String, assetPath: String,
+        isPremium: Boolean, tags: String, frequencyHz: Int?,
+    )
+
+    @Query("DELETE FROM sounds WHERE id = :id")
+    suspend fun deleteById(id: String): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(sound: Local.SoundEntity)
 
@@ -60,6 +83,10 @@ interface SoundDao {
 
     @Query("UPDATE sounds SET playCount = playCount + 1, lastPlayedAt = :timestamp WHERE id = :id")
     suspend fun incrementPlayCount(id: String, timestamp: Long)
+
+    // Single statement for a whole mix — one invalidation, one shelf recomposition per play
+    @Query("UPDATE sounds SET playCount = playCount + 1, lastPlayedAt = :timestamp WHERE id IN (:ids)")
+    suspend fun incrementPlayCount(ids: List<String>, timestamp: Long)
 
     @Query("""
         UPDATE sounds

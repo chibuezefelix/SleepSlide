@@ -8,51 +8,252 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+// Light color scheme
+
+private val LightColors = lightColorScheme(
+    primary = LightPalette.Charcoal,
+    onPrimary = LightPalette.White,
+
+    primaryContainer = LightPalette.Charcoal,
+    onPrimaryContainer = LightPalette.White,
+
+    secondary = LightPalette.DarkGray,
+    onSecondary = LightPalette.White,
+
+    secondaryContainer = LightPalette.Bone,
+    onSecondaryContainer = LightPalette.Charcoal,
+
+    tertiary = LightPalette.PaleBlueText,
+    onTertiary = LightPalette.White,
+
+    tertiaryContainer = LightPalette.PaleBlue,
+    onTertiaryContainer = LightPalette.PaleBlueText,
+
+    background = LightPalette.WarmWhite,
+    onBackground = LightPalette.Charcoal,
+
+    surface = LightPalette.White,
+    onSurface = LightPalette.Charcoal,
+
+    surfaceVariant = LightPalette.SurfaceMuted,
+    onSurfaceVariant = LightPalette.MutedGray,
+
+    outline = LightPalette.Border,
+    outlineVariant = LightPalette.Border,
+
+    error = LightPalette.PaleRedText,
+    onError = LightPalette.White,
+
+    errorContainer = LightPalette.PaleRed,
+    onErrorContainer = LightPalette.PaleRedText
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+// Dark color scheme
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+private val DarkColors = darkColorScheme(
+    primary = DarkText,
+    onPrimary = LightPalette.Charcoal,
+
+    primaryContainer = DarkText,
+    onPrimaryContainer = LightPalette.Charcoal,
+
+    secondary = DarkTextSecondary,
+    onSecondary = LightPalette.Charcoal,
+
+    secondaryContainer = DarkSurfaceVariant,
+    onSecondaryContainer = DarkText,
+
+    tertiary = LightPalette.PaleBlue,
+    onTertiary = LightPalette.PaleBlueText,
+
+    tertiaryContainer = Color(0xFF173044),
+    onTertiaryContainer = LightPalette.PaleBlue,
+
+    background = DarkBackground,
+    onBackground = DarkText,
+
+    surface = DarkSurface,
+    onSurface = DarkText,
+
+    surfaceVariant = DarkSurfaceVariant,
+    onSurfaceVariant = DarkTextSecondary,
+
+    outline = DarkBorder,
+    outlineVariant = DarkBorder,
+
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6)
 )
+
+// Shapes
+
+/**
+ * One radius per role, so a screen never mixes five corner sizes (see [Dimens]).
+ *
+ * extraSmall -> tags and small badges
+ * small      -> inputs and square icon buttons
+ * medium     -> inner cards and menus
+ * large      -> cards and list groups
+ * extraLarge -> hero panels and sheets
+ * Buttons and chips are full pills ([androidx.compose.foundation.shape.CircleShape]).
+ */
+val SleepSlideShapes = Shapes(
+    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.tagRadius),
+    small = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.controlRadius),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.cardRadius),
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.panelRadius)
+)
+
+// Extended SleepSlide design tokens
+
+@Immutable
+data class SleepSlideExtendedColors(
+    val isDark: Boolean,
+    val bone: Color,
+    val ground: Color,
+    val surface: Color,
+    val ink: Color,
+    val inkSoft: Color,
+    val muted: Color,
+    val panel: Color,
+    val onPanel: Color,
+
+    val border: Color,
+    val mutedSurface: Color,
+
+    val paleRed: Color,
+    val paleRedText: Color,
+
+    val paleBlue: Color,
+    val paleBlueText: Color,
+
+    val paleGreen: Color,
+    val paleGreenText: Color,
+
+    val paleYellow: Color,
+    val paleYellowText: Color,
+
+    /** Peak alpha of the soft corner glow on feature cards. Dark grounds take more before it reads as light. */
+    val glowStrength: Float,
+)
+
+private val LightExtendedColors = SleepSlideExtendedColors(
+    isDark = false,
+    bone = LightPalette.Bone,
+    ground = LightPalette.WarmWhite,
+    surface = LightPalette.White,
+    ink = LightPalette.Charcoal,
+    inkSoft = LightPalette.DarkGray,
+    muted = LightPalette.MutedGray,
+    panel = LightPalette.Charcoal,
+    onPanel = LightPalette.White,
+
+    border = LightPalette.Border,
+    mutedSurface = LightPalette.SurfaceMuted,
+
+    paleRed = LightPalette.PaleRed,
+    paleRedText = LightPalette.PaleRedText,
+
+    paleBlue = LightPalette.PaleBlue,
+    paleBlueText = LightPalette.PaleBlueText,
+
+    paleGreen = LightPalette.PaleGreen,
+    paleGreenText = LightPalette.PaleGreenText,
+
+    paleYellow = LightPalette.PaleYellow,
+    paleYellowText = LightPalette.PaleYellowText,
+
+    glowStrength = 0.065f,
+)
+
+private val DarkExtendedColors = SleepSlideExtendedColors(
+    isDark = true,
+    bone = DarkSurfaceVariant,
+    ground = DarkBackground,
+    surface = DarkSurface,
+    ink = DarkText,
+    inkSoft = DarkTextSecondary,
+    muted = DarkTextSecondary,
+    panel = DarkPanel,
+    onPanel = DarkText,
+
+    border = DarkBorder,
+    mutedSurface = DarkSurfaceVariant,
+
+    paleRed = Color(0xFF442022),
+    paleRedText = Color(0xFFFFB4B0),
+
+    paleBlue = Color(0xFF173044),
+    paleBlueText = Color(0xFF9DD7FF),
+
+    paleGreen = Color(0xFF203623),
+    paleGreenText = Color(0xFFB6DDB5),
+
+    paleYellow = Color(0xFF403716),
+    paleYellowText = Color(0xFFE8D18A),
+
+    glowStrength = 0.12f,
+)
+
+val LocalSleepSlideColors = staticCompositionLocalOf {
+    LightExtendedColors
+}
+
+// Theme
 
 @Composable
 fun SleepSlideTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val context = LocalContext.current
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (darkTheme) {
+                dynamicDarkColorScheme(context)
+            } else {
+                dynamicLightColorScheme(context)
+            }
         }
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> DarkColors
+        else -> LightColors
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    val extendedColors = if (darkTheme) {
+        DarkExtendedColors
+    } else {
+        LightExtendedColors
+    }
+
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalSleepSlideColors provides extendedColors
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = SleepSlideTypography,
+            shapes = SleepSlideShapes,
+            content = content
+        )
+    }
 }

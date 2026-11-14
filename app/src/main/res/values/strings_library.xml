@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Library messages -->
+    <string name="library_error_load">Could not load sounds</string>
+    <string name="library_error_add_sound">Could not add %1$s</string>
+    <string name="library_error_remove_sound">Could not remove sound</string>
+    <string name="library_error_start_playback">Could not start playback</string>
+    <string name="library_error_save_preset">Could not save preset</string>
+    <string name="library_error_volume">Volume update failed</string>
+    <string name="library_error_save_volume">Could not save volume</string>
+    <string name="library_error_master_volume">Master volume update failed</string>
+    <string name="library_error_save_master_volume">Could not save master volume</string>
+    <string name="library_error_mute">Could not mute</string>
+    <string name="library_error_unmute">Could not unmute</string>
+    <string name="library_info_add_sound_to_play">Add at least one sound to play</string>
+    <string name="library_error_pause">Could not pause</string>
+    <string name="library_error_resume">Could not resume</string>
+    <string name="library_info_add_before_save">Add sounds before saving a preset</string>
+    <string name="library_error_name_empty">Preset name cannot be empty</string>
+    <string name="library_error_no_sounds_to_save">No sounds to save</string>
+
+    <!-- Library screen -->
+    <string name="library_snack_premium_sound">"%1$s" is a premium sound — upgrade to unlock</string>
+    <plurals name="library_snack_max_layers">
+        <item quantity="one">Maximum %1$d sound in a mix</item>
+        <item quantity="other">Maximum %1$d sounds in a mix</item>
+    </plurals>
+    <string name="library_snack_service_starting">Audio service is starting</string>
+    <string name="library_snack_preset_saved">"%1$s" saved</string>
+    <string name="library_snack_already_in_mix">%1$s is already in the mix</string>
+    <string name="library_search_hint">Search sounds…</string>
+    <string name="library_cd_clear_search">Clear search</string>
+    <string name="library_recently_played">Recently played</string>
+    <string name="library_most_played">Most played</string>
+    <string name="library_all_sounds">All sounds</string>
+    <string name="library_no_match">No sounds match</string>
+    <plurals name="library_cd_tab">
+        <item quantity="one">%1$s, %2$d sound</item>
+        <item quantity="other">%1$s, %2$d sounds</item>
+    </plurals>
+    <string name="library_cd_in_mix">in mix</string>
+    <string name="library_cd_premium">premium</string>
+    <string name="library_cd_in_mix_tap_remove">in mix — tap to remove</string>
+    <string name="library_cd_tap_add">tap to add to mix</string>
+    <string name="library_cd_previewing">previewing</string>
+    <string name="library_cd_headphones">best with headphones</string>
+    <string name="library_category_headphones">%1$s · headphones</string>
+    <string name="library_mix_header">MIX</string>
+    <plurals name="library_mix_header_count">
+        <item quantity="one">MIX · %1$d sound</item>
+        <item quantity="other">MIX · %1$d sounds</item>
+    </plurals>
+    <string name="library_cd_collapse_mix">Collapse mix</string>
+    <string name="library_cd_expand_mix">Expand mix</string>
+    <string name="library_cd_pause_mix">Pause mix</string>
+    <string name="library_cd_resume_mix">Resume mix</string>
+    <string name="library_cd_play_mix">Play mix</string>
+    <string name="library_cd_mute_sound">Mute %1$s</string>
+    <string name="library_cd_unmute_sound">Unmute %1$s</string>
+</resources>

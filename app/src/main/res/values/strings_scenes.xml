@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Player backdrop scenes -->
+    <string name="scene_garden_title">Dahlia garden</string>
+    <string name="scene_garden_caption">Late-summer flowers, still air</string>
+    <string name="scene_mountain_lake_title">Fuji through the maples</string>
+    <string name="scene_mountain_lake_caption">Cool water, drifting mist</string>
+    <string name="scene_sunset_valley_title">Dusk over the valley</string>
+    <string name="scene_sunset_valley_caption">The last warm light of the day</string>
+    <string name="scene_cd_open_player">Scene: %1$s. Tap to open player.</string>
+    <string name="scene_cd_change">Scene: %1$s. Tap to change.</string>
+    <string name="scene_your_pick">· your pick</string>
+</resources>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Account card -->
+    <string name="purchase_unlock_title">Unlock All Sounds</string>
+    <string name="purchase_unlock_subtitle">One-time purchase · No subscription</string>
+    <string name="purchase_unlock_subtitle_priced">%1$s · One-time purchase</string>
+    <string name="purchase_premium_title">Premium</string>
+    <string name="purchase_premium_lifetime">Lifetime unlock — no subscription</string>
+    <string name="purchase_premium_restored">Restored purchase</string>
+    <string name="purchase_restore_label">Restore purchases</string>
+    <string name="purchase_restore_sublabel">Bought before, or on another device?</string>
+
+    <!-- Upgrade prompt (opened from an "Upgrade" action elsewhere) -->
+    <string name="purchase_prompt_title">Unlock all sounds</string>
+    <string name="purchase_prompt_body">Every premium sound, mix and binaural beat, forever. Pay once — no subscription.</string>
+    <string name="purchase_prompt_confirm">Unlock</string>
+    <string name="purchase_prompt_confirm_priced">Unlock for %1$s</string>
+    <string name="purchase_prompt_dismiss">Not now</string>
+
+    <!-- Outcomes -->
+    <string name="purchase_success">Welcome to premium — all sounds unlocked</string>
+    <string name="purchase_restore_success">Purchase restored</string>
+    <string name="purchase_nothing_to_restore">No purchase found for the Google account signed in to Play</string>
+    <string name="purchase_pending">Payment pending — premium unlocks as soon as Google Play confirms it</string>
+
+    <!-- Errors -->
+    <string name="purchase_error_network">No connection — check your internet and try again</string>
+    <string name="purchase_error_store">Google Play had a problem. Please try again in a moment</string>
+    <string name="purchase_error_not_allowed">Purchases aren\'t allowed on this device or account</string>
+    <string name="purchase_error_unavailable">The unlock isn\'t available right now. Please try again later</string>
+    <string name="purchase_error_in_progress">A purchase is already in progress</string>
+    <string name="purchase_error_not_unlocked">Payment received but premium didn\'t unlock — tap Restore purchases</string>
+    <string name="purchase_error_unknown">Something went wrong. Please try again</string>
+
+</resources>

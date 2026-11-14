@@ -1,3 +1,5 @@
+package com.opxl.sleepslide.di
+
 import android.content.Context
 import android.media.AudioManager
 import dagger.Module

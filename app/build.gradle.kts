@@ -28,32 +28,49 @@ android {
         applicationId = "com.opxl.sleepslide"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 7
+        versionName = "1.0.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "REVENUECAT_KEY", localProperties["REVENUECAT_KEY"] as String)
         //Assets
+        buildConfigField("String", "REVENUECAT_KEY", localProperties["REVENUECAT_KEY"] as String)
+        buildConfigField("String", "TEST_REVENUECAT_KEY", localProperties["TEST_REVENUECAT_KEY"] as String)
         buildConfigField("String", "WHITE_NOISE", localProperties["WHITE_NOISE"] as String)
 
+        // Testing mode grants PREMIUM without a purchase and uses TEST_REVENUECAT_KEY.
+        // Off by default; only the debug build type may turn it on (see below).
+        buildConfigField("boolean", "TESTING_MODE", "false")
 
     }
 
     buildTypes {
         release {
+            // R8: shrink, obfuscate and optimize code + strip unused resources.
+            // The mapping file is packaged into the AAB and Play picks it up
+            // automatically. App rules live in src/main/keepRules/.
             optimization {
-                enable = false
+                enable = true
             }
+            // Package native debug symbols into the AAB for Play crash/ANR reports.
+            // Today's only .so files (androidx graphics-path, datastore) ship
+            // pre-stripped, so there is nothing to extract until native code
+            // with symbols is added.
+            ndk {
+                debugSymbolLevel = "FULL"
+            }
+
+            // No applicationIdSuffix: Play requires exactly com.opxl.sleepslide.
+            isMinifyEnabled = false
         }
 
         debug {
             applicationIdSuffix=".debug"
             versionNameSuffix="-debug"
             isMinifyEnabled = false
-            buildConfigField("String", "REVENUECAT_KEY", localProperties.get("REVENUECAT_KEY") as String)
-            //Assets
-            buildConfigField("String", "WHITE_NOISE", localProperties.get("WHITE_NOISE") as String)
+            // Opt in with TESTING_MODE=true in local.properties. Release never reads it.
+            val testingMode = (localProperties["TESTING_MODE"] as String?)?.trim().toBoolean()
+            buildConfigField("boolean", "TESTING_MODE", testingMode.toString())
         }
     }
     compileOptions {
@@ -69,6 +86,10 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+    // android.util.Log in repository code returns 0 in JVM tests instead of throwing
+    testOptions {
+        unitTests.isReturnDefaultValues = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.15"
@@ -126,10 +147,11 @@ dependencies {
 
     // WorkManager + Hilt-Work
     implementation(libs.workmanager.ktx)
+    implementation(libs.glance.appwidget)
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
 
-    // RevenueCat
+    // RevenueCat — core SDK (the purchase UI is our own, in Settings)
     implementation(libs.bundles.revenuecat)
 
     // Debug
@@ -144,9 +166,6 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test.junit4)
 }
 
-configurations.all {
-    resolutionStrategy {
-        force("androidx.core:core-ktx:1.13.1")
-        force("androidx.core:core:1.13.1")
-    }
-}
+// NOTE: do not force androidx.core below what the Compose BOM needs —
+// foundation-layout 1.10 calls DisplayCutoutCompat.getCutoutPath() (core ≥ 1.16)
+// and an older forced core crashes at first layout with NoSuchMethodError.

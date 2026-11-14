@@ -56,6 +56,29 @@ class UserPreferencesRepositoryImpl @Inject constructor(
     override suspend fun clearLastPlayed() =
         dataStore.clearLastPlayed()
 
+    override suspend fun setWindDownEnabled(enabled: Boolean) {
+        dataStore.setWindDownEnabled(enabled)
+    }
+
+    override suspend fun setWindDownTime(hour: Int, minute: Int) {
+        dataStore.setWindDownTime(hour, minute)
+    }
+
+    override suspend fun setQuickStartTimerEnabled(enabled: Boolean) {
+        dataStore.setQuickStartTimerEnabled(enabled)
+    }
+
+    override suspend fun markNotificationPermissionRequested() {
+     dataStore.markNotificationPermissionRequested()
+    }
+
+    override suspend fun markHeadphonesHintSeen() =
+        dataStore.markHeadphonesHintSeen()
+
+//    override  suspend fun setWindDown(enabled: Boolean, hour: Int, minute: Int) {
+//        dataStore.setWindDown(enabled, hour, minute)
+//    }
+
     override suspend fun reset() =
         dataStore.clear()
 }

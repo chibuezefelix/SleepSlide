@@ -1,5 +1,6 @@
 package com.opxl.sleepslide.data.repository
 
+import android.util.Log
 import com.opxl.sleepslide.data.local.Mapper.toDomain
 import com.opxl.sleepslide.data.local.Mapper.toEntity
 import com.opxl.sleepslide.data.local.SoundDao
@@ -11,6 +12,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+
+private const val TAG = "SoundRepository"
 
 class SoundRepositoryImpl @Inject constructor(
     private val soundDao: SoundDao,
@@ -50,14 +53,50 @@ class SoundRepositoryImpl @Inject constructor(
         soundDao.getAll().map { it.toDomain() }
     }
 
+    override suspend fun resolve(mix: Domain.SoundMix): Domain.SoundMix = withContext(io) {
+        val current = soundDao.getByIds(mix.layers.map { it.sound.id })
+            .associate { it.id to it.toDomain() }
+        val layers = mix.layers.mapNotNull { layer ->
+            val sound = current[layer.sound.id]
+            if (sound == null) Log.w(TAG, "Dropping layer '${layer.sound.id}' — no longer in the catalogue")
+            sound?.let { layer.copy(sound = it) }
+        }
+        mix.copy(layers = layers)
+    }
+
+    /**
+     * Syncs the DB with [BundledSoundCatalogue] rather than seeding once: new rows are
+     * inserted, existing rows get catalogue-owned fields refreshed (paths, titles,
+     * tags) while play stats survive, and bundled rows whose file no longer ships are
+     * removed — unless a preset still references them (FK RESTRICT), in which case
+     * they stay so the preset keeps loading.
+     */
     override suspend fun seedBundledSounds() = withContext(io) {
-        val existing = soundDao.getAll()
-        if (existing.isNotEmpty()) return@withContext
-        soundDao.insertAll(BundledSoundCatalogue.all.map { it.toEntity() })
+        val catalogue = BundledSoundCatalogue.all.map { it.toEntity() }
+        val existingIds = soundDao.getBundledIds().toSet()
+
+        soundDao.insertAll(catalogue.filter { it.id !in existingIds })
+        catalogue.filter { it.id in existingIds }.forEach { e ->
+            soundDao.updateCatalogueFields(
+                id = e.id, title = e.title, category = e.category, assetPath = e.assetPath,
+                isPremium = e.isPremium, tags = e.tags, frequencyHz = e.frequencyHz,
+            )
+        }
+
+        val catalogueIds = catalogue.map { it.id }.toSet()
+        (existingIds - catalogueIds).forEach { staleId ->
+            runCatching { soundDao.deleteById(staleId) }   // RESTRICT: keep if a preset uses it
+        }
     }
 
     override suspend fun recordPlayed(soundId: String) = withContext(io) {
         soundDao.incrementPlayCount(soundId, System.currentTimeMillis())
+    }
+
+    override suspend fun recordPlayed(soundIds: Collection<String>) = withContext(io) {
+        val ids = soundIds.filter { it.isNotBlank() }.distinct()
+        if (ids.isEmpty()) return@withContext
+        soundDao.incrementPlayCount(ids, System.currentTimeMillis())
     }
 
     override suspend fun beginDownload(soundId: String) = withContext(io) {

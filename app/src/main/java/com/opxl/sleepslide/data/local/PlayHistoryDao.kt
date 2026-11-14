@@ -47,23 +47,36 @@ interface PlayHistoryDao {
     @Update
     suspend fun update(session: Local.PlayHistoryEntity)
 //
-    @Query("""
-        UPDATE play_history
-        SET endedAt = :endedAt,
-            durationPlayedMs = :durationMs,
-            stoppedBy = :reason
-        WHERE id = :id
-    """)
-    suspend fun closeSession(id: Long, endedAt: Long, durationMs: Long, reason: String)
+    /**
+     * Adds audible playing time to every open session. Called periodically while
+     * playing, so durationPlayedMs is always a running total rather than something
+     * derived at close time — the only way a session orphaned by process death can
+     * still report an honest figure.
+     */
+    @Query("UPDATE play_history SET durationPlayedMs = durationPlayedMs + :deltaMs WHERE endedAt IS NULL")
+    suspend fun addPlayedTimeToActiveSessions(deltaMs: Long)
 
+    /** Live close — the caller has flushed the running counter; only the end stamp is set. */
     @Query("""
         UPDATE play_history
         SET endedAt = :endedAt,
-            durationPlayedMs = :durationMs,
+            stoppedBy = :reason
+        WHERE id = :id AND endedAt IS NULL
+    """)
+    suspend fun closeSession(id: Long, endedAt: Long, reason: String)
+
+    /**
+     * Stale close (cold start after a crash / force-kill). The real end time is
+     * unknowable, so each row derives it from its own running counter instead of
+     * "now" — a session killed at 23:00 and closed at 07:00 must not record 8 h.
+     */
+    @Query("""
+        UPDATE play_history
+        SET endedAt = startedAt + durationPlayedMs,
             stoppedBy = :reason
         WHERE endedAt IS NULL
     """)
-    suspend fun closeAllActiveSessions(endedAt: Long?, durationMs: Long?, reason: String)
+    suspend fun closeAllActiveSessions(reason: String)
     @Query("DELETE FROM play_history WHERE startedAt < :beforeEpoch")
     suspend fun deleteOlderThan(beforeEpoch: Long): Int
     @Query("DELETE FROM play_history WHERE id = :id")

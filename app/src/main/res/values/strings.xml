@@ -1,3 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">SleepSlide</string>
+    <string name="app_name" translatable="false">SleepSlide</string>
+
+    <!-- Bottom tabs -->
+    <string name="tab_home">Home</string>
+    <string name="tab_library">Library</string>
+    <string name="tab_presets">Presets</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Shared actions -->
+    <string name="action_upgrade">Upgrade</string>
+
+    <!-- Lists: "A, B and C" -->
+    <string name="list_separator">, </string>
+    <string name="list_and">%1$s and %2$s</string>
+
+    <!-- Premium notice after a launch skipped locked layers -->
+    <plurals name="notice_locked_playing_rest">
+        <item quantity="one">%1$s is premium — playing the rest of your mix</item>
+        <item quantity="other">%1$s are premium — playing the rest of your mix</item>
+    </plurals>
+    <plurals name="notice_locked_upgrade">
+        <item quantity="one">%1$s is premium — upgrade to listen</item>
+        <item quantity="other">%1$s are premium — upgrade to listen</item>
+    </plurals>
+
+    <string name="premium_pill">Premium</string>
+
+    <!-- Splash / shared notes -->
+    <string name="splash_tagline">Calm sounds, mixed your way,\nfor deeper, longer sleep.</string>
+    <string name="headphones_note">Binaural beats need headphones — on a speaker you\'ll hear a plain hum.</string>
+    <string name="cd_close">Close</string>
+    <string name="action_continue">Continue</string>
+
+    <!-- Durations -->
+    <plurals name="duration_seconds">
+        <item quantity="one">%1$d second</item>
+        <item quantity="other">%1$d seconds</item>
+    </plurals>
+    <plurals name="duration_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+    <plurals name="duration_hours">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
+    <string name="duration_short_minutes">%1$dm</string>
+    <string name="duration_short_hours">%1$dh</string>
+    <string name="duration_short_hours_minutes">%1$dh %2$dm</string>
+
+    <!-- Shared actions & labels -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_discard">Discard</string>
+    <string name="action_delete">Delete</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_mute">Mute</string>
+    <string name="cd_unmute">Unmute</string>
+    <string name="toggle_on">ON</string>
+    <string name="toggle_off">OFF</string>
+    <string name="preset_field_name">Name</string>
+    <string name="preset_field_emoji">Emoji (optional)</string>
+    <string name="label_error">Error</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_done">Done</string>
+    <string name="duration_short_under_minute">&lt;1m</string>
 </resources>

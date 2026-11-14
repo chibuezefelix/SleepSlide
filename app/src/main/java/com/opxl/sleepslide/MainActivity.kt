@@ -4,66 +4,394 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.os.PowerManager
+import android.provider.Settings
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.produceState
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.opxl.sleepslide.data.AudioServiceHolder
 import com.opxl.sleepslide.data.audio.AudioServiceImpl
+import com.opxl.sleepslide.data.purchase.PurchaseServiceImpl
+import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.repository.UserPreferencesRepository
+import com.opxl.sleepslide.domain.service.PlaybackGate
+import com.opxl.sleepslide.presentation.navigation.NavGraph
+import com.opxl.sleepslide.presentation.navigation.UpgradeRequests
+import com.opxl.sleepslide.presentation.permission.LocalNotificationPermissionRequester
+import com.opxl.sleepslide.presentation.permission.NotificationPermissionRequester
+import com.opxl.sleepslide.presentation.permission.isNotificationPermissionGranted
+import com.opxl.sleepslide.presentation.splash.BrandSplash
 import com.opxl.sleepslide.ui.theme.SleepSlideTheme
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var audioServiceHolder: AudioServiceHolder
+    @Inject lateinit var purchaseService: PurchaseServiceImpl
+    @Inject lateinit var userPreferencesRepository: UserPreferencesRepository
+    @Inject lateinit var playbackGate: PlaybackGate
+    @Inject lateinit var upgradeRequests: UpgradeRequests
 
-    // In MainActivity or a ServiceConnectionManager
-    private val connection = object : ServiceConnection {
+
+    private var isAudioServiceBound = false
+
+    private val audioServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName, binder: IBinder) {
             val service = (binder as AudioServiceImpl.LocalBinder).getService()
-            // pass to ViewModel or a shared holder
+            audioServiceHolder.attach(service)
+            isAudioServiceBound = true
         }
-        override fun onServiceDisconnected(name: ComponentName) {}
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            // System killed the service (OOM etc.) — detach and rebind on next start
+            audioServiceHolder.detach()
+            isAudioServiceBound = false
+        }
+
+        override fun onBindingDied(name: ComponentName) {
+            // Binding died — unbind cleanly and rebind
+            unbindAudioServiceSafely()
+            bindAudioService()
+        }
+
+        override fun onNullBinding(name: ComponentName) {
+            // Should never happen with LocalBinder but handle defensively
+            audioServiceHolder.detach()
+            isAudioServiceBound = false
+        }
+    }
+
+    /**
+     * Single POST_NOTIFICATIONS launcher for the whole app. Screens ask through
+     * [LocalNotificationPermissionRequester]; the result is handed back to whichever
+     * screen asked. If the Activity is recreated while the system dialog is up the
+     * pending callback is lost, which is fine — screens re-check on entry.
+     */
+    private var pendingNotificationPermissionResult: ((Boolean) -> Unit)? = null
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        // Denied — audio still plays but the media notification won't show.
+        // We do not re-ask; the requesting screen records the user's choice.
+        pendingNotificationPermissionResult?.invoke(granted)
+        pendingNotificationPermissionResult = null
+    }
+
+    private val notificationPermissionRequester = NotificationPermissionRequester { onResult ->
+        if (isNotificationPermissionGranted()) {
+            onResult(true)
+        } else {
+            pendingNotificationPermissionResult = onResult
+            notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    /**
+     * Deep link delivered via [onNewIntent]. Kept in state, not handled in place: when the
+     * process was killed but the task survived, the system replays the notification intent
+     * before the navigation graph (or any Compose-side listener) exists.
+     */
+    private val pendingDeepLink = mutableStateOf<Intent?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.data != null) pendingDeepLink.value = inPlaceDeepLink(intent)
     }
 
     override fun onStart() {
         super.onStart()
         Intent(this, AudioServiceImpl::class.java).also {
-            bindService(it, connection, Context.BIND_AUTO_CREATE)
+            bindService(it, audioServiceConnection, Context.BIND_AUTO_CREATE)
         }
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+
         super.onCreate(savedInstanceState)
+        // Keep splash visible until preferences are loaded for the first time
+        var preferencesReady = false
+        splashScreen.setKeepOnScreenCondition { !preferencesReady }
+        // Fade the system splash out (mark lifting slightly) into the in-app BrandSplash.
+        splashScreen.setOnExitAnimationListener { provider ->
+            // iconView throws an NPE (core-splashscreen 1.0.1) when the system draws an
+            // icon-less splash, e.g. a cold start from a notification tap. Skip the mark
+            // lift then; the fade and remove() below must still run.
+            runCatching {
+                provider.iconView.animate().scaleX(1.15f).scaleY(1.15f).setDuration(300L).start()
+            }
+            provider.view.animate()
+                .alpha(0f)
+                .setDuration(300L)
+                .withEndAction { provider.remove() }
+                .start()
+        }
+        // Cold start only — not on rotation or theme recreation.
+        val playIntro = savedInstanceState == null
+        // NavHost handles the launch intent's deep link itself; see [inPlaceDeepLink].
+        intent = inPlaceDeepLink(intent)
         enableEdgeToEdge()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         setContent {
-            SleepSlideTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+            // The Settings theme choice drives the Compose theme; SYSTEM and the fallback
+            // before prefs load follow the device. The hour ticks so SCHEDULED flips on time.
+            val prefs by userPreferencesRepository.observe().collectAsStateWithLifecycle(initialValue = null)
+            val systemDark = isSystemInDarkTheme()
+            val hour by produceState(currentHour()) {
+                while (true) {
+                    delay(60_000L.milliseconds)
+                    value = currentHour()
+                }
+            }
+            val darkTheme = prefs?.let {
+                resolveIsDark(it.themeMode, it.darkModeStartHour, it.darkModeEndHour, systemDark, hour)
+            } ?: systemDark
+            LaunchedEffect(darkTheme) { applyStatusBarAppearance(darkTheme) }
+
+            SleepSlideTheme(darkTheme = darkTheme) {
+                CompositionLocalProvider(
+                    LocalNotificationPermissionRequester provides notificationPermissionRequester,
+                ) {
+                    var showIntro by rememberSaveable { mutableStateOf(playIntro) }
+                    val navController = rememberNavController()
+                    // A notification tap while the app is running arrives in onNewIntent
+                    // (SINGLE_TOP), not onCreate — NavHost only reads the launch intent. It is
+                    // held in [pendingDeepLink] and applied here once the graph exists, because
+                    // after the process was killed it can arrive before Compose is composed.
+                    val graphReady = navController.currentBackStackEntryAsState().value != null
+                    val pending = pendingDeepLink.value
+                    LaunchedEffect(graphReady, pending) {
+                        if (graphReady && pending != null) {
+                            navController.handleDeepLink(pending)
+                            pendingDeepLink.value = null
+                        }
+                    }
+                    Box {
+                        NavGraph(
+                            userPreferencesRepository = userPreferencesRepository,
+                            playbackGate              = playbackGate,
+                            upgradeRequests           = upgradeRequests,
+                            navController             = navController,
+                        )
+                        if (showIntro) BrandSplash(onFinished = { showIntro = false })
+                    }
+                }
+            }
+        }
+
+        // Start observing after setContent so flows have collectors
+        observeAudioStateForWindowFlags()
+        observeBatteryOptimisationPrompt()
+
+        lifecycleScope.launch {
+            userPreferencesRepository.observe().collect {
+                preferencesReady = true
+            }
+        }
+    }
+
+
+    override fun onResume() {
+        super.onResume()
+        // WeakReference — safe to rebind every resume; PurchaseService guards against null activity
+        purchaseService.bindActivity(this)
+    }
+    override fun onPause() {
+        // Unbind purchase activity reference before going to background
+        purchaseService.unbindActivity()
+        super.onPause()
+    }
+
+    override fun onStop() {
+        unbindAudioServiceSafely()
+        super.onStop()
+    }
+
+    override fun onDestroy() {
+        // Final safety net — clear window flags
+        clearKeepScreenOn()
+        super.onDestroy()
+    }
+
+    /**
+     * Start as foreground service first — ensures the service survives even if
+     * binding is dropped. Binding gives us the [AudioServiceImpl] reference.
+     */
+    private fun startAndBindAudioService() {
+        val intent = Intent(this, AudioServiceImpl::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+        bindAudioService()
+    }
+
+    private fun bindAudioService() {
+        if (isAudioServiceBound) return
+        val intent = Intent(this, AudioServiceImpl::class.java)
+        runCatching {
+            bindService(intent, audioServiceConnection, Context.BIND_AUTO_CREATE)
+        }.onFailure {
+            // Defensive — if bind fails, holder stays null and ViewModels handle gracefully
+            audioServiceHolder.detach()
+        }
+    }
+
+    private fun unbindAudioServiceSafely() {
+        if (!isAudioServiceBound) return
+        isAudioServiceBound = false
+        // No holder.detach() here: the service stays published until its own onDestroy,
+        // so the sleep timer can still reach it after the screen goes off.
+        runCatching { unbindService(audioServiceConnection) }
+    }
+
+    private fun observeAudioStateForWindowFlags() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                audioServiceHolder.service.collectLatest { service ->
+                    if (service == null) return@collectLatest
+                    combine(
+                        service.audioState.map { it.isNightLockEnabled }.distinctUntilChanged(),
+                        service.audioState.map { it.playbackStatus }.distinctUntilChanged(),
+                    ) { nightLock, status ->
+                        nightLock && status == Domain.PlaybackStatus.PLAYING
+                    }.distinctUntilChanged().collectLatest { keepOn ->
+                        if (keepOn) setKeepScreenOn() else clearKeepScreenOn()
+                    }
                 }
             }
         }
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SleepSlideTheme {
-        Greeting("Android")
+    /**
+     * Battery optimisation prompt — shown once, politely, never more than once.
+     * Most apps either never ask (audio dies at 3AM) or spam the user.
+     * We check if we're already excluded before prompting.
+     */
+    private fun observeBatteryOptimisationPrompt() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                userPreferencesRepository.observe()
+                    .map {
+                        !it.hasDismissedBatteryOptPrompt && it.batteryOptPromptShownCount == 0
+                    }
+                    .distinctUntilChanged()
+                    .collectLatest { shouldPrompt ->
+                        if (shouldPrompt && !isIgnoringBatteryOptimisations()) {
+                            userPreferencesRepository.recordBatteryOptPromptShown()
+                            showBatteryOptimisationPrompt()
+                        }
+                    }
+            }
+        }
     }
+    private fun isIgnoringBatteryOptimisations(): Boolean {
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        return pm.isIgnoringBatteryOptimizations(packageName)
+    }
+
+
+
+    private fun setKeepScreenOn() {
+        runCatching {
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    private fun clearKeepScreenOn() {
+        runCatching {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    private fun applyStatusBarAppearance(isDark: Boolean) {
+        val controller = WindowInsetsControllerCompat(window, window.decorView)
+        // Light appearance = dark icons (for light backgrounds)
+        controller.isAppearanceLightStatusBars = !isDark
+        controller.isAppearanceLightNavigationBars = !isDark
+    }
+
+    private fun showBatteryOptimisationPrompt() {
+        runCatching {
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = Uri.parse("package:$packageName")
+            }
+            startActivity(intent)
+        }.onFailure {
+            // Device does not support this intent (some OEMs) — fall back to app battery settings
+            runCatching {
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:$packageName")
+                })
+            }
+        }
+    }
+
+    private fun resolveIsDark(
+        mode: Domain.ThemeMode,
+        darkStartHour: Int,
+        darkEndHour: Int,
+        systemDark: Boolean,
+        hour: Int,
+    ): Boolean = when (mode) {
+        Domain.ThemeMode.DARK   -> true
+        Domain.ThemeMode.LIGHT  -> false
+        Domain.ThemeMode.SYSTEM -> systemDark
+        Domain.ThemeMode.SCHEDULED ->
+            if (darkStartHour > darkEndHour) {
+                // Overnight window e.g. 21:00 → 07:00
+                hour >= darkStartHour || hour < darkEndHour
+            } else {
+                hour in darkStartHour until darkEndHour
+            }
+    }
+
+    /**
+     * Navigation treats a deep link carrying FLAG_ACTIVITY_NEW_TASK (without CLEAR_TASK) as
+     * "rebuild the task": it relaunches MainActivity and finishes this one, replaying the
+     * splash. Notifications must set NEW_TASK, so drop it and let the graph navigate in place.
+     */
+    private fun inPlaceDeepLink(source: Intent): Intent =
+        if (source.data == null) source
+        else Intent(source).apply { flags = flags and Intent.FLAG_ACTIVITY_NEW_TASK.inv() }
+
+    private fun currentHour(): Int =
+        java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+
 }

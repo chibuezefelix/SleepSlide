@@ -16,4 +16,7 @@ interface TimerStateObserver {
     val isActive: Flow<Boolean>
 
     val isFading: Flow<Boolean>
+
+    /** One-shot per timer that runs out — see [com.opxl.sleepslide.domain.service.TimerService.finished]. */
+    val finished: Flow<Unit>
 }

@@ -1,4 +1,25 @@
 package com.opxl.sleepslide.data.audio
+/**
+ * Author Chibueze Felix
+* Date: 2026-8-29
+* License: MIT
+* #DOC
+* Description: This file contains the implementation of the AudioService interface, which manages
+* audio playback, including playing, pausing, stopping, and managing audio layers and volumes.
+*  It also handles audio focus changes, Bluetooth connectivity, and media session management.
+* The service runs in the foreground to ensure continuous playback even when the app is in the
+*  background. It uses coroutines for asynchronous operations and state management with StateFlow
+* to provide real-time updates on the audio state. The service is designed to be injected using
+* Dagger Hilt for dependency management.
+* It serves as a bridge between the domain layer and the Android framework,
+* providing a clean API for audio playback extendes the MediaSessionService to integrate with
+* Android's media playback framework- it is Android initiated and managed, allowing for better
+* control over audio playback and user interactions. Hilt @Binds is used to bind the AudioService
+* interface to its implementation, ensuring that the service can be easily injected and used
+* throughout the application
+* The service is designed to be robust and handle various edge cases, such as audio focus loss,
+*
+*/
 
 import com.opxl.sleepslide.domain.model.Domain
 
@@ -8,6 +29,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
+import androidx.core.content.ContextCompat
 import android.content.pm.ServiceInfo
 import android.os.Binder
 import android.os.Build
@@ -16,6 +38,9 @@ import androidx.core.app.NotificationCompat
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.opxl.sleepslide.R
+import com.opxl.sleepslide.data.AudioServiceHolder
+import com.opxl.sleepslide.data.timer.SleepTimerController
+import com.opxl.sleepslide.data.timer.TimerServiceImpl
 //import com.opxl.sleepslide.domain.model.AudioFocusStatus
 //import com.opxl.sleepslide.domain.model.PlaybackStatus
 import com.opxl.sleepslide.domain.service.AudioService
@@ -25,7 +50,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -61,6 +85,8 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
     @Inject lateinit var audioFocusHandler: AudioFocusHandler
     @Inject lateinit var bluetoothReceiver: BluetoothReceiver
     @Inject lateinit var playerLayerManager: PlayerLayerManager
+    @Inject lateinit var timerService: TimerServiceImpl
+    @Inject lateinit var audioServiceHolder: AudioServiceHolder
 
     // Service-scoped coroutine scope — cancelled in onDestroy, not tied to ApplicationScope
     // Using SupervisorJob so a child failure does not cancel sibling coroutines
@@ -95,6 +121,12 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
         registerBluetoothReceiver()
         registerFocusCallbacks()
         observePlayerErrors()
+        // The service owns the sleep timer's stop: it is alive whenever there is sound,
+        // while the Activity (and every ViewModel) may be long gone.
+        SleepTimerController(timerService, this, serviceScope).start()
+        // Published for the service's whole life, not just while the UI is bound, so
+        // the timer backstop can reach it with the screen off.
+        audioServiceHolder.attach(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -114,8 +146,10 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
     }
 
     override fun onDestroy() {
+        audioServiceHolder.detach()
         cancelFades()
-        playerLayerManager.releaseAll()
+        // Stop, don't release: the players are singletons reused by the next service instance
+        playerLayerManager.stopAll()
         audioFocusHandler.abandon()
         audioFocusHandler.clearCallbacks()
         runCatching { unregisterReceiver(bluetoothReceiver) }
@@ -127,13 +161,21 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
 
     //  AudioService
 
-    override suspend fun play(mix: Domain.SoundMix) {
+    override suspend fun play(mix: Domain.SoundMix, proceedWithoutAudioFocus: Boolean) {
         if (mix.isEmpty) return
 
-        if (!audioFocusHandler.request()) {
+        val gotFocus = audioFocusHandler.request()
+        if (!gotFocus && !proceedWithoutAudioFocus) {
             _audioState.update { it.copy(playbackStatus = Domain.PlaybackStatus.ERROR) }
             return
         }
+
+        // Promote from bound-only to started+foreground so playback survives the
+        // Activity unbinding (screen off, app backgrounded). onStartCommand() then
+        // calls startForegroundSafely(). Without this the service is destroyed the
+        // moment MainActivity.onStop() unbinds — silence as soon as the phone locks.
+        ContextCompat.startForegroundService(this, Intent(this, AudioServiceImpl::class.java))
+        timerService.onPlaybackStarted()
 
         cancelFades()
         playerLayerManager.stopAll()
@@ -150,7 +192,7 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
             it.copy(
                 playbackStatus   = Domain.PlaybackStatus.LOADING,
                 activeMix        = mix,
-                audioFocusStatus = Domain.AudioFocusStatus.GAINED,
+                audioFocusStatus = if (gotFocus) Domain.AudioFocusStatus.GAINED else Domain.AudioFocusStatus.NONE,
                 fadeInProgress   = null,
             )
         }
@@ -186,6 +228,11 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
                 fadeInProgress        = null,
             )
         }
+        // Symmetric with play(): drop foreground + the "started" state so the service
+        // can be destroyed once the last client unbinds. The binding keeps it alive
+        // while the UI is up.
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     override suspend fun setLayerVolume(position: Int, volume: Float) {
@@ -270,15 +317,12 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
     override suspend fun fadeOut(durationMs: Long) {
         fadeJob?.cancel()
         val master = _audioState.value.activeMix?.masterVolume ?: 1f
-        val steps  = (durationMs / FADE_STEP).toInt().coerceAtLeast(1)
 
         _audioState.update { it.copy(playbackStatus = Domain.PlaybackStatus.FADING_OUT) }
 
         fadeJob = serviceScope.launch {
-            for (step in steps downTo 0) {
-                val fraction = step.toFloat() / steps
-                playerLayerManager.setMasterVolume(master * fraction, layerVolumes)
-                delay(FADE_STEP)
+            rampVolume(durationMs, FADE_STEP) { progress ->
+                playerLayerManager.setMasterVolume(master * (1f - progress), layerVolumes)
             }
             playerLayerManager.pauseAll()
             // Restore true master so next play() starts at correct volume
@@ -288,20 +332,25 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
         fadeJob?.join()
     }
 
+    override suspend fun cancelFadeOut() {
+        if (_audioState.value.playbackStatus != Domain.PlaybackStatus.FADING_OUT) return
+        cancelFades()
+        val master = _audioState.value.activeMix?.masterVolume ?: 1f
+        playerLayerManager.setMasterVolume(master, layerVolumes)
+        _audioState.update { it.copy(playbackStatus = Domain.PlaybackStatus.PLAYING) }
+    }
+
     override suspend fun fadeIn(durationMs: Long) {
         fadeJob?.cancel()
         val master = _audioState.value.activeMix?.masterVolume ?: 1f
-        val steps  = (durationMs / FADE_STEP).toInt().coerceAtLeast(1)
 
         playerLayerManager.setMasterVolume(0f, layerVolumes)
         _audioState.update { it.copy(playbackStatus = Domain.PlaybackStatus.FADING_IN, fadeInProgress = 0f) }
 
         fadeJob = serviceScope.launch {
-            for (step in 0..steps) {
-                val fraction = step.toFloat() / steps
-                playerLayerManager.setMasterVolume(master * fraction, layerVolumes)
-                _audioState.update { it.copy(fadeInProgress = fraction) }
-                delay(FADE_STEP)
+            rampVolume(durationMs, FADE_STEP) { progress ->
+                playerLayerManager.setMasterVolume(master * progress, layerVolumes)
+                _audioState.update { it.copy(fadeInProgress = progress) }
             }
             playerLayerManager.setMasterVolume(master, layerVolumes)
             _audioState.update {
@@ -421,6 +470,7 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
+        audioServiceHolder.markForeground(true)
     }
 
     private fun buildNotification(): Notification {
@@ -432,8 +482,8 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
             )
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("SleepSlide")
-            .setContentText("Playing in background")
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.notif_playback_playing))
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
@@ -445,10 +495,10 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            "Playback",
+            getString(R.string.notif_playback_channel_name),
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
-            description = "SleepSlide background playback"
+            description = getString(R.string.notif_playback_channel_description)
             setShowBadge(false)
             setSound(null, null)
             enableVibration(false)

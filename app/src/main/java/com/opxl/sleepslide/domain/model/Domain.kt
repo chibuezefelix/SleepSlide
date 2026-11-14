@@ -15,11 +15,23 @@ object Domain {
         val frequencyHz: Int? = null,
     )
 
+    /** Sounds that only work in stereo on headphones (binaural beats) carry the "headphones" tag. */
+    val Sound.needsHeadphones: Boolean get() = "headphones" in tags
+
+    /** The one entitlement rule: premium sounds are locked on the free tier. */
+    fun Sound.isLockedFor(tier: EntitlementTier): Boolean =
+        isPremium && tier == EntitlementTier.FREE
+
+    /** Layers of this mix that [tier] may not play. Empty for PREMIUM. */
+    fun SoundMix.lockedLayers(tier: EntitlementTier): List<SoundLayer> =
+        layers.filter { it.sound.isLockedFor(tier) }
+
     enum class SoundCategory {
         TINNITUS,
         NATURE,
         AMBIENT,
         BINAURAL,
+        ASMR,
         GUIDED,
     }
 // One active layer inside a [SoundMix].
@@ -104,18 +116,36 @@ object Domain {
         ERROR,
     }
 
+
+
     enum class AudioFocusStatus {
+        NONE,
         GAINED,
         LOST,
         LOST_TRANSIENT,
         DUCK,
     }
 
+    enum class AudioFocusLostReason {
+        PHONE_CALL,         // LOST_TRANSIENT — will auto-resume
+        ANOTHER_APP,        // LOST — user must manually resume
+    }
+
+    /**
+     * [isResolved] is false only at cold start, before either the on-disk snapshot or
+     * RevenueCat has answered. Nothing should gate or render locks on an unresolved tier.
+     */
     data class Entitlement(
         val tier: EntitlementTier,
         val purchasedAt: Long? = null,
         val revenueCatUserId: String,
         val isRestored: Boolean = false,
+        val isResolved: Boolean = true,
+    )
+
+    /** The lifetime unlock as Play sells it in the user's country. */
+    data class PremiumOffer(
+        val formattedPrice: String,
     )
 
     enum class EntitlementTier {
@@ -151,7 +181,22 @@ object Domain {
 
         // Last played
         val lastPlayedPresetId: Long? = null,
-        val lastPlayedMixJson: String? = null,       
+        val lastPlayedMixJson: String? = null,
+
+       var  nightLockBrightness: Float = 0.01f  ,        // 0.0 (off) to 1.0 (full)
+       var   hasRequestedNotificationPermission: Boolean = false,
+        val isWindDownEnabled: Boolean          = false,
+        val windDownHour: Int                   = 21,
+        val windDownMinute: Int                 = 30,
+
+        // Tutorial — screens whose first-visit coach marks have been dismissed
+        val seenCoachMarks: Set<String>         = emptySet(),
+
+        // One-time "binaural needs headphones" hint in the Library
+        val hasSeenHeadphonesHint: Boolean      = false,
+
+        // Quick Start (reminder button, Quick Settings tile): start the last-used timer too
+        val isQuickStartTimerEnabled: Boolean   = true,
     )
 
     enum class ThemeMode { LIGHT, DARK, SYSTEM, SCHEDULED }
@@ -161,4 +206,5 @@ object Domain {
         TINNITUS,
         GENERAL,
     }
+
 }

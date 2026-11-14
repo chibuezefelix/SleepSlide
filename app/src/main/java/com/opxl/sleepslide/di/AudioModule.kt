@@ -1,3 +1,5 @@
+package com.opxl.sleepslide.di
+
 import android.content.Context
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -22,9 +24,15 @@ object  AudioModule{
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .build()
 
+        // handleAudioFocus = false: AudioFocusHandler owns focus for the whole mix.
+        // With three players each requesting focus, Android grants the newest request
+        // and sends AUDIOFOCUS_LOSS to our own handler — the app pauses itself.
         return ExoPlayer.Builder(context)
-            .setAudioAttributes(audioAttributes,true)
+            .setAudioAttributes(audioAttributes, false)
             .setHandleAudioBecomingNoisy(true)
+            // Keep the CPU awake while playing with the screen off, so fades and the
+            // sleep timer run on time. Released whenever playback stops.
+            .setWakeMode(C.WAKE_MODE_LOCAL)
             .build()
 
 
