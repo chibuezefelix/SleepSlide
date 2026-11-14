@@ -19,4 +19,11 @@
     <string name="notif_quick_start_empty_body">Nothing to resume yet. Tap to open SleepSlide.</string>
     <string name="notif_quick_start_failed_title">Couldn\'t start the sound</string>
     <string name="notif_quick_start_failed_body">Tap to open SleepSlide and try again.</string>
+    <string name="tile_label">Sleep now</string>
+    <string name="tile_starting">Starting…</string>
+    <string name="tile_playing">Playing</string>
+    <string name="tile_playing_minutes_left">Playing · %1$dm left</string>
+    <string name="tile_needs_upgrade">Premium sounds</string>
+    <string name="tile_nothing_to_play">Pick a sound first</string>
+    <string name="tile_failed">Couldn\'t start</string>
 </resources>
