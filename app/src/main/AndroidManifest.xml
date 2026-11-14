@@ -62,6 +62,13 @@
         <receiver android:name=".data.timer.TimerBackstopReceiver"
             android:exported="false"/>
 
+        <receiver android:name=".data.notification.ExactAlarmPermissionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"/>
+            </intent-filter>
+        </receiver>
+
         <receiver android:name=".data.notification.BootReceiver"
             android:exported="true">
             <intent-filter>

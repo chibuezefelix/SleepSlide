@@ -126,6 +126,7 @@ sealed interface SettingsEvent {
     data object NavigateBack : SettingsEvent
     data object NavigateToOnboarding : SettingsEvent
     data object OpenBatteryOptSettings : SettingsEvent
+    data object OpenExactAlarmSettings : SettingsEvent
     data class ShowError(val message: String) : SettingsEvent
     data class ShowInfo(val message: String) : SettingsEvent
     data object PurchaseSuccess : SettingsEvent

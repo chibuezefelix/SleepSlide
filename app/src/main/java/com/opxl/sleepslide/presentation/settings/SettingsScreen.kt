@@ -44,6 +44,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +58,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -121,6 +125,16 @@ fun SettingsScreen(
     var showResetDialog       by rememberSaveable { mutableStateOf(false) }
     var showOnboardingDialog  by rememberSaveable { mutableStateOf(false) }
 
+    // Back from the system "Alarms & reminders" page: refresh the permission card.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) viewModel.refreshExactAlarmPermission()
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
@@ -131,6 +145,7 @@ fun SettingsScreen(
                     // Re-check status when returning
                     viewModel.refreshBatteryOptStatus()
                 }
+                is SettingsVMState.SettingsEvent.OpenExactAlarmSettings   -> openExactAlarmSettings(context)
                 is SettingsVMState.SettingsEvent.ShowDataResetConfirmation        -> showResetDialog = true
                 is SettingsVMState.SettingsEvent.ShowRetakeOnboardingConfirmation -> showOnboardingDialog = true
                 is SettingsVMState.SettingsEvent.PurchaseSuccess  ->
@@ -219,6 +234,7 @@ fun SettingsScreen(
                     onToggle     = viewModel::setWindDownEnabled,
                     onTimeChange = viewModel::setWindDownTime,
                     onTest       = { viewModel.sendTestWindDownNotification() },
+                    onAllowPreciseTiming = { viewModel.openExactAlarmSettings() },
                 )
             }
 
@@ -580,6 +596,7 @@ private fun WindDownSection(
     onToggle: (Boolean) -> Unit,
     onTimeChange: (hour: Int, minute: Int) -> Unit,
     onTest: () -> Unit,
+    onAllowPreciseTiming: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         GroupCard {
@@ -654,16 +671,26 @@ private fun WindDownSection(
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Precise timing requires permission",
+                            "Want it right on time?",
                             style = MaterialTheme.typography.titleSmall,
                             color = PaleYellowText,
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            "Enable 'Alarms & reminders' for the exact time. Without it, the reminder may arrive a few minutes late.",
+                            "Allow 'Alarms & reminders' for the exact time. Without it, the reminder still arrives, but can be late.",
                             style = MaterialTheme.typography.bodySmall,
                             color = PaleYellowText.copy(alpha = 0.8f),
                         )
+                        TextButton(
+                            onClick = onAllowPreciseTiming,
+                            contentPadding = PaddingValues(0.dp),
+                        ) {
+                            Text(
+                                "Allow precise timing",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = PaleYellowText,
+                            )
+                        }
                     }
                 }
             }
@@ -1011,4 +1038,22 @@ private fun SkeletonBox(height: androidx.compose.ui.unit.Dp) {
             .clip(RoundedCornerShape(Dimens.panelRadius))
             .background(Border),
     )
+}
+
+/** Opens the system page where the user can grant "Alarms & reminders" (API 31+). */
+private fun openExactAlarmSettings(context: android.content.Context) {
+    val pkg = android.net.Uri.parse("package:${context.packageName}")
+    val intent = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S)
+        android.content.Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, pkg)
+    else
+        android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkg)
+    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+    runCatching { context.startActivity(intent) }.onFailure {
+        runCatching {
+            context.startActivity(
+                android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkg)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
+    }
 }
