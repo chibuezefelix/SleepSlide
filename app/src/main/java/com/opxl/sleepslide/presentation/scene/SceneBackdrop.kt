@@ -18,6 +18,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -49,14 +50,18 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.ui.theme.Dimens
 import com.opxl.sleepslide.ui.theme.ImageScrim
 import com.opxl.sleepslide.ui.theme.OnImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 import androidx.compose.ui.res.stringResource
+import com.opxl.sleepslide.presentation.components.Glow
+import com.opxl.sleepslide.presentation.components.glow
 import com.opxl.sleepslide.R
 
 /**
@@ -74,6 +79,11 @@ fun SceneBackdrop(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
     onTap: (() -> Unit)? = null,   // null = tap cycles scenes; otherwise tap is delegated
+    horizontalPadding: Dp = Dimens.gutter,
+    height: Dp? = null,            // fixed height; null = animate between the compact/full sizes
+    showCaption: Boolean = true,   // the scene title in the bottom-left corner
+    glow: Glow? = null,            // soft light over the scrim; off unless the caller opts in
+    overlay: (@Composable BoxScope.() -> Unit)? = null,   // content drawn over the scrim (Home hero)
 ) {
     // Re-pick only when the set of sounds changes, not on every volume tick
     val mixKey = remember(sounds) { sounds.map { it.id }.sorted().joinToString(",") }
@@ -86,10 +96,11 @@ fun SceneBackdrop(
         stringResource(scene.title),
     )
 
-    val height by animateFloatAsState(
+    val animatedHeight by animateFloatAsState(
         targetValue   = when {
-            compact   -> if (isPlaying) 150f else 130f
-            else      -> if (isPlaying) 250f else 200f
+            height != null -> height.value
+            compact        -> if (isPlaying) 150f else 130f
+            else           -> if (isPlaying) 250f else 200f
         },
         animationSpec = tween(700),
         label         = "sceneHeight",
@@ -110,9 +121,9 @@ fun SceneBackdrop(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .height(height.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .padding(horizontal = horizontalPadding)
+            .height(animatedHeight.dp)
+            .clip(RoundedCornerShape(Dimens.panelRadius))
             .background(ImageScrim)
             .clickable { onTap?.invoke() ?: run { userScene = scene.next() } }
             .semantics { contentDescription = sceneDescription },
@@ -150,12 +161,14 @@ fun SceneBackdrop(
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
-                        0.45f to Color.Transparent,
-                        1.0f  to ImageScrim.copy(alpha = 0.72f),
+                        (if (overlay != null) 0.25f else 0.45f) to Color.Transparent,
+                        1.0f to ImageScrim.copy(alpha = if (overlay != null) 0.82f else 0.72f),
                     )
                 )
+                .glow(glow)
         )
-        Column(
+        if (overlay != null) overlay()
+        if (showCaption) Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .padding(horizontal = 16.dp, vertical = 14.dp),

@@ -28,8 +28,8 @@ android {
         applicationId = "com.opxl.sleepslide"
         minSdk = 26
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.0.4"
+        versionCode = 7
+        versionName = "1.0.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -59,15 +59,15 @@ android {
             ndk {
                 debugSymbolLevel = "FULL"
             }
+
+            // No applicationIdSuffix: Play requires exactly com.opxl.sleepslide.
+            isMinifyEnabled = false
         }
 
         debug {
             applicationIdSuffix=".debug"
             versionNameSuffix="-debug"
             isMinifyEnabled = false
-            buildConfigField("String", "REVENUECAT_KEY", localProperties.get("REVENUECAT_KEY") as String)
-            //Assets
-            buildConfigField("String", "WHITE_NOISE", localProperties.get("WHITE_NOISE") as String)
             // Opt in with TESTING_MODE=true in local.properties. Release never reads it.
             val testingMode = (localProperties["TESTING_MODE"] as String?)?.trim().toBoolean()
             buildConfigField("boolean", "TESTING_MODE", testingMode.toString())
@@ -147,6 +147,7 @@ dependencies {
 
     // WorkManager + Hilt-Work
     implementation(libs.workmanager.ktx)
+    implementation(libs.glance.appwidget)
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
 

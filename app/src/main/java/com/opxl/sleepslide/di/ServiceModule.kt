@@ -2,6 +2,8 @@ package com.opxl.sleepslide.di
 
 import com.opxl.sleepslide.data.audio.AudioServiceImpl
 import com.opxl.sleepslide.data.purchase.PurchaseServiceImpl
+import com.opxl.sleepslide.data.quickstart.QuickStartServiceImpl
+import com.opxl.sleepslide.domain.service.QuickStartService
 import com.opxl.sleepslide.data.timer.TimerServiceImpl
 import com.opxl.sleepslide.domain.service.AudioService
 import com.opxl.sleepslide.domain.service.PurchaseService
@@ -21,6 +23,10 @@ object ServiceModule {
     @Provides
     @Singleton
     fun provideTimerService(timerServiceImpl: TimerServiceImpl): TimerService = timerServiceImpl
+
+    @Provides
+    @Singleton
+    fun provideQuickStartService(impl: QuickStartServiceImpl): QuickStartService = impl
 
     @Provides
     @Singleton

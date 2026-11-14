@@ -42,6 +42,8 @@ private val SOUND_TITLES: Map<String, Int> = mapOf(
     "binaural_theta" to R.string.sound_title_binaural_theta,
     "binaural_delta" to R.string.sound_title_binaural_delta,
     "asmr_tap" to R.string.sound_title_asmr_tap,
+    "fan" to R.string.sound_title_fan,
+    "wind_soft" to R.string.sound_title_wind_soft,
 )
 
 @Composable

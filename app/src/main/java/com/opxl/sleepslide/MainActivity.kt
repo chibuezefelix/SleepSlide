@@ -17,7 +17,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,13 +25,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.produceState
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.core.util.Consumer
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.opxl.sleepslide.data.AudioServiceHolder
 import com.opxl.sleepslide.data.audio.AudioServiceImpl
@@ -120,6 +119,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * Deep link delivered via [onNewIntent]. Kept in state, not handled in place: when the
+     * process was killed but the task survived, the system replays the notification intent
+     * before the navigation graph (or any Compose-side listener) exists.
+     */
+    private val pendingDeepLink = mutableStateOf<Intent?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.data != null) pendingDeepLink.value = inPlaceDeepLink(intent)
+    }
+
     override fun onStart() {
         super.onStart()
         Intent(this, AudioServiceImpl::class.java).also {
@@ -136,7 +147,12 @@ class MainActivity : ComponentActivity() {
         splashScreen.setKeepOnScreenCondition { !preferencesReady }
         // Fade the system splash out (mark lifting slightly) into the in-app BrandSplash.
         splashScreen.setOnExitAnimationListener { provider ->
-            provider.iconView.animate().scaleX(1.15f).scaleY(1.15f).setDuration(300L).start()
+            // iconView throws an NPE (core-splashscreen 1.0.1) when the system draws an
+            // icon-less splash, e.g. a cold start from a notification tap. Skip the mark
+            // lift then; the fade and remove() below must still run.
+            runCatching {
+                provider.iconView.animate().scaleX(1.15f).scaleY(1.15f).setDuration(300L).start()
+            }
             provider.view.animate()
                 .alpha(0f)
                 .setDuration(300L)
@@ -172,14 +188,17 @@ class MainActivity : ComponentActivity() {
                 ) {
                     var showIntro by rememberSaveable { mutableStateOf(playIntro) }
                     val navController = rememberNavController()
-                    // A notification tap while the app is running arrives here (SINGLE_TOP),
-                    // not in onCreate — NavHost only reads the launch intent.
-                    DisposableEffect(navController) {
-                        val listener = Consumer<Intent> { newIntent ->
-                            navController.handleDeepLink(inPlaceDeepLink(newIntent))
+                    // A notification tap while the app is running arrives in onNewIntent
+                    // (SINGLE_TOP), not onCreate — NavHost only reads the launch intent. It is
+                    // held in [pendingDeepLink] and applied here once the graph exists, because
+                    // after the process was killed it can arrive before Compose is composed.
+                    val graphReady = navController.currentBackStackEntryAsState().value != null
+                    val pending = pendingDeepLink.value
+                    LaunchedEffect(graphReady, pending) {
+                        if (graphReady && pending != null) {
+                            navController.handleDeepLink(pending)
+                            pendingDeepLink.value = null
                         }
-                        addOnNewIntentListener(listener)
-                        onDispose { removeOnNewIntentListener(listener) }
                     }
                     Box {
                         NavGraph(

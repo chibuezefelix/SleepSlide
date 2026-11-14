@@ -161,10 +161,11 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
 
     //  AudioService
 
-    override suspend fun play(mix: Domain.SoundMix) {
+    override suspend fun play(mix: Domain.SoundMix, proceedWithoutAudioFocus: Boolean) {
         if (mix.isEmpty) return
 
-        if (!audioFocusHandler.request()) {
+        val gotFocus = audioFocusHandler.request()
+        if (!gotFocus && !proceedWithoutAudioFocus) {
             _audioState.update { it.copy(playbackStatus = Domain.PlaybackStatus.ERROR) }
             return
         }
@@ -191,7 +192,7 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
             it.copy(
                 playbackStatus   = Domain.PlaybackStatus.LOADING,
                 activeMix        = mix,
-                audioFocusStatus = Domain.AudioFocusStatus.GAINED,
+                audioFocusStatus = if (gotFocus) Domain.AudioFocusStatus.GAINED else Domain.AudioFocusStatus.NONE,
                 fadeInProgress   = null,
             )
         }
@@ -469,6 +470,7 @@ class AudioServiceImpl : MediaSessionService(), AudioService {
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
+        audioServiceHolder.markForeground(true)
     }
 
     private fun buildNotification(): Notification {

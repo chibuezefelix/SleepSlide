@@ -1,23 +1,20 @@
 package com.opxl.sleepslide.presentation.library
 
-import com.opxl.sleepslide.domain.model.Domain
-import com.opxl.sleepslide.domain.model.Domain.needsHeadphones
-
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,9 +39,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
@@ -55,7 +50,6 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,59 +60,64 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opxl.sleepslide.R
+import com.opxl.sleepslide.domain.model.Domain
+import com.opxl.sleepslide.domain.model.Domain.needsHeadphones
 import com.opxl.sleepslide.domain.repository.CoachMarkScreens
+import com.opxl.sleepslide.presentation.components.CircleIconButton
+import com.opxl.sleepslide.presentation.components.GhostIconButton
+import com.opxl.sleepslide.presentation.components.Glyph
+import com.opxl.sleepslide.presentation.components.GlyphIcon
+import com.opxl.sleepslide.presentation.components.IconCircle
+import com.opxl.sleepslide.presentation.components.LineSlider
+import com.opxl.sleepslide.presentation.components.LineSliderColors
+import com.opxl.sleepslide.presentation.components.PremiumPill
+import com.opxl.sleepslide.presentation.components.ScreenTitle
+import com.opxl.sleepslide.presentation.components.SearchField
+import com.opxl.sleepslide.presentation.components.SectionLabel
+import com.opxl.sleepslide.presentation.components.SelectChip
+import com.opxl.sleepslide.presentation.components.SleepTextInput
+import com.opxl.sleepslide.presentation.components.Tag
+import com.opxl.sleepslide.presentation.components.categoryColors
+import com.opxl.sleepslide.presentation.components.displayTitle
+import com.opxl.sleepslide.presentation.components.glyph
+import com.opxl.sleepslide.presentation.components.groupPosition
+import com.opxl.sleepslide.presentation.components.groupedRow
+import com.opxl.sleepslide.presentation.components.labelRes
 import com.opxl.sleepslide.presentation.tutorial.CoachMarkHost
 import com.opxl.sleepslide.presentation.tutorial.TutorialViewModel
 import com.opxl.sleepslide.presentation.tutorial.coachMarkAnchor
 import com.opxl.sleepslide.presentation.tutorial.tutorialViewModel
-import com.opxl.sleepslide.presentation.components.LineSlider
-import com.opxl.sleepslide.presentation.components.ChevronLeft
-import com.opxl.sleepslide.presentation.components.ChevronRight
-import com.opxl.sleepslide.presentation.components.HeadphonesIcon
-import com.opxl.sleepslide.presentation.components.LineSliderColors
-import com.opxl.sleepslide.presentation.components.PremiumPill
-import com.opxl.sleepslide.ui.theme.OnPanel
-import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.Border
 import com.opxl.sleepslide.ui.theme.Charcoal
+import com.opxl.sleepslide.ui.theme.Dimens
 import com.opxl.sleepslide.ui.theme.MutedGray
+import com.opxl.sleepslide.ui.theme.OnPanel
 import com.opxl.sleepslide.ui.theme.PaleBlue
 import com.opxl.sleepslide.ui.theme.PaleBlueText
-import com.opxl.sleepslide.ui.theme.PaleGreen
-import com.opxl.sleepslide.ui.theme.PaleGreenText
 import com.opxl.sleepslide.ui.theme.PaleRed
 import com.opxl.sleepslide.ui.theme.PaleRedText
-import com.opxl.sleepslide.ui.theme.PaleYellow
-import com.opxl.sleepslide.ui.theme.PaleYellowText
+import com.opxl.sleepslide.ui.theme.Panel
 import com.opxl.sleepslide.ui.theme.SurfaceMuted
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import com.opxl.sleepslide.ui.theme.White
 import kotlinx.coroutines.launch
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.platform.LocalContext
-import com.opxl.sleepslide.R
-import com.opxl.sleepslide.presentation.components.displayTitle
-import com.opxl.sleepslide.presentation.components.labelRes
-
 
 @Composable
 fun LibraryScreen(
@@ -170,66 +169,65 @@ fun LibraryScreen(
     }
 
     CoachMarkHost(viewModel = tutorial, labels = LIBRARY_COACH_MARKS) {
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(snackbarHostState) { data ->
-                Snackbar(
-                    snackbarData   = data,
-                    containerColor = Charcoal,
-                    contentColor   = White,
-                    actionColor    = PaleBlueText,
-                    shape          = RoundedCornerShape(8.dp),
-                )
-            }
-        },
-        containerColor = WarmWhite,
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .windowInsetsPadding(WindowInsets.statusBars),
-        ) {
-            LibraryTopBar(
-                filter      = uiState.filter,
-                activeMix   = uiState.activeMix,
-                onBack      = onNavigateBack,
-                onSearch    = viewModel::onSearchQueryChanged,
-                onClear     = { viewModel.clearSearch() },
-                onSave      = { viewModel.requestSaveAsPreset() },
-            )
-
-            AnimatedContent(
-                targetState   = uiState.catalogue,
-                transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
-                label         = "library_body",
-            ) { catalogue ->
-                when (catalogue) {
-                    is LibraryVMState.CatalogueState.Loading -> LibraryLoadingSkeleton()
-                    is LibraryVMState.CatalogueState.Error   -> LibraryErrorState(catalogue.message.asString())
-                    is LibraryVMState.CatalogueState.Ready   -> LibraryReadyBody(
-                        catalogue = catalogue,
-                        activeMix = uiState.activeMix,
-                        playback  = uiState.playback,
-                        tier      = uiState.entitlementTier,
-                        onTabSelect       = viewModel::selectCategory,
-                        onSoundTap        = viewModel::onSoundTapped,
-                        onSoundLongPress  = viewModel::onSoundLongPressed,
-                        onLayerVolume     = viewModel::onLayerVolumeChanged,
-                        onLayerDragEnd    = viewModel::onLayerVolumeDragEnded,
-                        onMasterVolume    = viewModel::onMasterVolumeChanged,
-                        onMasterDragEnd   = { viewModel.onMasterVolumeDragEnded() },
-                        onMute            = viewModel::muteLayer,
-                        onUnmute          = viewModel::unmuteLayer,
-                        onPlay            = { viewModel.playCurrentMix() },
-                        onPause           = { viewModel.pausePlayback() },
-                        onResume          = { viewModel.resumePlayback() },
+        Scaffold(
+            snackbarHost = {
+                SnackbarHost(snackbarHostState) { data ->
+                    Snackbar(
+                        snackbarData   = data,
+                        containerColor = Charcoal,
+                        contentColor   = White,
+                        actionColor    = PaleBlueText,
+                        shape          = RoundedCornerShape(Dimens.controlRadius),
                     )
+                }
+            },
+            containerColor = WarmWhite,
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .windowInsetsPadding(WindowInsets.statusBars),
+            ) {
+                LibraryTopBar(
+                    filter    = uiState.filter,
+                    activeMix = uiState.activeMix,
+                    onBack    = onNavigateBack,
+                    onSearch  = viewModel::onSearchQueryChanged,
+                    onClear   = { viewModel.clearSearch() },
+                    onSave    = { viewModel.requestSaveAsPreset() },
+                )
+
+                AnimatedContent(
+                    targetState    = uiState.catalogue,
+                    transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(200)) },
+                    label          = "library_body",
+                ) { catalogue ->
+                    when (catalogue) {
+                        is LibraryVMState.CatalogueState.Loading -> LibraryLoadingSkeleton()
+                        is LibraryVMState.CatalogueState.Error   -> LibraryErrorState(catalogue.message.asString())
+                        is LibraryVMState.CatalogueState.Ready   -> LibraryReadyBody(
+                            catalogue        = catalogue,
+                            activeMix        = uiState.activeMix,
+                            playback         = uiState.playback,
+                            onTabSelect      = viewModel::selectCategory,
+                            onSoundTap       = viewModel::onSoundTapped,
+                            onSoundLongPress = viewModel::onSoundLongPressed,
+                            onLayerVolume    = viewModel::onLayerVolumeChanged,
+                            onLayerDragEnd   = viewModel::onLayerVolumeDragEnded,
+                            onMasterVolume   = viewModel::onMasterVolumeChanged,
+                            onMasterDragEnd  = { viewModel.onMasterVolumeDragEnded() },
+                            onMute           = viewModel::muteLayer,
+                            onUnmute         = viewModel::unmuteLayer,
+                            onPlay           = { viewModel.playCurrentMix() },
+                            onPause          = { viewModel.pausePlayback() },
+                            onResume         = { viewModel.resumePlayback() },
+                        )
+                    }
                 }
             }
         }
     }
-    } // CoachMarkHost
 
     if (showSaveDialog) {
         SavePresetDialog(
@@ -251,7 +249,9 @@ private val LIBRARY_COACH_MARKS = listOf(
     "save"      to R.string.coach_library_save,
 )
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Top bar
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun LibraryTopBar(
@@ -262,133 +262,79 @@ private fun LibraryTopBar(
     onClear: () -> Unit,
     onSave: () -> Unit,
 ) {
-    val hasMix = activeMix is LibraryVMState.MixBuilderState.Active
+    val hasMix  = activeMix is LibraryVMState.MixBuilderState.Active
     val isDirty = (activeMix as? LibraryVMState.MixBuilderState.Active)?.isDirty == true
-    val clearSearchLabel = stringResource(R.string.library_cd_clear_search)
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .padding(top = 16.dp),
+            .padding(horizontal = Dimens.gutter)
+            .padding(top = 12.dp),
     ) {
         Row(
             modifier              = Modifier.fillMaxWidth(),
             verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            SmallIconButton(onClick = onBack, description = stringResource(R.string.cd_back)) { ChevronLeft(Charcoal) }
-
-            // Inline search field
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .coachMarkAnchor("search")
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(SurfaceMuted)
-                    .border(
-                        1.dp,
-                        if (filter.isSearchActive) Charcoal else Border,
-                        RoundedCornerShape(8.dp),
-                    )
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    SearchDot(MutedGray)
-                    BasicTextField(
-                        value         = filter.searchQuery,
-                        onValueChange = onSearch,
-                        singleLine    = true,
-                        textStyle     = MaterialTheme.typography.bodyMedium.copy(color = Charcoal),
-                        cursorBrush   = SolidColor(Charcoal),
-                        modifier      = Modifier.weight(1f),
-                        decorationBox = { inner ->
-                            Box {
-                                if (filter.searchQuery.isEmpty()) {
-                                    Text(
-                                        stringResource(R.string.library_search_hint),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MutedGray,
-                                    )
-                                }
-                                inner()
-                            }
-                        },
-                    )
-                    if (filter.isSearchActive) {
-                        Box(
-                            modifier = Modifier
-                                .size(16.dp)
-                                .clip(CircleShape)
-                                .background(MutedGray.copy(alpha = 0.2f))
-                                .clickable(onClick = onClear)
-                                .semantics { contentDescription = clearSearchLabel },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            XIcon(MutedGray)
-                        }
-                    }
-                }
+            CircleIconButton(onClick = onBack, contentDescription = stringResource(R.string.cd_back)) {
+                GlyphIcon(Glyph.ChevronLeft, Charcoal, size = 16.dp)
             }
-
-            // Save button — only visible when mix has sounds
+            // Save button — only visible when the mix has sounds
             AnimatedVisibility(
                 visible = hasMix,
                 enter   = fadeIn(tween(200)),
                 exit    = fadeOut(tween(150)),
             ) {
-                SmallIconButton(
-                    onClick     = onSave,
-                    description = stringResource(R.string.player_cd_save_as_preset),
-                    background  = if (isDirty) Charcoal else SurfaceMuted,
-                    borderColor = if (isDirty) Charcoal else Border,
-                    modifier    = Modifier.coachMarkAnchor("save"),
-                ) {
-                    SaveDot(tint = if (isDirty) White else MutedGray)
-                }
+                CircleIconButton(
+                    onClick            = onSave,
+                    filled             = isDirty,
+                    contentDescription = stringResource(R.string.player_cd_save_as_preset),
+                    modifier           = Modifier.coachMarkAnchor("save"),
+                ) { GlyphIcon(Glyph.Save, if (isDirty) White else Charcoal, size = 18.dp) }
             }
         }
 
-        Spacer(Modifier.height(16.dp))
-        HRule()
+        Spacer(Modifier.height(18.dp))
+        ScreenTitle(title = stringResource(R.string.tab_library))
+        Spacer(Modifier.height(14.dp))
+
+        SearchField(
+            value            = filter.searchQuery,
+            onValueChange    = onSearch,
+            hint             = stringResource(R.string.library_search_hint),
+            onClear          = onClear,
+            clearDescription = stringResource(R.string.library_cd_clear_search),
+            active           = filter.isSearchActive,
+            modifier         = Modifier.coachMarkAnchor("search"),
+        )
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Body states
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun LibraryLoadingSkeleton() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = Dimens.gutter, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // Tab skeleton
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             repeat(4) {
-                Box(
-                    Modifier
-                        .width(60.dp)
-                        .height(32.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Border),
-                )
+                Box(Modifier.width(72.dp).height(36.dp).clip(CircleShape).background(SurfaceMuted))
             }
         }
         Spacer(Modifier.height(8.dp))
-        repeat(6) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Border),
-            )
-        }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(360.dp)
+                .clip(RoundedCornerShape(Dimens.cardRadius))
+                .background(SurfaceMuted),
+        )
     }
 }
 
@@ -401,27 +347,21 @@ private fun LibraryErrorState(message: String) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .background(PaleRed)
-                .padding(horizontal = 10.dp, vertical = 4.dp),
-        ) {
-            Text(stringResource(R.string.label_error), style = MaterialTheme.typography.labelSmall, color = PaleRedText)
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(message, style = MaterialTheme.typography.bodyMedium, color = MutedGray)
+        Tag(stringResource(R.string.label_error), PaleRed, PaleRedText)
+        Spacer(Modifier.height(10.dp))
+        Text(message, style = MaterialTheme.typography.bodyMedium, color = MutedGray, textAlign = TextAlign.Center)
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Ready body
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun LibraryReadyBody(
     catalogue: LibraryVMState.CatalogueState.Ready,
     activeMix: LibraryVMState.MixBuilderState,
     playback: LibraryVMState.LibraryPlaybackState,
-    tier: Domain.EntitlementTier,
     onTabSelect: (Domain.SoundCategory?) -> Unit,
     onSoundTap: (Domain.Sound) -> Unit,
     onSoundLongPress: (Domain.Sound) -> Unit,
@@ -438,35 +378,35 @@ private fun LibraryReadyBody(
     val listState = rememberLazyListState()
 
     Column(modifier = Modifier.fillMaxSize()) {
-
-        // Category tabs
         CategoryTabs(
-            tabs       = catalogue.tabs,
-            selected   = catalogue.selectedTab,
-            onSelect   = { onTabSelect(it.category) },
+            tabs     = catalogue.tabs,
+            selected = catalogue.selectedTab,
+            onSelect = { onTabSelect(it.category) },
         )
 
-        // Sound list + shelves
         LazyColumn(
-            state           = listState,
-            contentPadding  = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier        = Modifier.weight(1f),
+            state          = listState,
+            contentPadding = PaddingValues(horizontal = Dimens.gutter, vertical = 4.dp),
+            modifier       = Modifier.weight(1f),
         ) {
             // Shelves — recent and most played (hidden during search/filter)
             if (catalogue.showShelves) {
                 if (catalogue.recentSounds.isNotEmpty()) {
-                    item(key = "recent_header") { SectionLabel(stringResource(R.string.library_recently_played)) }
+                    item(key = "recent_header") {
+                        SectionLabel(stringResource(R.string.library_recently_played), topPadding = 12.dp)
+                    }
                     item(key = "recent_row") {
                         SoundShelf(
-                            items     = catalogue.recentSounds,
-                            onTap     = { onSoundTap(it.sound) },
+                            items       = catalogue.recentSounds,
+                            onTap       = { onSoundTap(it.sound) },
                             onLongPress = { onSoundLongPress(it.sound) },
                         )
                     }
                 }
                 if (catalogue.mostPlayed.isNotEmpty() && catalogue.mostPlayed != catalogue.recentSounds) {
-                    item(key = "most_header") { SectionLabel(stringResource(R.string.library_most_played)) }
+                    item(key = "most_header") {
+                        SectionLabel(stringResource(R.string.library_most_played), topPadding = 20.dp)
+                    }
                     item(key = "most_row") {
                         SoundShelf(
                             items       = catalogue.mostPlayed,
@@ -475,10 +415,23 @@ private fun LibraryReadyBody(
                         )
                     }
                 }
-                item(key = "divider") { SectionLabel(stringResource(R.string.library_all_sounds)) }
+                item(key = "divider") {
+                    SectionLabel(
+                        text       = stringResource(R.string.library_all_sounds),
+                        topPadding = 24.dp,
+                        trailing   = {
+                            Text(
+                                text  = "${catalogue.displayedSounds.size}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MutedGray,
+                            )
+                        },
+                    )
+                }
+            } else {
+                item(key = "top_gap") { Spacer(Modifier.height(8.dp)) }
             }
 
-            // No results state
             if (catalogue.displayedSounds.isEmpty()) {
                 item(key = "empty") {
                     Box(
@@ -492,12 +445,14 @@ private fun LibraryReadyBody(
                 }
             }
 
+            val count = catalogue.displayedSounds.size
             itemsIndexed(
                 items = catalogue.displayedSounds,
                 key   = { _, item -> item.sound.id },
             ) { index, item ->
                 SoundRow(
                     item        = item,
+                    position    = groupPosition(index, count),
                     onTap       = { onSoundTap(item.sound) },
                     onLongPress = { onSoundLongPress(item.sound) },
                     modifier    = if (index == 0) Modifier.coachMarkAnchor("sound") else Modifier,
@@ -505,11 +460,12 @@ private fun LibraryReadyBody(
             }
 
             item(key = "bottom") {
+                Spacer(Modifier.height(16.dp))
                 Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
             }
         }
 
-        // Mix builder bottom sheet — always visible when mix has layers
+        // Mix builder — rises from the bottom once the mix has layers
         AnimatedVisibility(
             visible = activeMix is LibraryVMState.MixBuilderState.Active,
             enter   = slideInVertically { it } + fadeIn(tween(250)),
@@ -517,23 +473,25 @@ private fun LibraryReadyBody(
         ) {
             val mix = activeMix as? LibraryVMState.MixBuilderState.Active ?: return@AnimatedVisibility
             MixBuilderPanel(
-                mix           = mix,
-                playback      = playback,
-                onLayerVolume = onLayerVolume,
-                onDragEnd     = onLayerDragEnd,
-                onMasterVolume = onMasterVolume,
+                mix             = mix,
+                playback        = playback,
+                onLayerVolume   = onLayerVolume,
+                onDragEnd       = onLayerDragEnd,
+                onMasterVolume  = onMasterVolume,
                 onMasterDragEnd = onMasterDragEnd,
-                onMute        = onMute,
-                onUnmute      = onUnmute,
-                onPlay        = onPlay,
-                onPause       = onPause,
-                onResume      = onResume,
+                onMute          = onMute,
+                onUnmute        = onUnmute,
+                onPlay          = onPlay,
+                onPause         = onPause,
+                onResume        = onResume,
             )
         }
     }
 }
 
-// Category tabs
+// ─────────────────────────────────────────────────────────────────────────────
+// Category tabs · shelves
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun CategoryTabs(
@@ -543,49 +501,44 @@ private fun CategoryTabs(
 ) {
     LazyRow(
         modifier              = Modifier.coachMarkAnchor("tabs"),
-        contentPadding        = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
+        contentPadding        = PaddingValues(horizontal = Dimens.gutter, vertical = 14.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(tabs, key = { it.label }) { tab ->
-            val isSelected = tab == selected
-            val bg by animateColorAsState(if (isSelected) Charcoal else SurfaceMuted, tween(200), "tab_${tab.label}")
-            val fg by animateColorAsState(if (isSelected) White else MutedGray, tween(200), "tab_fg_${tab.label}")
             val tabLabel = stringResource(tab.label)
             val tabDescription = pluralStringResource(R.plurals.library_cd_tab, tab.count, tabLabel, tab.count)
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(bg)
-                    .border(1.dp, if (isSelected) Charcoal else Border, RoundedCornerShape(6.dp))
-                    .clickable { onSelect(tab) }
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
-                    .semantics { contentDescription = tabDescription },
-            ) {
-                Text(
-                    text  = tabLabel,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = fg,
-                )
-            }
+            SelectChip(
+                label    = tabLabel,
+                selected = tab == selected,
+                onClick  = { onSelect(tab) },
+                modifier = Modifier.semantics { contentDescription = tabDescription },
+            )
         }
     }
 }
 
-// Sound shelf (horizontal)
-
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SoundShelf(
     items: List<LibraryVMState.SoundItemState>,
     onTap: (LibraryVMState.SoundItemState) -> Unit,
     onLongPress: (LibraryVMState.SoundItemState) -> Unit,
 ) {
+    // Bleed past the list's gutter so chips scroll to the screen edge, first chip still on the gutter.
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding        = PaddingValues(horizontal = Dimens.gutter),
+        modifier              = Modifier.layout { measurable, constraints ->
+            val bleed = Dimens.gutter.roundToPx()
+            val placeable = measurable.measure(
+                constraints.copy(maxWidth = constraints.maxWidth + bleed * 2, minWidth = constraints.minWidth + bleed * 2)
+            )
+            layout(constraints.maxWidth, placeable.height) { placeable.place(-bleed, 0) }
+        },
     ) {
         items(items, key = { it.sound.id }) { item ->
-            val (pillBg, pillFg) = categoryColors(item.sound.category)
-            val isIn = item.isInActiveMix
+            val (_, categoryFg) = categoryColors(item.sound.category)
+            val isIn  = item.isInActiveMix
             val title = item.sound.displayTitle()
             val chipDescription = listOfNotNull(
                 title,
@@ -593,47 +546,48 @@ private fun SoundShelf(
                 stringResource(R.string.library_cd_premium).takeIf { item.isPremiumLocked },
             ).joinToString(", ")
 
-            Box(
+            Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(if (isIn) Panel else pillBg)
-                    .border(1.dp, if (isIn) Panel else Border, RoundedCornerShape(6.dp))
-                    .clickable { onTap(item) }
-                    .padding(horizontal = 14.dp, vertical = 9.dp)
-                    .alpha(if (item.isPremiumLocked) 0.5f else 1f)
+                    .clip(CircleShape)
+                    .background(if (isIn) Charcoal else White)
+                    .border(Dimens.hairline, if (isIn) Charcoal else Border, CircleShape)
+                    .combinedClickable(onClick = { onTap(item) }, onLongClick = { onLongPress(item) }, role = Role.Button)
+                    .alpha(if (item.isPremiumLocked) 0.55f else 1f)
+                    .padding(start = 12.dp, end = 16.dp, top = 9.dp, bottom = 9.dp)
                     .semantics { contentDescription = chipDescription },
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    verticalAlignment     = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    if (item.isPremiumLocked) {
-                        LockDot(if (isIn) OnPanel.copy(alpha = 0.7f) else pillFg)
-                    } else if (isIn) {
-                        ActiveDot(OnPanel.copy(alpha = 0.8f))
-                    }
-                    Text(
-                        text  = title,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (isIn) OnPanel else pillFg,
-                    )
+                when {
+                    item.isPremiumLocked -> GlyphIcon(Glyph.Lock, if (isIn) White else MutedGray, size = 14.dp)
+                    isIn                 -> GlyphIcon(Glyph.Check, White, size = 14.dp)
+                    else                 -> GlyphIcon(item.sound.category.glyph, categoryFg, size = 16.dp)
                 }
+                Text(
+                    text  = title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (isIn) White else Charcoal,
+                )
             }
         }
     }
 }
 
-// Sound row (vertical list)
+// ─────────────────────────────────────────────────────────────────────────────
+// Sound row (one row of the grouped list)
+// ─────────────────────────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SoundRow(
     item: LibraryVMState.SoundItemState,
+    position: com.opxl.sleepslide.presentation.components.GroupPosition,
     onTap: () -> Unit,
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isIn      = item.isInActiveMix
-    val locked    = item.isPremiumLocked
+    val isIn       = item.isInActiveMix
+    val locked     = item.isPremiumLocked
     val previewing = item.isPreviewPlaying
     val showsHeadphonesTag = item.sound.needsHeadphones
     val title = item.sound.displayTitle()
@@ -645,94 +599,66 @@ private fun SoundRow(
         stringResource(R.string.library_cd_headphones).takeIf { showsHeadphonesTag },
     ).joinToString(", ")
 
-    val bgColor by animateColorAsState(
-        targetValue   = when { isIn -> Panel; previewing -> PaleBlue; else -> White },
-        animationSpec = tween(200),
-        label         = "row_bg_${item.sound.id}",
-    )
-    val borderColor by animateColorAsState(
-        targetValue   = when { isIn -> Panel; previewing -> PaleBlueText; else -> Border },
-        animationSpec = tween(200),
-        label         = "row_border_${item.sound.id}",
-    )
-
-    val (pillBg, pillFg) = categoryColors(item.sound.category)
+    val (circleBg, circleFg) = categoryColors(item.sound.category)
+    val categoryLabel = stringResource(item.sound.category.labelRes)
 
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onTap)
-            .alpha(if (locked && !isIn) 0.6f else 1f)
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+            .groupedRow(position)
+            .combinedClickable(onClick = onTap, onLongClick = onLongPress, role = Role.Button)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
             .semantics { contentDescription = rowDescription },
-        verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Leading indicator
-        Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) {
-            when {
-                previewing -> PreviewingWave(PaleBlueText)
-                isIn       -> InMixIndicator(item.mixPosition)
-                locked     -> LockBox()
-                else       -> CategoryDot(pillBg, pillFg, item.sound.category)
+        // Leading — what this row is right now
+        when {
+            previewing -> IconCircle(PaleBlue) { GlyphIcon(Glyph.WaveBars, PaleBlueText, size = 18.dp) }
+            isIn       -> IconCircle(Charcoal) {
+                Text("${(item.mixPosition ?: 0) + 1}", style = MaterialTheme.typography.labelLarge, color = White)
             }
+            locked     -> IconCircle(SurfaceMuted) { GlyphIcon(Glyph.Lock, MutedGray, size = 18.dp) }
+            else       -> IconCircle(circleBg, glow = circleFg) { GlyphIcon(item.sound.category.glyph, circleFg, size = 18.dp) }
         }
 
-        // Content
+        Spacer(Modifier.width(14.dp))
+
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text     = title,
                 style    = MaterialTheme.typography.titleSmall,
-                color    = when { isIn -> OnPanel; previewing -> PaleBlueText; else -> Charcoal },
+                color    = if (locked && !isIn) MutedGray else Charcoal,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(2.dp))
-            val categoryLabel = stringResource(item.sound.category.labelRes)
-            val subColor = when { isIn -> OnPanel.copy(alpha = 0.6f); previewing -> PaleBlueText.copy(alpha = 0.7f); else -> MutedGray }
             Row(
                 verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
-                if (showsHeadphonesTag) HeadphonesIcon(subColor)
+                if (showsHeadphonesTag) GlyphIcon(Glyph.Headphones, MutedGray, size = 12.dp)
                 Text(
                     text  = if (showsHeadphonesTag) stringResource(R.string.library_category_headphones, categoryLabel) else categoryLabel,
                     style = MaterialTheme.typography.bodySmall,
-                    color = subColor,
+                    color = MutedGray,
                 )
             }
         }
 
-        // Trailing — add / remove / lock / download
+        Spacer(Modifier.width(12.dp))
+
+        // Trailing — add / in mix / premium
         when {
-            locked -> PremiumPill()
-            isIn -> Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(OnPanel.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                MinusIcon(OnPanel)
-            }
-            else -> Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape)
-                    .background(SurfaceMuted)
-                    .border(1.dp, Border, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                PlusIcon(MutedGray)
-            }
+            locked && !isIn -> PremiumPill()
+            isIn -> IconCircle(Charcoal, size = 30.dp) { GlyphIcon(Glyph.Check, White, size = 14.dp) }
+            else -> IconCircle(SurfaceMuted, size = 30.dp, border = Border) { GlyphIcon(Glyph.Plus, Charcoal, size = 14.dp) }
         }
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Mix builder panel
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun MixBuilderPanel(
@@ -755,63 +681,51 @@ private fun MixBuilderPanel(
     val transportLabel = stringResource(
         when { isPlaying -> R.string.library_cd_pause_mix; isPaused -> R.string.library_cd_resume_mix; else -> R.string.library_cd_play_mix }
     )
-    val chevronRotation by animateFloatAsState(if (isExpanded) 90f else -90f, label = "mix_chevron")
+    val chevronRotation by animateFloatAsState(if (isExpanded) 0f else 180f, label = "mix_chevron")
+    val shape = RoundedCornerShape(topStart = Dimens.panelRadius, topEnd = Dimens.panelRadius)
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .coachMarkAnchor("mix_panel")
+            .clip(shape)
             .background(Panel)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .border(Dimens.hairline, OnPanel.copy(alpha = 0.08f), shape)
+            .padding(horizontal = Dimens.gutter)
+            .padding(top = 14.dp, bottom = 14.dp),
     ) {
-        // Panel header
         Row(
             modifier              = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment     = Alignment.CenterVertically,
         ) {
-            Text(
-                if (isExpanded) stringResource(R.string.library_mix_header) else pluralStringResource(R.plurals.library_mix_header_count, mix.layers.size, mix.layers.size),
-                style = MaterialTheme.typography.labelSmall,
-                color = OnPanel.copy(alpha = 0.5f),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Collapse / expand
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(OnPanel.copy(alpha = 0.1f))
-                        .border(1.dp, OnPanel.copy(alpha = 0.2f), CircleShape)
-                        .clickable { isExpanded = !isExpanded }
-                        .semantics { contentDescription = expandLabel },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    ChevronRight(OnPanel, Modifier.rotate(chevronRotation))
-                }
+            Column {
+                Text(
+                    text  = stringResource(R.string.library_mix_header).uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = OnPanel.copy(alpha = 0.55f),
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text  = pluralStringResource(R.plurals.library_mix_header_count, mix.layers.size, mix.layers.size),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = OnPanel,
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                GhostIconButton(
+                    onClick            = { isExpanded = !isExpanded },
+                    contentDescription = expandLabel,
+                    size               = 40.dp,
+                    background         = OnPanel.copy(alpha = 0.08f),
+                ) { GlyphIcon(Glyph.ChevronDown, OnPanel, Modifier.rotate(chevronRotation), size = 16.dp) }
 
-                // Play / Pause / Resume
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(OnPanel.copy(alpha = 0.1f))
-                        .border(1.dp, OnPanel.copy(alpha = 0.2f), CircleShape)
-                        .clickable(
-                            onClick = when {
-                                isPlaying -> onPause
-                                isPaused  -> onResume
-                                else      -> onPlay
-                            }
-                        )
-                        .semantics { contentDescription = transportLabel },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    when {
-                        isPlaying -> PauseIcon(OnPanel)
-                        else      -> PlayIcon(OnPanel)
-                    }
-                }
+                GhostIconButton(
+                    onClick            = when { isPlaying -> onPause; isPaused -> onResume; else -> onPlay },
+                    contentDescription = transportLabel,
+                    size               = 44.dp,
+                    background         = OnPanel,
+                ) { GlyphIcon(if (isPlaying) Glyph.Pause else Glyph.Play, Panel, size = 20.dp) }
             }
         }
 
@@ -821,9 +735,7 @@ private fun MixBuilderPanel(
             exit    = shrinkVertically() + fadeOut(tween(150)),
         ) {
             Column {
-                Spacer(Modifier.height(12.dp))
-
-                // Layer rows
+                Spacer(Modifier.height(14.dp))
                 mix.layers.sortedBy { it.position }.forEach { layer ->
                     LayerSliderRow(
                         layer     = layer,
@@ -832,22 +744,30 @@ private fun MixBuilderPanel(
                         onMute    = { onMute(layer.position) },
                         onUnmute  = { onUnmute(layer.position) },
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(6.dp))
                 }
 
-                // Master volume when 2+ layers
                 if (mix.layers.size > 1) {
-                    Spacer(Modifier.height(4.dp))
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp)
+                            .height(Dimens.hairline)
+                            .background(OnPanel.copy(alpha = 0.1f)),
+                    )
                     Row(
-                        modifier          = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier              = Modifier.fillMaxWidth(),
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
+                        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+                            GlyphIcon(Glyph.Sliders, OnPanel.copy(alpha = 0.7f), size = 16.dp)
+                        }
                         Text(
-                            stringResource(R.string.player_master),
-                            style    = MaterialTheme.typography.labelSmall,
-                            color    = OnPanel.copy(alpha = 0.5f),
-                            modifier = Modifier.width(48.dp),
+                            text     = stringResource(R.string.player_master),
+                            style    = MaterialTheme.typography.labelLarge,
+                            color    = OnPanel.copy(alpha = 0.85f),
+                            modifier = Modifier.width(96.dp),
                         )
                         LineSlider(
                             value                 = mix.masterVolume,
@@ -855,6 +775,13 @@ private fun MixBuilderPanel(
                             onValueChangeFinished = onMasterDragEnd,
                             modifier              = Modifier.weight(1f),
                             colors                = LineSliderColors.dark(),
+                        )
+                        Text(
+                            text      = "${(mix.masterVolume * 100).toInt()}",
+                            style     = MaterialTheme.typography.labelSmall,
+                            color     = OnPanel.copy(alpha = 0.45f),
+                            textAlign = TextAlign.End,
+                            modifier  = Modifier.width(28.dp),
                         )
                     }
                 }
@@ -876,42 +803,30 @@ private fun LayerSliderRow(
     val title = layer.sound.displayTitle()
     val muteLabel = stringResource(if (layer.isMuted) R.string.library_cd_unmute_sound else R.string.library_cd_mute_sound, title)
     Row(
-        modifier          = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier              = Modifier.fillMaxWidth(),
+        verticalAlignment     = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        // Mute toggle
-        Box(
-            modifier = Modifier
-                .size(28.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(
-                    if (layer.isMuted) OnPanel.copy(alpha = 0.05f)
-                    else OnPanel.copy(alpha = 0.1f)
-                )
-                .border(1.dp, OnPanel.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
-                .clickable(onClick = if (layer.isMuted) onUnmute else onMute)
-                .semantics { contentDescription = muteLabel },
-            contentAlignment = Alignment.Center,
+        GhostIconButton(
+            onClick            = if (layer.isMuted) onUnmute else onMute,
+            contentDescription = muteLabel,
+            size               = 32.dp,
+            background         = OnPanel.copy(alpha = if (layer.isMuted) 0.04f else 0.08f),
         ) {
-            if (layer.isMuted) {
-                Box(Modifier.size(8.dp).clip(RoundedCornerShape(1.dp)).background(OnPanel.copy(alpha = 0.3f)))
-            } else {
-                SpeakerDots(OnPanel.copy(alpha = 0.7f))
-            }
+            GlyphIcon(
+                if (layer.isMuted) Glyph.VolumeOff else Glyph.Volume,
+                OnPanel.copy(alpha = if (layer.isMuted) 0.4f else 0.85f),
+                size = 16.dp,
+            )
         }
-
-        // Sound name
         Text(
             text     = title,
-            style    = MaterialTheme.typography.labelMedium,
-            color    = if (layer.isMuted) OnPanel.copy(alpha = 0.3f) else OnPanel.copy(alpha = 0.8f),
+            style    = MaterialTheme.typography.labelLarge,
+            color    = if (layer.isMuted) OnPanel.copy(alpha = 0.35f) else OnPanel.copy(alpha = 0.85f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.width(80.dp),
+            modifier = Modifier.width(96.dp),
         )
-
-        // Volume slider
         LineSlider(
             value                 = layer.volume,
             onValueChange         = onVolume,
@@ -919,18 +834,19 @@ private fun LayerSliderRow(
             modifier              = Modifier.weight(1f),
             colors                = LineSliderColors.dark(muted = layer.isMuted),
         )
-
-        // Percentage label
         Text(
-            text  = "${(layer.volume * 100).toInt()}",
-            style = MaterialTheme.typography.labelSmall,
-            color = OnPanel.copy(alpha = 0.4f),
-            modifier = Modifier.width(24.dp),
+            text      = "${(layer.volume * 100).toInt()}",
+            style     = MaterialTheme.typography.labelSmall,
+            color     = OnPanel.copy(alpha = 0.45f),
+            textAlign = TextAlign.End,
+            modifier  = Modifier.width(28.dp),
         )
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
 // Save dialog
+// ─────────────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun SavePresetDialog(
@@ -945,62 +861,24 @@ private fun SavePresetDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor   = WarmWhite,
+        containerColor   = White,
+        shape            = RoundedCornerShape(Dimens.panelRadius),
         title = {
             Text(stringResource(R.string.player_save_preset_title), style = MaterialTheme.typography.headlineSmall, color = Charcoal)
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(SurfaceMuted)
-                        .border(1.dp, if (name.isNotBlank()) Charcoal else Border, RoundedCornerShape(6.dp))
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                ) {
-                    BasicTextField(
-                        value         = name,
-                        onValueChange = { name = it },
-                        singleLine    = true,
-                        textStyle     = MaterialTheme.typography.bodyMedium.copy(color = Charcoal),
-                        cursorBrush   = SolidColor(Charcoal),
-                        modifier      = Modifier.fillMaxWidth().focusRequester(focusRequester),
-                        decorationBox = { inner ->
-                            Box {
-                                if (name.isEmpty()) {
-                                    Text(stringResource(R.string.preset_field_name), style = MaterialTheme.typography.bodyMedium, color = MutedGray)
-                                }
-                                inner()
-                            }
-                        },
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(SurfaceMuted)
-                        .border(1.dp, Border, RoundedCornerShape(6.dp))
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                ) {
-                    BasicTextField(
-                        value         = emoji,
-                        onValueChange = { if (it.length <= 2) emoji = it },
-                        singleLine    = true,
-                        textStyle     = MaterialTheme.typography.bodyMedium.copy(color = Charcoal),
-                        cursorBrush   = SolidColor(Charcoal),
-                        modifier      = Modifier.fillMaxWidth(),
-                        decorationBox = { inner ->
-                            Box {
-                                if (emoji.isEmpty()) {
-                                    Text(stringResource(R.string.preset_field_emoji), style = MaterialTheme.typography.bodyMedium, color = MutedGray)
-                                }
-                                inner()
-                            }
-                        },
-                    )
-                }
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                SleepTextInput(
+                    value          = name,
+                    onValueChange  = { name = it },
+                    hint           = stringResource(R.string.preset_field_name),
+                    focusRequester = focusRequester,
+                )
+                SleepTextInput(
+                    value         = emoji,
+                    onValueChange = { if (it.length <= 2) emoji = it },
+                    hint          = stringResource(R.string.preset_field_emoji),
+                )
             }
         },
         confirmButton = {
@@ -1019,207 +897,3 @@ private fun SavePresetDialog(
         },
     )
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Micro-components
-// ─────────────────────────────────────────────────────────────────────────────
-
-@Composable
-private fun SectionLabel(label: String) {
-    Text(
-        text     = label.uppercase(),
-        style    = MaterialTheme.typography.labelSmall,
-        color    = MutedGray,
-        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
-    )
-}
-
-@Composable
-private fun HRule() {
-    Box(Modifier.fillMaxWidth().height(1.dp).background(Border))
-}
-
-@Composable
-private fun SmallIconButton(
-    onClick: () -> Unit,
-    description: String,
-    background: Color  = White,
-    borderColor: Color = Border,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Box(
-        modifier = modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(background)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .semantics { contentDescription = description },
-        contentAlignment = Alignment.Center,
-        content          = { content() },
-    )
-}
-
-@Composable
-private fun InMixIndicator(position: Int?) {
-    Box(
-        modifier = Modifier
-            .size(28.dp)
-            .clip(CircleShape)
-            .background(OnPanel.copy(alpha = 0.15f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text  = "${(position ?: 0) + 1}",
-            style = MaterialTheme.typography.labelSmall,
-            color = OnPanel,
-        )
-    }
-}
-
-@Composable
-private fun CategoryDot(bg: Color, fg: Color, category: Domain.SoundCategory) {
-    Box(
-        modifier = Modifier
-            .size(28.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(bg),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text  = stringResource(category.labelRes).first().uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = fg,
-        )
-    }
-}
-
-@Composable
-private fun LockBox() {
-    Box(
-        modifier = Modifier
-            .size(28.dp)
-            .clip(RoundedCornerShape(6.dp))
-            .background(PaleYellow),
-        contentAlignment = Alignment.Center,
-    ) {
-        LockDot(PaleYellowText)
-    }
-}
-
-@Composable
-private fun PreviewingWave(tint: Color) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment     = Alignment.CenterVertically,
-    ) {
-        listOf(8.dp, 14.dp, 10.dp).forEach { h ->
-            Box(Modifier.width(2.dp).height(h).clip(RoundedCornerShape(1.dp)).background(tint))
-        }
-    }
-}
-
-@Composable
-private fun ActiveDot(tint: Color) {
-    Box(Modifier.size(6.dp).clip(CircleShape).background(tint))
-}
-
-@Composable
-private fun SearchDot(tint: Color) {
-    Box(Modifier.size(14.dp).drawBehind {
-        val r = 4.5.dp.toPx()
-        drawCircle(tint, r, Offset(r, r), style = Stroke(1.5.dp.toPx()))
-        val d = r * 0.707f
-        drawLine(tint, Offset(r + d, r + d), Offset(size.width, size.height), 1.5.dp.toPx())
-    })
-}
-
-@Composable
-private fun XIcon(tint: Color) {
-    Box(Modifier.size(8.dp).drawBehind {
-        val s = 1.5.dp.toPx()
-        drawLine(tint, Offset(0f, 0f), Offset(size.width, size.height), s)
-        drawLine(tint, Offset(size.width, 0f), Offset(0f, size.height), s)
-    })
-}
-
-@Composable
-private fun SaveDot(tint: Color) {
-    Box(Modifier.size(14.dp).drawBehind {
-        val p = androidx.compose.ui.graphics.Path().apply {
-            moveTo(1.dp.toPx(), 0f); lineTo(size.width - 1.dp.toPx(), 0f)
-            lineTo(size.width, 1.dp.toPx()); lineTo(size.width, size.height)
-            lineTo(0f, size.height); lineTo(0f, 1.dp.toPx()); close()
-        }
-        drawPath(p, tint)
-    })
-}
-
-@Composable
-private fun LockDot(tint: Color) {
-    Box(Modifier.size(10.dp).drawBehind {
-        val s = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round)
-        val r = size.minDimension / 3.5f
-        drawArc(tint, 0f, -180f, false,
-            Offset(size.width / 2f - r, 0f), Size(r * 2, r * 2), style = s)
-        drawRect(tint, Offset(0f, size.height / 2f),
-            Size(size.width, size.height / 2f), style = s)
-    })
-}
-
-@Composable
-private fun PlusIcon(tint: Color) {
-    Box(Modifier.size(10.dp), contentAlignment = Alignment.Center) {
-        Box(Modifier.fillMaxWidth().height(1.5.dp).background(tint))
-        Box(Modifier.width(1.5.dp).height(10.dp).background(tint))
-    }
-}
-
-@Composable
-private fun MinusIcon(tint: Color) {
-    Box(Modifier.width(10.dp).height(1.5.dp).background(tint))
-}
-
-@Composable
-private fun PlayIcon(tint: Color) {
-    Box(Modifier.size(10.dp).background(
-        tint,
-        shape = object : androidx.compose.ui.graphics.Shape {
-            override fun createOutline(
-                size: Size,
-                layoutDirection: androidx.compose.ui.unit.LayoutDirection,
-                density: androidx.compose.ui.unit.Density,
-            ) = androidx.compose.ui.graphics.Outline.Generic(
-                androidx.compose.ui.graphics.Path().apply {
-                    moveTo(0f, 0f); lineTo(size.width, size.height / 2f); lineTo(0f, size.height); close()
-                }
-            )
-        }
-    ))
-}
-
-@Composable
-private fun PauseIcon(tint: Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        Box(Modifier.width(3.dp).height(10.dp).background(tint))
-        Box(Modifier.width(3.dp).height(10.dp).background(tint))
-    }
-}
-
-@Composable
-private fun SpeakerDots(tint: Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(1.dp)) {
-        Box(Modifier.width(3.dp).height(8.dp).background(tint))
-        Box(Modifier.width(3.dp).height(6.dp).background(tint))
-    }
-}
-
-@Composable @ReadOnlyComposable
-private fun categoryColors(category: Domain.SoundCategory) = when (category) {
-    Domain.SoundCategory.TINNITUS -> PaleBlue to PaleBlueText
-    Domain.SoundCategory.NATURE   -> PaleGreen to PaleGreenText
-    Domain.SoundCategory.ASMR     -> PaleYellow to PaleYellowText
-    else                   -> SurfaceMuted to MutedGray
-}
-

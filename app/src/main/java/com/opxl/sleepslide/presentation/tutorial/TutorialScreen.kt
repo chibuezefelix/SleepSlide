@@ -3,7 +3,6 @@ package com.opxl.sleepslide.presentation.tutorial
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,6 +58,15 @@ import kotlin.math.sin
 import androidx.compose.ui.res.stringResource
 import androidx.annotation.StringRes
 import com.opxl.sleepslide.R
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.text.font.FontWeight
+import com.opxl.sleepslide.presentation.components.CircleIconButton
+import com.opxl.sleepslide.presentation.components.Glyph
+import com.opxl.sleepslide.presentation.components.GlyphIcon
+import com.opxl.sleepslide.presentation.components.PrimaryPill
+import com.opxl.sleepslide.presentation.components.SectionLabel
+import com.opxl.sleepslide.ui.theme.Dimens
+import kotlinx.coroutines.launch
 
 /**
  * One card per feature. Titles are at most four words; [what] and [how] are one sentence each.
@@ -107,8 +115,10 @@ enum class TutorialCard(@StringRes val title: Int, @StringRes val what: Int, @St
 fun TutorialScreen(onClose: () -> Unit) {
     val cards = TutorialCard.entries
     val pagerState = rememberPagerState { cards.size }
+    val scope = rememberCoroutineScope()
     val closeLabel = stringResource(R.string.cd_close)
     val pageLabel  = stringResource(R.string.tutorial_cd_page_of, pagerState.currentPage + 1, cards.size)
+    val isLast     = pagerState.currentPage == cards.lastIndex
 
     Column(
         modifier = Modifier
@@ -119,34 +129,22 @@ fun TutorialScreen(onClose: () -> Unit) {
         Row(
             modifier              = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(horizontal = Dimens.gutter)
+                .padding(top = 12.dp, bottom = 16.dp),
             verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column {
                 Text(stringResource(R.string.tutorial_header), style = MaterialTheme.typography.titleMedium, color = Charcoal)
+                Spacer(Modifier.height(2.dp))
                 Text(
                     stringResource(R.string.tutorial_page_of, pagerState.currentPage + 1, cards.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = MutedGray,
                 )
             }
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(White)
-                    .border(1.dp, Border, RoundedCornerShape(8.dp))
-                    .clickable(onClick = onClose)
-                    .semantics { contentDescription = closeLabel },
-                contentAlignment = Alignment.Center,
-            ) {
-                val ink = Charcoal
-                Canvas(Modifier.size(12.dp)) {
-                    val s = 1.5.dp.toPx()
-                    drawLine(ink, Offset(0f, 0f), Offset(size.width, size.height), s, StrokeCap.Round)
-                    drawLine(ink, Offset(size.width, 0f), Offset(0f, size.height), s, StrokeCap.Round)
-                }
+            CircleIconButton(onClick = onClose, contentDescription = closeLabel) {
+                GlyphIcon(Glyph.Close, Charcoal, size = 18.dp)
             }
         }
 
@@ -155,34 +153,48 @@ fun TutorialScreen(onClose: () -> Unit) {
             modifier       = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            contentPadding = PaddingValues(horizontal = 20.dp),
+            contentPadding = PaddingValues(horizontal = Dimens.gutter),
             pageSpacing    = 12.dp,
             beyondViewportPageCount = 1,
+            verticalAlignment = Alignment.Top,
         ) { page -> FeatureCard(cards[page]) }
 
-        // Dot indicator — the pill slides with the swipe rather than jumping page to page.
-        val dotStep = 14.dp
-        val pillWidth = 16.dp
-        val dotColor = Border
-        val pillColor = Charcoal
-        Canvas(
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(vertical = 20.dp)
-                .size(width = dotStep * (cards.size - 1) + pillWidth, height = 8.dp)
-                .semantics { contentDescription = pageLabel },
+        Row(
+            modifier          = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Dimens.gutter, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            val step = dotStep.toPx()
-            val pill = pillWidth.toPx()
-            repeat(cards.size) { i ->
-                drawCircle(dotColor, radius = size.height / 2f, center = Offset(i * step + pill / 2f, size.height / 2f))
+            // Dot indicator — the pill slides with the swipe rather than jumping page to page.
+            val dotStep = 14.dp
+            val pillWidth = 16.dp
+            val dotColor = Border
+            val pillColor = Charcoal
+            Canvas(
+                modifier = Modifier
+                    .size(width = dotStep * (cards.size - 1) + pillWidth, height = 8.dp)
+                    .semantics { contentDescription = pageLabel },
+            ) {
+                val step = dotStep.toPx()
+                val pill = pillWidth.toPx()
+                repeat(cards.size) { i ->
+                    drawCircle(dotColor, radius = size.height / 2f, center = Offset(i * step + pill / 2f, size.height / 2f))
+                }
+                val position = pagerState.currentPage + pagerState.currentPageOffsetFraction
+                drawRoundRect(
+                    color        = pillColor,
+                    topLeft      = Offset(position * step, 0f),
+                    size         = Size(pill, size.height),
+                    cornerRadius = CornerRadius(size.height / 2f),
+                )
             }
-            val position = pagerState.currentPage + pagerState.currentPageOffsetFraction
-            drawRoundRect(
-                color        = pillColor,
-                topLeft      = Offset(position * step, 0f),
-                size         = Size(pill, size.height),
-                cornerRadius = CornerRadius(size.height / 2f),
+            Spacer(Modifier.weight(1f))
+            PrimaryPill(
+                text    = stringResource(if (isLast) R.string.action_done else R.string.action_continue),
+                onClick = {
+                    if (isLast) onClose()
+                    else scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
+                },
             )
         }
 
@@ -197,34 +209,39 @@ private fun FeatureCard(card: TutorialCard) {
         accent = PaleBlueText, fill = SurfaceMuted, surface = White,
     )
     val illustrationLabel = stringResource(R.string.tutorial_cd_illustration, stringResource(card.title))
+    val shape = RoundedCornerShape(Dimens.panelRadius)
+    // Sized to its content (scrolls if a large font pushes it past the page) — no empty slab below the text.
     Column(
         modifier = Modifier
-            .fillMaxSize()
-            .clip(RoundedCornerShape(12.dp))
+            .fillMaxWidth()
+            .clip(shape)
             .background(White)
-            .border(1.dp, Border, RoundedCornerShape(12.dp))
+            .border(Dimens.hairline, Border, shape)
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(12.dp),
     ) {
         Canvas(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(1.5f)
+                .aspectRatio(1.3f)
                 .semantics { contentDescription = illustrationLabel },
         ) {
-            drawRoundRect(ink.fill, cornerRadius = CornerRadius(10.dp.toPx()))
-            drawRoundRect(ink.line, cornerRadius = CornerRadius(10.dp.toPx()), style = Stroke(1.dp.toPx()))
+            drawRoundRect(ink.fill, cornerRadius = CornerRadius(Dimens.cardRadius.toPx() - 4.dp.toPx()))
             drawIllustration(card, ink)
         }
 
-        Spacer(Modifier.height(24.dp))
-        Text(stringResource(card.title), style = MaterialTheme.typography.headlineSmall, color = Charcoal)
-        Spacer(Modifier.height(8.dp))
-        Text(stringResource(card.what), style = MaterialTheme.typography.bodyMedium, color = Charcoal)
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(R.string.tutorial_how_to_use), style = MaterialTheme.typography.labelSmall, color = MutedGray)
-        Spacer(Modifier.height(4.dp))
-        Text(stringResource(card.how), style = MaterialTheme.typography.bodyMedium, color = MutedGray)
+        Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 22.dp, bottom = 16.dp)) {
+            Text(
+                stringResource(card.title),
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
+                color = Charcoal,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(card.what), style = MaterialTheme.typography.bodyLarge, color = Charcoal)
+            Spacer(Modifier.height(18.dp))
+            SectionLabel(stringResource(R.string.tutorial_how_to_use), topPadding = 0.dp, bottomPadding = 6.dp)
+            Text(stringResource(card.how), style = MaterialTheme.typography.bodyMedium, color = MutedGray)
+        }
     }
 }
 

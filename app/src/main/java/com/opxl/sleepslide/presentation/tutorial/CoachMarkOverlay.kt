@@ -44,6 +44,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.opxl.sleepslide.ui.theme.Dimens
 import com.opxl.sleepslide.ui.theme.ImageScrim
 import com.opxl.sleepslide.ui.theme.OverlayMark
 import com.opxl.sleepslide.ui.theme.OnImage
@@ -171,8 +172,11 @@ fun CoachMarkOverlay(
         val nudge    = 8.dp.toPx()
         val headLen  = 7.dp.toPx()
         val spotPad  = 6.dp.toPx()
-        val spotCorner  = CornerRadius(10.dp.toPx())
-        val labelCorner = CornerRadius(8.dp.toPx())
+        // Spotlights follow the shape underneath: circles and pills stay round, cards keep their corner.
+        val pillLimit   = 72.dp.toPx()
+        val cardCorner  = Dimens.panelRadius.toPx() + spotPad
+        fun spotCorner(spot: Rect) = CornerRadius(if (spot.height <= pillLimit) spot.height / 2f else cardCorner)
+        val labelCorner = CornerRadius(Dimens.controlRadius.toPx())
         val stroke   = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
         val maxTextWidth = (minOf(250.dp.toPx(), w - 2 * margin) - 2 * pad).toInt()
 
@@ -181,13 +185,15 @@ fun CoachMarkOverlay(
         // Targets that are actually inside this overlay; each becomes a spotlight and an obstacle.
         val spots = marks
             .map { it to it.anchor.translate(-origin) }
-            .filter { (_, a) -> a.left >= 0f && a.top >= 0f && a.right <= w && a.bottom <= h }
+            // A target scrolled fully out of view reports an empty rect at the origin — skip it.
+            .filter { (_, a) -> !a.isEmpty && a.left >= 0f && a.top >= 0f && a.right <= w && a.bottom <= h }
             .map { (mark, a) -> mark to a.inflate(spotPad) }
         val obstacles = spots.mapTo(mutableListOf()) { it.second }
 
         spots.forEach { (mark, spot) ->
-            drawRoundRect(Color.Black, spot.topLeft, spot.size, spotCorner, blendMode = BlendMode.Clear)
-            drawRoundRect(OverlayMark, spot.topLeft, spot.size, spotCorner, style = stroke)
+            val corner = spotCorner(spot)
+            drawRoundRect(Color.Black, spot.topLeft, spot.size, corner, blendMode = BlendMode.Clear)
+            drawRoundRect(OverlayMark, spot.topLeft, spot.size, corner, style = stroke)
 
             // Label goes on whichever side of the target has more room, then slides away
             // from anything already drawn so labels never cover each other or a spotlight.

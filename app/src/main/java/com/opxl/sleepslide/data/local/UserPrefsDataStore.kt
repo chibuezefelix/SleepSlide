@@ -119,6 +119,10 @@ class UserPrefsDataStore @Inject constructor(
         }
     }
 
+    suspend fun setQuickStartTimerEnabled(enabled: Boolean) {
+        dataStore.edit { it[PrefKeys.IS_QUICK_START_TIMER_ENABLED] = enabled }
+    }
+
     suspend fun markNotificationPermissionRequested() {
         dataStore.edit { it[PrefKeys.HAS_REQUESTED_NOTIFICATION_PERM] = true }
     }

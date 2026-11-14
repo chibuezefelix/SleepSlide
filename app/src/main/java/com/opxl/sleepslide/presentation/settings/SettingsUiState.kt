@@ -52,6 +52,7 @@ data class PlaybackSettingsState(
     val defaultFadeOutMs: Long              = 60_000L,
     val lastTimerDurationMs: Long           = 30 * 60 * 1_000L,
     val isNightLockDefault: Boolean         = false,
+    val isQuickStartTimerEnabled: Boolean   = true,
     val fadeInLabel: String                 = "3 seconds",
     val fadeOutLabel: String                = "1 minute",
     val timerLabel: String                  = "30 minutes",
@@ -126,6 +127,7 @@ sealed interface SettingsEvent {
     data object NavigateBack : SettingsEvent
     data object NavigateToOnboarding : SettingsEvent
     data object OpenBatteryOptSettings : SettingsEvent
+    data object OpenExactAlarmSettings : SettingsEvent
     data class ShowError(val message: String) : SettingsEvent
     data class ShowInfo(val message: String) : SettingsEvent
     data object PurchaseSuccess : SettingsEvent

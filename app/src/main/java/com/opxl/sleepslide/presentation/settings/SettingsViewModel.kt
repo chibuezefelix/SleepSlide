@@ -55,6 +55,7 @@ class SettingsViewModel @Inject constructor(
     private val _purchaseState  = MutableStateFlow<SettingsVMState.PurchaseOperationState>(SettingsVMState.PurchaseOperationState.Idle)
     private val _dataResetState = MutableStateFlow<SettingsVMState.DataResetState>(SettingsVMState.DataResetState.Idle)
     private val _batteryStatus  = MutableStateFlow<SettingsVMState.BatteryOptStatus>(SettingsVMState.BatteryOptStatus.Unknown)
+    private val _exactAlarmGranted = MutableStateFlow(checkExactAlarmPermission())
     /** Localised Play price of the unlock; null until loaded, or when offline. */
     private val _price          = MutableStateFlow<String?>(null)
 
@@ -201,6 +202,13 @@ class SettingsViewModel @Inject constructor(
     }
 
 
+    fun setQuickStartTimerEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            runCatching { userPreferencesRepository.setQuickStartTimerEnabled(enabled) }
+                .onFailure { _events.trySend(SettingsVMState.SettingsEvent.ShowError("Could not save quick start setting")) }
+        }
+    }
+
     fun setThemeMode(mode: Domain.ThemeMode) {
         viewModelScope.launch {
             runCatching { userPreferencesRepository.setThemeMode(mode) }
@@ -336,14 +344,15 @@ class SettingsViewModel @Inject constructor(
             .distinctUntilChanged()
 
         val purchaseFlow = combine(_purchaseState, _price) { op, price -> op to price }
+        val systemFlow   = combine(_batteryStatus, _exactAlarmGranted) { battery, exact -> battery to exact }
 
         return combine(
             prefsFlow,
             entitlementFlow,
             purchaseFlow,
-            _batteryStatus,
+            systemFlow,
             _dataResetState,
-        ) { prefs, entitlement, (purchaseOp, price), batteryStatus, dataReset ->
+        ) { prefs, entitlement, (purchaseOp, price), (batteryStatus, exactAlarmGranted), dataReset ->
 
             val accountState = when {
                 // Cold start before the cache or RevenueCat answered — skeleton, not a wrong tier
@@ -364,6 +373,7 @@ class SettingsViewModel @Inject constructor(
                 defaultFadeOutMs  = prefs.defaultFadeOutMs,
                 lastTimerDurationMs = prefs.lastTimerDurationMs,
                 isNightLockDefault = prefs.isNightLockEnabledByDefault,
+                isQuickStartTimerEnabled = prefs.isQuickStartTimerEnabled,
                 fadeInLabel       = SettingsVMState.FADE_IN_STEPS_MS.labelFor(prefs.defaultFadeInMs, "3 seconds"),
                 fadeOutLabel      = SettingsVMState.FADE_OUT_STEPS_MS.labelFor(prefs.defaultFadeOutMs, "1 minute"),
                 timerLabel        = SettingsVMState.DEFAULT_TIMER_STEPS_MS.labelFor(prefs.lastTimerDurationMs, "30 minutes"),
@@ -391,6 +401,13 @@ class SettingsViewModel @Inject constructor(
                 about = SettingsVMState.AboutState(
                     appVersion = resolveAppVersion(),
                     onboardingPath = prefs.onboardingPath,
+                ),
+                windDown = SettingsVMState.WindDownState(
+                    isEnabled     = prefs.isWindDownEnabled,
+                    hour          = prefs.windDownHour,
+                    minute        = prefs.windDownMinute,
+                    formattedTime = formatTime(prefs.windDownHour, prefs.windDownMinute),
+                    exactAlarmPermissionGranted = exactAlarmGranted,
                 ),
                 purchase = purchaseOp,
                 dataReset = dataReset,
@@ -512,14 +529,28 @@ class SettingsViewModel @Inject constructor(
     }.getOrDefault(true)
 
     fun openExactAlarmSettings() {
+        _events.trySend(SettingsVMState.SettingsEvent.OpenExactAlarmSettings)
+    }
+
+    /**
+     * Called when the screen resumes (e.g. back from the system "Alarms & reminders"
+     * page). Updates the permission card and, when the grant changed, re-schedules
+     * the reminder so it switches between the exact and the inexact alarm.
+     */
+    fun refreshExactAlarmPermission() {
+        val granted = checkExactAlarmPermission()
+        if (granted == _exactAlarmGranted.value) return
+        _exactAlarmGranted.value = granted
         viewModelScope.launch {
-            _events.trySend(
-                SettingsVMState.SettingsEvent.ShowInfo(
-                "Enable 'Alarms & reminders' for precise daily timing"
-            ))
-            // Actual navigation to alarm settings is handled by MainActivity
-            // via SettingsEvent.OpenBatteryOptSettings re-used for this purpose
-            // or a dedicated event if the caller differentiates
+            runCatching {
+                val prefs = userPreferencesRepository.get()
+                if (prefs.isWindDownEnabled) {
+                    windDownNotificationService.scheduleDailyReminder(
+                        prefs.windDownHour,
+                        prefs.windDownMinute,
+                    )
+                }
+            }
         }
     }
 

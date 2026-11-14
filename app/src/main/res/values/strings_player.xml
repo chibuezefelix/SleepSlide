@@ -38,6 +38,7 @@
     <string name="player_empty_title">No sounds yet</string>
     <string name="player_empty_subtitle">Tap to browse the library</string>
     <string name="player_master">Master</string>
+    <string name="player_layer_muted">Muted</string>
     <string name="player_add_sound">Add a sound</string>
     <string name="player_cd_remove_layer">Remove layer</string>
     <string name="player_section_timer">Timer</string>

@@ -19,14 +19,14 @@
     <string name="onboarding_path_tinnitus_description">White, pink, brown and grey noise to mask ear ringing and help you sleep.</string>
     <string name="onboarding_path_tinnitus_who">For Jeff — veterans, hearing loss, tinnitus sufferers</string>
     <string name="onboarding_path_general_title">Wind down</string>
-    <string name="onboarding_path_general_description">Rain, ocean, forest and ambient sounds to help you relax after a long day.</string>
+    <string name="onboarding_path_general_description">Rain, wind, forest and ambient sounds to help you relax after a long day.</string>
     <string name="onboarding_path_general_who">For Sandra — stress relief, daily wind-down</string>
     <string name="onboarding_pill_white_noise">White noise</string>
     <string name="onboarding_pill_brown_noise">Brown noise</string>
     <string name="onboarding_pill_pink_noise">Pink noise</string>
     <string name="onboarding_pill_grey_noise">Grey noise</string>
     <string name="onboarding_pill_rain">Rain</string>
-    <string name="onboarding_pill_ocean">Ocean</string>
+    <string name="onboarding_pill_wind">Wind</string>
     <string name="onboarding_pill_forest">Forest</string>
     <string name="onboarding_pill_fireplace">Fireplace</string>
     <string name="onboarding_permissions_headline">One more thing</string>

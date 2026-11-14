@@ -59,8 +59,36 @@
         </provider>
         <receiver android:name=".data.notification.WindDownAlarmReceiver"
             android:exported="false"/>
+        <service android:name=".presentation.widget.SleepTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_moon"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+        <receiver android:name=".presentation.widget.SleepWidgetReceiver"
+            android:exported="true"
+            android:label="@string/tile_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sleep_widget_info"/>
+        </receiver>
+        <receiver android:name=".data.notification.QuickStartReceiver"
+            android:exported="false"/>
         <receiver android:name=".data.timer.TimerBackstopReceiver"
             android:exported="false"/>
+
+        <receiver android:name=".data.notification.ExactAlarmPermissionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"/>
+            </intent-filter>
+        </receiver>
 
         <receiver android:name=".data.notification.BootReceiver"
             android:exported="true">

@@ -105,24 +105,28 @@ private val DarkColors = darkColorScheme(
 // Shapes
 
 /**
- * SleepSlide deliberately avoids excessive rounding.
+ * One radius per role, so a screen never mixes five corner sizes (see [Dimens]).
  *
- * 4dp  -> buttons / compact controls
- * 8dp  -> cards
- * 12dp -> larger surfaces
+ * extraSmall -> tags and small badges
+ * small      -> inputs and square icon buttons
+ * medium     -> inner cards and menus
+ * large      -> cards and list groups
+ * extraLarge -> hero panels and sheets
+ * Buttons and chips are full pills ([androidx.compose.foundation.shape.CircleShape]).
  */
 val SleepSlideShapes = Shapes(
-    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
-    small = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
-    medium = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-    large = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.tagRadius),
+    small = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.controlRadius),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.cardRadius),
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(Dimens.panelRadius)
 )
 
 // Extended SleepSlide design tokens
 
 @Immutable
 data class SleepSlideExtendedColors(
+    val isDark: Boolean,
     val bone: Color,
     val ground: Color,
     val surface: Color,
@@ -145,10 +149,14 @@ data class SleepSlideExtendedColors(
     val paleGreenText: Color,
 
     val paleYellow: Color,
-    val paleYellowText: Color
+    val paleYellowText: Color,
+
+    /** Peak alpha of the soft corner glow on feature cards. Dark grounds take more before it reads as light. */
+    val glowStrength: Float,
 )
 
 private val LightExtendedColors = SleepSlideExtendedColors(
+    isDark = false,
     bone = LightPalette.Bone,
     ground = LightPalette.WarmWhite,
     surface = LightPalette.White,
@@ -171,10 +179,13 @@ private val LightExtendedColors = SleepSlideExtendedColors(
     paleGreenText = LightPalette.PaleGreenText,
 
     paleYellow = LightPalette.PaleYellow,
-    paleYellowText = LightPalette.PaleYellowText
+    paleYellowText = LightPalette.PaleYellowText,
+
+    glowStrength = 0.065f,
 )
 
 private val DarkExtendedColors = SleepSlideExtendedColors(
+    isDark = true,
     bone = DarkSurfaceVariant,
     ground = DarkBackground,
     surface = DarkSurface,
@@ -197,7 +208,9 @@ private val DarkExtendedColors = SleepSlideExtendedColors(
     paleGreenText = Color(0xFFB6DDB5),
 
     paleYellow = Color(0xFF403716),
-    paleYellowText = Color(0xFFE8D18A)
+    paleYellowText = Color(0xFFE8D18A),
+
+    glowStrength = 0.12f,
 )
 
 val LocalSleepSlideColors = staticCompositionLocalOf {

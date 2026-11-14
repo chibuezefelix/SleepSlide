@@ -64,6 +64,10 @@ class UserPreferencesRepositoryImpl @Inject constructor(
         dataStore.setWindDownTime(hour, minute)
     }
 
+    override suspend fun setQuickStartTimerEnabled(enabled: Boolean) {
+        dataStore.setQuickStartTimerEnabled(enabled)
+    }
+
     override suspend fun markNotificationPermissionRequested() {
      dataStore.markNotificationPermissionRequested()
     }

@@ -30,6 +30,7 @@ object PrefKeys {
     val IS_WIND_DOWN_ENABLED            = booleanPreferencesKey("is_wind_down_enabled")
     val WIND_DOWN_HOUR = intPreferencesKey("wind_down_hour")
     val WIND_DOWN_MINUTE = intPreferencesKey("wind_down_minute")
+    val IS_QUICK_START_TIMER_ENABLED    = booleanPreferencesKey("is_quick_start_timer_enabled")
     val HAS_REQUESTED_NOTIFICATION_PERM = booleanPreferencesKey("has_requested_notification_perm")
     val HAS_SEEN_HEADPHONES_HINT    = booleanPreferencesKey("has_seen_headphones_hint")
 
@@ -163,6 +164,7 @@ object Mapper {
             seenCoachMarks              = CoachMarkScreens.ALL
                 .filterTo(mutableSetOf()) { this[PrefKeys.coachMarkSeen(it)] == true },
             hasSeenHeadphonesHint       = this[PrefKeys.HAS_SEEN_HEADPHONES_HINT]    ?: defaults.hasSeenHeadphonesHint,
+            isQuickStartTimerEnabled    = this[PrefKeys.IS_QUICK_START_TIMER_ENABLED] ?: defaults.isQuickStartTimerEnabled,
         )
     }
 
@@ -205,6 +207,7 @@ object Mapper {
         this[PrefKeys.HAS_REQUESTED_NOTIFICATION_PERM] = prefs.hasRequestedNotificationPermission
         CoachMarkScreens.ALL.forEach { this[PrefKeys.coachMarkSeen(it)] = it in prefs.seenCoachMarks }
         this[PrefKeys.HAS_SEEN_HEADPHONES_HINT]     = prefs.hasSeenHeadphonesHint
+        this[PrefKeys.IS_QUICK_START_TIMER_ENABLED] = prefs.isQuickStartTimerEnabled
     }
 
     fun Local.PlayHistoryEntity.toDomain(): Domain.PlaySession = Domain.PlaySession(
