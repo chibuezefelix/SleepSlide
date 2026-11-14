@@ -107,6 +107,10 @@ import com.opxl.sleepslide.ui.theme.SurfaceMuted
 import com.opxl.sleepslide.ui.theme.WarmWhite
 import com.opxl.sleepslide.ui.theme.White
 import kotlinx.coroutines.launch
+import com.opxl.sleepslide.presentation.widget.AddTileResult
+import com.opxl.sleepslide.presentation.widget.canRequestAddTile
+import com.opxl.sleepslide.presentation.widget.requestAddSleepTile
+import com.opxl.sleepslide.presentation.widget.requestPinSleepWidget
 
 @Composable
 fun SettingsScreen(
@@ -235,6 +239,39 @@ fun SettingsScreen(
                     onTimeChange = viewModel::setWindDownTime,
                     onTest       = { viewModel.sendTestWindDownNotification() },
                     onAllowPreciseTiming = { viewModel.openExactAlarmSettings() },
+                )
+            }
+
+            item {
+                SectionLabel("Quick start")
+                QuickStartSection(
+                    state            = uiState.playback,
+                    onTimerToggle    = viewModel::setQuickStartTimerEnabled,
+                    onAddWidget      = {
+                        // Some launchers (e.g. Xiaomi without the shortcuts permission) drop the pin
+                        // request silently and never call back, so always leave the manual way visible.
+                        val sent = requestPinSleepWidget(context)
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                if (sent) "If nothing appears, long-press your home screen, tap Widgets, and choose SleepSlide."
+                                else "Long-press your home screen, tap Widgets, and choose SleepSlide."
+                            )
+                        }
+                    },
+                    onAddTile        = {
+                        requestAddSleepTile(context) { result ->
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    when (result) {
+                                        AddTileResult.ADDED         -> "Added to Quick Settings"
+                                        AddTileResult.ALREADY_ADDED -> "Already in Quick Settings"
+                                        AddTileResult.DECLINED      -> "Not added"
+                                        AddTileResult.UNAVAILABLE   -> "Couldn't add it automatically. Edit your Quick Settings and drag in \"Sleep now\"."
+                                    }
+                                )
+                            }
+                        }
+                    },
                 )
             }
 
@@ -695,6 +732,56 @@ private fun WindDownSection(
                 }
             }
         }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quick start (reminder button, Quick Settings tile)
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun QuickStartSection(
+    state: SettingsVMState.PlaybackSettingsState,
+    onTimerToggle: (Boolean) -> Unit,
+    onAddTile: () -> Unit,
+    onAddWidget: () -> Unit,
+) {
+    GroupCard {
+        ToggleRow(
+            glyph    = Glyph.Timer,
+            label    = "Start timer too",
+            sublabel = if (state.isQuickStartTimerEnabled)
+                "One tap also starts your usual timer (${state.timerLabel})"
+            else
+                "One tap plays until you stop it",
+            enabled  = state.isQuickStartTimerEnabled,
+            onToggle = onTimerToggle,
+        )
+        RowDivider(inset = DividerInset)
+        if (canRequestAddTile) {
+            ListRow(
+                title    = "Add to Quick Settings",
+                subtitle = "Start your usual sounds from the swipe-down panel",
+                leading  = { SettingIcon(Glyph.Moon) },
+                trailing = { Chevron() },
+                onClick  = onAddTile,
+            )
+        } else {
+            ListRow(
+                title    = "Quick Settings tile",
+                subtitle = "Swipe down, tap the edit pencil, and drag \"Sleep now\" into your tiles",
+                leading  = { SettingIcon(Glyph.Moon) },
+                subtitleMaxLines = 3,
+            )
+        }
+        RowDivider(inset = DividerInset)
+        ListRow(
+            title    = "Add home-screen widget",
+            subtitle = "Sleep now and your pinned presets, one tap from your home screen",
+            leading  = { SettingIcon(Glyph.Sparkle) },
+            trailing = { Chevron() },
+            onClick  = onAddWidget,
+        )
     }
 }
 

@@ -202,6 +202,13 @@ class SettingsViewModel @Inject constructor(
     }
 
 
+    fun setQuickStartTimerEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            runCatching { userPreferencesRepository.setQuickStartTimerEnabled(enabled) }
+                .onFailure { _events.trySend(SettingsVMState.SettingsEvent.ShowError("Could not save quick start setting")) }
+        }
+    }
+
     fun setThemeMode(mode: Domain.ThemeMode) {
         viewModelScope.launch {
             runCatching { userPreferencesRepository.setThemeMode(mode) }
@@ -366,6 +373,7 @@ class SettingsViewModel @Inject constructor(
                 defaultFadeOutMs  = prefs.defaultFadeOutMs,
                 lastTimerDurationMs = prefs.lastTimerDurationMs,
                 isNightLockDefault = prefs.isNightLockEnabledByDefault,
+                isQuickStartTimerEnabled = prefs.isQuickStartTimerEnabled,
                 fadeInLabel       = SettingsVMState.FADE_IN_STEPS_MS.labelFor(prefs.defaultFadeInMs, "3 seconds"),
                 fadeOutLabel      = SettingsVMState.FADE_OUT_STEPS_MS.labelFor(prefs.defaultFadeOutMs, "1 minute"),
                 timerLabel        = SettingsVMState.DEFAULT_TIMER_STEPS_MS.labelFor(prefs.lastTimerDurationMs, "30 minutes"),
