@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat
 import com.opxl.sleepslide.MainActivity
 import com.opxl.sleepslide.R
 
+import com.opxl.sleepslide.domain.service.QuickStartService
 import com.opxl.sleepslide.domain.service.WindDownNotificationService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.util.Calendar
@@ -34,6 +35,8 @@ private const val LEGACY_CHANNEL_ID     = "wind_down_reminder"
 private const val NOTIFICATION_ID       = 9_001
 private const val REQUEST_CODE_DAILY    = 9_002
 private const val REQUEST_CODE_IMMEDIATE = 9_003
+private const val REQUEST_CODE_START_NOW = 9_004
+private const val REQUEST_CODE_RESULT    = 9_005
 private const val DEEP_LINK_URI = "sleepslide://app/presets?autoPlay=false"
 
 @Singleton
@@ -159,6 +162,7 @@ class WindDownNotificationServiceImpl @Inject constructor(
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setContentIntent(contentIntent)
+            .addAction(0, context.getString(R.string.notif_action_start_now), buildStartNowPendingIntent())
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
@@ -175,6 +179,55 @@ class WindDownNotificationServiceImpl @Inject constructor(
         }
     }
 
+
+    private fun buildStartNowPendingIntent(): PendingIntent =
+        PendingIntent.getBroadcast(
+            context,
+            REQUEST_CODE_START_NOW,
+            Intent(context, QuickStartReceiver::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+    override fun onQuickStartResult(outcome: QuickStartService.Outcome) {
+        val (titleRes, bodyRes, openPresets) = when (outcome) {
+            is QuickStartService.Outcome.Started,
+            is QuickStartService.Outcome.AlreadyPlaying -> {
+                runCatching { notificationManager.cancel(NOTIFICATION_ID) }
+                return
+            }
+            is QuickStartService.Outcome.NeedsUpgrade ->
+                Triple(R.string.notif_quick_start_upgrade_title, R.string.notif_quick_start_upgrade_body, true)
+            is QuickStartService.Outcome.NothingToPlay ->
+                Triple(R.string.notif_quick_start_empty_title, R.string.notif_quick_start_empty_body, false)
+            is QuickStartService.Outcome.Failed ->
+                Triple(R.string.notif_quick_start_failed_title, R.string.notif_quick_start_failed_body, false)
+        }
+        // A receiver may not start an activity from the background, so the explanation is a
+        // notification whose tap opens the app.
+        val open = if (openPresets) {
+            Intent(Intent.ACTION_VIEW, Uri.parse(DEEP_LINK_URI)).setClass(context, MainActivity::class.java)
+        } else {
+            context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
+        }.apply { flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP }
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(titleRes))
+            .setContentText(context.getString(bodyRes))
+            .setContentIntent(
+                PendingIntent.getActivity(
+                    context, REQUEST_CODE_RESULT, open,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
+            )
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)     // replaces the reminder in place, no second ding
+            .setSilent(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .build()
+        runCatching { notificationManager.notify(NOTIFICATION_ID, notification) }
+            .onFailure { Log.e(TAG, "Failed to show quick-start result", it) }
+    }
 
     private fun ensureChannelCreated() {
         val channel = NotificationChannel(

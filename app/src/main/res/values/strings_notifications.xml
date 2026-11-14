@@ -12,4 +12,11 @@
     <string name="notif_playback_channel_name">Playback</string>
     <string name="notif_playback_channel_description">SleepSlide background playback</string>
     <string name="notif_playback_playing">Playing</string>
+    <string name="notif_action_start_now">Start now</string>
+    <string name="notif_quick_start_upgrade_title">Your last mix uses premium sounds</string>
+    <string name="notif_quick_start_upgrade_body">Tap to pick a free sound, or unlock everything once.</string>
+    <string name="notif_quick_start_empty_title">Pick your first sound</string>
+    <string name="notif_quick_start_empty_body">Nothing to resume yet. Tap to open SleepSlide.</string>
+    <string name="notif_quick_start_failed_title">Couldn\'t start the sound</string>
+    <string name="notif_quick_start_failed_body">Tap to open SleepSlide and try again.</string>
 </resources>

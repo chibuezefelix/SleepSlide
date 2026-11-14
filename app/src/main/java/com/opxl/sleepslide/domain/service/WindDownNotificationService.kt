@@ -27,4 +27,10 @@ interface WindDownNotificationService {
      */
 
     fun isScheduled(): Boolean
+
+    /**
+     * Reflects what the reminder's "Start now" button did: clears the reminder when sound
+     * started, otherwise replaces it with a short, silent explanation that opens the app.
+     */
+    fun onQuickStartResult(outcome: QuickStartService.Outcome)
 }
