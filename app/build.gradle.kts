@@ -28,13 +28,19 @@ android {
         applicationId = "com.opxl.sleepslide"
         minSdk = 26
         targetSdk = 37
-        versionCode = 6
-        versionName = "1.0.6"
+        versionCode = 7
+        versionName = "1.0.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-//        //Assets
+        //Assets
+        buildConfigField("String", "REVENUECAT_KEY", localProperties["REVENUECAT_KEY"] as String)
+        buildConfigField("String", "TEST_REVENUECAT_KEY", localProperties["TEST_REVENUECAT_KEY"] as String)
         buildConfigField("String", "WHITE_NOISE", localProperties["WHITE_NOISE"] as String)
+
+        // Testing mode grants PREMIUM without a purchase and uses TEST_REVENUECAT_KEY.
+        // Off by default; only the debug build type may turn it on (see below).
+        buildConfigField("boolean", "TESTING_MODE", "false")
 
     }
 
@@ -54,26 +60,17 @@ android {
                 debugSymbolLevel = "FULL"
             }
 
-            applicationIdSuffix=".release"
-            versionNameSuffix="-release"
+            // No applicationIdSuffix: Play requires exactly com.opxl.sleepslide.
             isMinifyEnabled = false
-            buildConfigField("String", "REVENUECAT_KEY", localProperties.get("REVENUECAT_KEY") as String)
-            // Opt in with TESTING_MODE=true in local.properties. Release never reads it.
-            val testingMode = (localProperties["'TESTING_MODE'"] as String?)?.trim().toBoolean()
-            buildConfigField("boolean", "TESTING_MODE", testingMode.toString())
-
         }
 
         debug {
             applicationIdSuffix=".debug"
             versionNameSuffix="-debug"
             isMinifyEnabled = false
-            buildConfigField("String", "REVENUECAT_KEY", localProperties.get("TEST_REVENUECAT_KEY") as String)
-            //Assets
-            buildConfigField("String", "WHITE_NOISE", localProperties.get("WHITE_NOISE") as String)
             // Opt in with TESTING_MODE=true in local.properties. Release never reads it.
-            val testingMode = (localProperties["'TESTING_MODE_DEBUG'"] as String?)?.trim().toBoolean()
-            buildConfigField("boolean", "TESTING_MODE_DEBUG", testingMode.toString())
+            val testingMode = (localProperties["TESTING_MODE"] as String?)?.trim().toBoolean()
+            buildConfigField("boolean", "TESTING_MODE", testingMode.toString())
         }
     }
     compileOptions {
