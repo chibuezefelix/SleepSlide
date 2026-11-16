@@ -37,7 +37,29 @@ private const val REQUEST_CODE_DAILY    = 9_002
 private const val REQUEST_CODE_IMMEDIATE = 9_003
 private const val REQUEST_CODE_START_NOW = 9_004
 private const val REQUEST_CODE_RESULT    = 9_005
+private const val REQUEST_CODE_BACKUP    = 9_006
 private const val DEEP_LINK_URI = "sleepslide://app/presets?autoPlay=false"
+
+/**
+ * How long after the exact alarm the inexact backup is armed. Revoking the exact-alarm
+ * permission makes Android delete exact alarms (and kill the app) without telling us;
+ * inexact alarms survive, so the backup still delivers the reminder, a little late.
+ */
+internal const val BACKUP_DELAY_MS = 10 * 60 * 1000L
+
+/** What to arm for one occurrence of the reminder. */
+internal data class AlarmPlan(val exact: Boolean, val backupAtMs: Long?)
+
+/**
+ * The backup only makes sense next to an exact alarm: without the permission the main
+ * alarm is already inexact and cannot be revoked away. Whichever alarm fires first
+ * re-schedules both for the next day, which replaces the other, so no duplicate shows.
+ */
+internal fun planAlarms(exactAllowed: Boolean, triggerAtMs: Long): AlarmPlan =
+    AlarmPlan(
+        exact       = exactAllowed,
+        backupAtMs  = if (exactAllowed) triggerAtMs + BACKUP_DELAY_MS else null,
+    )
 
 @Singleton
 class WindDownNotificationServiceImpl @Inject constructor(
@@ -63,9 +85,10 @@ class WindDownNotificationServiceImpl @Inject constructor(
 
         val triggerAtMs = nextOccurrenceMs(hour, minute)
         val pendingIntent = buildDailyPendingIntent()
+        val plan = planAlarms(canScheduleExactAlarms(), triggerAtMs)
 
         runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && canScheduleExactAlarms()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && plan.exact) {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerAtMs,
@@ -83,11 +106,24 @@ class WindDownNotificationServiceImpl @Inject constructor(
         }.onFailure { e ->
             Log.e(TAG, "Failed to schedule wind-down alarm", e)
         }
+
+        runCatching {
+            val backupPending = buildBackupPendingIntent()
+            if (plan.backupAtMs != null) {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, plan.backupAtMs, backupPending)
+                Log.d(TAG, "Wind-down backup alarm scheduled (${java.util.Date(plan.backupAtMs)})")
+            } else {
+                alarmManager.cancel(backupPending)
+            }
+        }.onFailure { e ->
+            Log.e(TAG, "Failed to schedule wind-down backup alarm", e)
+        }
     }
 
     override fun cancelDailyReminder() {
         runCatching {
             alarmManager.cancel(buildDailyPendingIntent())
+            alarmManager.cancel(buildBackupPendingIntent())
             Log.d(TAG, "Wind-down alarm cancelled")
         }.onFailure { e ->
             Log.e(TAG, "Failed to cancel wind-down alarm", e)
@@ -284,6 +320,14 @@ class WindDownNotificationServiceImpl @Inject constructor(
         }
         return calendar.timeInMillis
     }
+
+    private fun buildBackupPendingIntent(): PendingIntent =
+        PendingIntent.getBroadcast(
+            context,
+            REQUEST_CODE_BACKUP,
+            Intent(context, WindDownAlarmReceiver::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
 
     private fun buildDailyPendingIntent(): PendingIntent =
         PendingIntent.getBroadcast(
