@@ -144,10 +144,13 @@ class SleepSlideApp : Application(), Configuration.Provider {
                     path    = prefs.onboardingPath,
                 )
 
-            // Re-schedule if enabled but alarm is not currently pending
-            // (handles app updates, force-stop, and permission revocation)
-            if (config.isEnabled && !windDownNotificationService.isScheduled()) {
-                Log.d(TAG, "Wind-down enabled but alarm missing — re-scheduling")
+            // Re-schedule whenever enabled (handles app updates, force-stop and permission
+            // revocation). isScheduled() can't be trusted for this: the PendingIntent
+            // outlives an alarm the system removed (e.g. exact-alarm permission revoked),
+            // so it reports "scheduled" for an alarm that is gone. Scheduling is idempotent
+            // (same PendingIntent, FLAG_UPDATE_CURRENT), so repeating it is harmless.
+            if (config.isEnabled) {
+                Log.d(TAG, "Wind-down enabled — (re)scheduling")
                 windDownNotificationService.scheduleDailyReminder(config.hour, config.minute)
             }
         }.onFailure { e ->
