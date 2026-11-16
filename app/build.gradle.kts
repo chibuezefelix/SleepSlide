@@ -9,14 +9,11 @@ if (localPropertiesFile.exists()){
     throw GradleException("local.properties file not found. Please create it and add the required properties.")
 }
 plugins {
-
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
     alias(libs.plugins.room)
-
-
 }
 
 android {
